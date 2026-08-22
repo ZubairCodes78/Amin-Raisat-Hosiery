@@ -81,10 +81,11 @@ export const BrandHeroSlider: React.FC = () => {
       {/* 
         Responsive Proportional Container:
         - Full-width hero banner with responsive aspect ratios
-        - Mobile: Full height for better mobile experience
-        - Uses object-cover for proper hero banner fit
+        - Mobile: Natural aspect ratio to preserve complete banner composition
+        - Desktop/tablet: Optimized aspect ratios
+        - Uses object-contain to preserve complete artwork without cropping
       */}
-      <div className="relative w-full max-w-[1920px] mx-auto h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-[600px] flex items-center justify-center">
+      <div className="relative w-full max-w-[1920px] mx-auto aspect-[3/4] sm:aspect-[16/9] md:aspect-[2/1] lg:aspect-[21/9] flex items-center justify-center">
         {slides.map((slide, idx) => {
           const isCurrent = currentSlide === idx;
           const imageSrc = slide.desktopImage || slide.mobileImage || `/images/slider ${idx + 1}.png`;
@@ -106,7 +107,7 @@ export const BrandHeroSlider: React.FC = () => {
                   fill
                   priority={idx === 0}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 100vw"
-                  className="object-cover object-center w-full h-full"
+                  className="object-contain object-center w-full h-full"
                 />
               </div>
             </div>
