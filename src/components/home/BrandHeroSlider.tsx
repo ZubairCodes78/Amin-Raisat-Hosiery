@@ -31,13 +31,13 @@ export const BrandHeroSlider: React.FC = () => {
     setCurrentSlide((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
   }, [totalSlides]);
 
-  // Auto-advance timer (3 seconds, pauses when hovered or touched)
+  // Auto-advance timer (2 seconds, pauses when hovered or touched)
   useEffect(() => {
     if (totalSlides <= 1 || isPaused) return;
 
     const timer = setInterval(() => {
       nextSlide();
-    }, 3000);
+    }, 2000);
 
     return () => clearInterval(timer);
   }, [totalSlides, isPaused, nextSlide]);
@@ -80,10 +80,11 @@ export const BrandHeroSlider: React.FC = () => {
     >
       {/* 
         Responsive Proportional Container:
-        - Full-width hero banner with standard aspect ratios
+        - Full-width hero banner with responsive aspect ratios
+        - Mobile: Full height for better mobile experience
         - Uses object-cover for proper hero banner fit
       */}
-      <div className="relative w-full max-w-[1920px] mx-auto aspect-[16/9] sm:aspect-[16/8] md:aspect-[2/1] lg:aspect-[21/9] max-h-[600px] flex items-center justify-center">
+      <div className="relative w-full max-w-[1920px] mx-auto h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-[600px] flex items-center justify-center">
         {slides.map((slide, idx) => {
           const isCurrent = currentSlide === idx;
           const imageSrc = slide.desktopImage || slide.mobileImage || `/images/slider ${idx + 1}.png`;
@@ -104,7 +105,7 @@ export const BrandHeroSlider: React.FC = () => {
                   alt={slide.title || `Amin Raisat Hosiery Campaign Banner ${idx + 1}`}
                   fill
                   priority={idx === 0}
-                  sizes="100vw"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 100vw"
                   className="object-cover object-center w-full h-full"
                 />
               </div>
