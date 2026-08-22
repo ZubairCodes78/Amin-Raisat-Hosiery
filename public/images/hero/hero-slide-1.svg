@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 800" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgStudio1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9" />
+      <stop offset="50%" stop-color="#E2E8F0" />
+      <stop offset="100%" stop-color="#CBD5E1" />
+    </linearGradient>
+    <linearGradient id="overlayDark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F172A" stop-opacity="0.85" />
+      <stop offset="50%" stop-color="#0F172A" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.1" />
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="20" stdDeviation="25" flood-color="#000000" flood-opacity="0.2" />
+    </filter>
+  </defs>
+
+  <!-- Studio Background -->
+  <rect width="1920" height="800" fill="url(#bgStudio1)" />
+
+  <!-- Architectural studio background lines -->
+  <g opacity="0.15">
+    <line x1="1200" y1="0" x2="1200" y2="800" stroke="#0F172A" stroke-width="2" />
+    <line x1="1500" y1="0" x2="1500" y2="800" stroke="#0F172A" stroke-width="2" />
+    <circle cx="1400" cy="400" r="300" fill="none" stroke="#0F172A" stroke-width="1.5" />
+  </g>
+
+  <!-- Right Hero Product Arrangement (Sleeveless Vest & Folded Garments) -->
+  <g transform="translate(1150, 100)" filter="url(#softShadow)">
+    <!-- Stack of Folded Cotton Garments -->
+    <g transform="translate(250, 320)">
+      <rect x="0" y="80" width="340" height="40" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" />
+      <rect x="0" y="40" width="340" height="40" rx="8" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" />
+      <rect x="0" y="0" width="340" height="40" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" />
+      <line x1="20" y1="20" x2="100" y2="20" stroke="#94A3B8" stroke-width="2" stroke-dasharray="3 3" />
+    </g>
+
+    <!-- Main Front Mannequin Vest -->
+    <g transform="translate(40, 20)">
+      <!-- Back Neck -->
+      <path d="M 170 80 Q 240 130 310 80 L 370 100 L 400 220 Q 350 300 350 380 L 350 550 L 130 550 L 130 380 Q 130 300 80 220 L 110 100 Z" fill="#E2E8F0" />
+      <!-- Front Body -->
+      <path d="M 170 80 Q 240 210 310 80 L 360 95 Q 370 190 350 280 Q 330 330 340 400 L 345 550 Q 240 558 135 550 L 140 400 Q 150 330 130 280 Q 110 190 120 95 Z" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+      <!-- Ribbed Neck Binding -->
+      <path d="M 170 80 Q 240 210 310 80 Q 318 82 316 90 Q 240 224 164 90 Q 162 82 170 80 Z" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.5" />
+      <!-- Armhole Bindings -->
+      <path d="M 120 95 Q 110 190 130 280 Q 124 283 120 272 Q 102 185 110 93 Z" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.5" />
+      <path d="M 360 95 Q 370 190 350 280 Q 356 283 360 272 Q 378 185 370 93 Z" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.5" />
+      <!-- Label -->
+      <text x="240" y="150" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748B" letter-spacing="2">AMIN RAISAT</text>
+    </g>
+  </g>
+
+  <!-- Left Editorial Dark Overlay for Text Legibility -->
+  <rect width="1200" height="800" fill="url(#overlayDark)" />
+</svg>

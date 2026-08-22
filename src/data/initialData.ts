@@ -1,0 +1,284 @@
+import { Category, Subcategory, Product, SiteSettings, ShippingSettings, HeroSlide } from '@/types';
+
+export const INITIAL_HERO_SLIDES: HeroSlide[] = [
+  {
+    id: 'temp-slide-1', // Will be replaced with UUID from database
+    title: 'Slider 1',
+    desktopImage: '/images/slider 1.png',
+    mobileImage: '/images/slider 1.png',
+    displayOrder: 1,
+    isActive: true,
+  },
+  {
+    id: 'temp-slide-2', // Will be replaced with UUID from database
+    title: 'Slider 2',
+    desktopImage: '/images/slider 2.png',
+    mobileImage: '/images/slider 2.png',
+    displayOrder: 2,
+    isActive: true,
+  },
+];
+
+export const INITIAL_SHIPPING_SETTINGS: ShippingSettings = {
+  minOrderQty: 2,
+  maxOrderQty: 12,
+  baseDeliveryCharge: 200,
+  freeDeliveryThreshold: 3,
+};
+
+export const INITIAL_SITE_SETTINGS: SiteSettings = {
+  brandName: 'Amin Raisat Hosiery',
+  ownerName: 'Muhammad Amin',
+  phone: '03018666075',
+  whatsapp: '03018666075',
+  email: 'amingoldriasathosiery@gmail.com',
+  address: 'Hosiery Market, Faisalabad, Pakistan',
+  businessHours: 'Monday - Saturday: 9:00 AM - 9:00 PM',
+  market: 'Pakistan',
+  currency: 'PKR',
+  shipping: INITIAL_SHIPPING_SETTINGS,
+  bankDetails: {
+    bankName: 'Meezan Bank Ltd.',
+    accountTitle: 'Muhammad Amin',
+    accountNumber: '01010101010101',
+    iban: 'PK00MEZN0000000000000000',
+    instructions: 'Please transfer the exact total amount and send a screenshot of the payment receipt to our WhatsApp (03018666075) with your Order ID.',
+  },
+  isStoreOpen: true,
+  isCodEnabled: true,
+  isBankTransferEnabled: true,
+  isAnnouncementEnabled: true,
+  announcementText: '',
+  isWhatsAppFloatingEnabled: true,
+  exchangeReturnDays: 7,
+};
+
+export const INITIAL_SUBCATEGORIES: Subcategory[] = [
+  // Men's Subcategories
+  {
+    id: 'sub-men-vests',
+    categoryId: 'cat-men',
+    name: 'Vests',
+    slug: 'vests',
+    description: '100% Combed Cotton High Quality & Standard Quality Vests.',
+    isActive: true,
+    displayOrder: 1,
+    productCount: 1,
+  },
+  {
+    id: 'sub-men-boxers',
+    categoryId: 'cat-men',
+    name: 'Boxers',
+    slug: 'boxers',
+    description: 'Relaxed fit pure cotton boxers for daily comfort.',
+    isActive: true,
+    displayOrder: 2,
+    productCount: 0,
+  },
+  {
+    id: 'sub-men-briefs',
+    categoryId: 'cat-men',
+    name: 'Briefs',
+    slug: 'briefs',
+    description: 'Soft stretch cotton briefs with snug waistband.',
+    isActive: true,
+    displayOrder: 3,
+    productCount: 0,
+  },
+  {
+    id: 'sub-men-tshirts',
+    categoryId: 'cat-men',
+    name: 'T-Shirts',
+    slug: 't-shirts',
+    description: 'Everyday casual cotton crewneck and v-neck t-shirts.',
+    isActive: true,
+    displayOrder: 4,
+    productCount: 0,
+  },
+  {
+    id: 'sub-men-trousers',
+    categoryId: 'cat-men',
+    name: 'Trousers',
+    slug: 'trousers',
+    description: 'Comfortable loungewear and cotton knit trousers.',
+    isActive: true,
+    displayOrder: 5,
+    productCount: 0,
+  },
+
+  // Women's Subcategories
+  {
+    id: 'sub-women-camisoles',
+    categoryId: 'cat-women',
+    name: 'Camisoles & Vests',
+    slug: 'camisoles',
+    description: 'Soft breathable cotton camisoles and inner vests for women.',
+    isActive: true,
+    displayOrder: 1,
+    productCount: 0,
+  },
+  {
+    id: 'sub-women-innerwear',
+    categoryId: 'cat-women',
+    name: 'Innerwear',
+    slug: 'innerwear',
+    description: 'Comfort-fit women hosiery essentials.',
+    isActive: true,
+    displayOrder: 2,
+    productCount: 0,
+  },
+
+  // Kids' Subcategories
+  {
+    id: 'sub-kids-vests',
+    categoryId: 'cat-kids',
+    name: "Kids' Vests",
+    slug: 'kids-vests',
+    description: 'Hypoallergenic pure cotton vests for kids.',
+    isActive: true,
+    displayOrder: 1,
+    productCount: 0,
+  },
+  {
+    id: 'sub-kids-underwear',
+    categoryId: 'cat-kids',
+    name: "Kids' Underwear",
+    slug: 'kids-underwear',
+    description: 'Gentle cotton briefs and trunks for boys and girls.',
+    isActive: true,
+    displayOrder: 2,
+    productCount: 0,
+  },
+];
+
+export const INITIAL_CATEGORIES: Category[] = [
+  {
+    id: 'cat-men',
+    name: 'Men',
+    slug: 'men',
+    description: 'Everyday premium cotton innerwear, vests, and essentials engineered for maximum comfort and durability.',
+    isActive: true,
+    displayOrder: 1,
+    productCount: 1,
+  },
+  {
+    id: 'cat-women',
+    name: 'Women',
+    slug: 'women',
+    description: 'Upcoming collection of comfortable, breathable women hosiery essentials.',
+    isActive: true,
+    displayOrder: 2,
+    productCount: 0,
+  },
+  {
+    id: 'cat-kids',
+    name: 'Kids',
+    slug: 'kids',
+    description: 'Soft and gentle cotton hosiery for children of all ages.',
+    isActive: true,
+    displayOrder: 3,
+    productCount: 0,
+  },
+];
+
+export const INITIAL_PRODUCTS: Product[] = [
+  {
+    id: 'prod-mens-vest',
+    categoryId: 'cat-men',
+    subcategoryId: 'sub-men-vests',
+    name: "Men's Pure Cotton Vest",
+    slug: 'mens-vest',
+    subtitle: '100% Combed Cotton Breathable Innerwear — High Quality & Standard Quality options',
+    description:
+      'Engineered for long-lasting comfort in Pakistani climate, the Amin Raisat Hosiery Men’s Vest is crafted from 100% fine combed cotton. Soft against the skin, sweat-absorbent, and designed to maintain its shape wash after wash. Available in two distinct construction qualities (High Quality taped seams vs Standard Quality folded seams) and two sleeve styles (Sleeveless/Sando & Half Sleeves).',
+    features: [
+      '100% Premium Combed Cotton for skin-friendly softness and breathability',
+      'Dual Construction Options: High Quality (Reinforced Tape) & Standard Quality',
+      'Sweat-absorbent weave tailored for all-day freshness and warm climates',
+      'Form-retaining rib weave that resists stretching and collar sagging',
+      'Tagless inner neckline for smooth, itch-free wear under shirts and kurtas',
+    ],
+    qualityComparison: {
+      highQuality: {
+        neck: 'Reinforced woven tape around the neckline for anti-sag shape retention and prolonged durability.',
+        shoulders: 'Protective reinforcement tape along the shoulder seams preventing stretch and wear.',
+        stitching: 'Precision industrial interlock 4-thread stitching across all hemlines.',
+        feel: 'Silky-smooth premium combed cotton finish with enhanced softness.',
+      },
+      standardQuality: {
+        neck: 'Manually folded neckline stitched neatly using a dedicated sewing machine (no tape).',
+        shoulders: 'Standard clean double-needle stitched finish.',
+        stitching: 'Durable everyday lockstitch seam construction.',
+        feel: 'Classic breathable pure cotton feel suited for dependable daily wear.',
+      },
+    },
+    careInstructions: [
+      'Machine wash gentle or hand wash in cold/lukewarm water',
+      'Wash with similar light colors',
+      'Do not use chlorine bleach',
+      'Medium heat iron if required',
+      'Line dry in shade for longest fabric life',
+    ],
+    shippingInfo:
+      'Fast delivery across all cities of Pakistan. Delivery charges Rs. 200 apply on 2 pieces. Orders of 3 or more pieces qualify for 100% Free Delivery. Cash on Delivery (COD) & Bank Transfer available.',
+    isPublished: true,
+    createdAt: new Date().toISOString(),
+    media: [
+      {
+        id: 'med-hq-sl',
+        productId: 'prod-mens-vest',
+        type: 'photo',
+        url: '/images/products/sleevless high.jpeg',
+        alt: "Men's Vest - High Quality Sleeveless / Sando",
+        title: 'High Quality Sleeveless',
+        displayOrder: 1,
+        variantQuality: 'High Quality',
+        variantSleeve: 'Sleeveless',
+      },
+      {
+        id: 'med-hq-fs',
+        productId: 'prod-mens-vest',
+        type: 'photo',
+        url: '/images/products/full sleeve high.jpeg',
+        alt: "Men's Vest - High Quality Full Sleeve",
+        title: 'High Quality Full Sleeve',
+        displayOrder: 2,
+        variantQuality: 'High Quality',
+        variantSleeve: 'Full Sleeve',
+      },
+      {
+        id: 'med-lq-sl',
+        productId: 'prod-mens-vest',
+        type: 'photo',
+        url: '/images/products/sleevless low.jpeg',
+        alt: "Men's Vest - Low Quality Sleeveless / Sando",
+        title: 'Low Quality Sleeveless',
+        displayOrder: 3,
+        variantQuality: 'Low Quality',
+        variantSleeve: 'Sleeveless',
+      },
+    ],
+    variants: [
+      // 1. High Quality - Sleeveless / Sando (S, M, L, XL, XXL)
+      { id: 'var-hq-sl-s', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Sleeveless', size: 'S', price: 480, stock: 45, sku: 'ARH-HQ-SL-S', isAvailable: true },
+      { id: 'var-hq-sl-m', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Sleeveless', size: 'M', price: 480, stock: 60, sku: 'ARH-HQ-SL-M', isAvailable: true },
+      { id: 'var-hq-sl-l', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Sleeveless', size: 'L', price: 480, stock: 55, sku: 'ARH-HQ-SL-L', isAvailable: true },
+      { id: 'var-hq-sl-xl', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Sleeveless', size: 'XL', price: 500, stock: 40, sku: 'ARH-HQ-SL-XL', isAvailable: true },
+      { id: 'var-hq-sl-xxl', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Sleeveless', size: 'XXL', price: 520, stock: 30, sku: 'ARH-HQ-SL-XXL', isAvailable: true },
+
+      // 2. High Quality - Full Sleeve (S, M, L, XL, XXL)
+      { id: 'var-hq-fs-s', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'S', price: 540, stock: 35, sku: 'ARH-HQ-FS-S', isAvailable: true },
+      { id: 'var-hq-fs-m', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'M', price: 540, stock: 50, sku: 'ARH-HQ-FS-M', isAvailable: true },
+      { id: 'var-hq-fs-l', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'L', price: 540, stock: 50, sku: 'ARH-HQ-FS-L', isAvailable: true },
+      { id: 'var-hq-fs-xl', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'XL', price: 560, stock: 35, sku: 'ARH-HQ-FS-XL', isAvailable: true },
+      { id: 'var-hq-fs-xxl', productId: 'prod-mens-vest', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'XXL', price: 580, stock: 25, sku: 'ARH-HQ-FS-XXL', isAvailable: true },
+
+      // 3. Low Quality - Sleeveless / Sando Only (S, M, L, XL, XXL)
+      { id: 'var-lq-sl-s', productId: 'prod-mens-vest', quality: 'Low Quality', sleeve: 'Sleeveless', size: 'S', price: 380, stock: 50, sku: 'ARH-LQ-SL-S', isAvailable: true },
+      { id: 'var-lq-sl-m', productId: 'prod-mens-vest', quality: 'Low Quality', sleeve: 'Sleeveless', size: 'M', price: 380, stock: 65, sku: 'ARH-LQ-SL-M', isAvailable: true },
+      { id: 'var-lq-sl-l', productId: 'prod-mens-vest', quality: 'Low Quality', sleeve: 'Sleeveless', size: 'L', price: 380, stock: 60, sku: 'ARH-LQ-SL-L', isAvailable: true },
+      { id: 'var-lq-sl-xl', productId: 'prod-mens-vest', quality: 'Low Quality', sleeve: 'Sleeveless', size: 'XL', price: 400, stock: 45, sku: 'ARH-LQ-SL-XL', isAvailable: true },
+      { id: 'var-lq-sl-xxl', productId: 'prod-mens-vest', quality: 'Low Quality', sleeve: 'Sleeveless', size: 'XXL', price: 420, stock: 30, sku: 'ARH-LQ-SL-XXL', isAvailable: true },
+    ],
+  },
+];

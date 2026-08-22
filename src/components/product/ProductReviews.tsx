@@ -1,0 +1,251 @@
+'use client';
+
+import React, { useState } from 'react';
+import { ProductReview } from '@/types';
+import { useStore } from '@/context/StoreContext';
+import { Star, MessageSquare, Check, X } from 'lucide-react';
+
+interface ProductReviewsProps {
+  productId: string;
+  productName: string;
+  reviews?: ProductReview[];
+}
+
+export const ProductReviews: React.FC<ProductReviewsProps> = ({ productId, productName, reviews = [] }) => {
+  const { submitReview } = useStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerCity, setCustomerCity] = useState('');
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const totalReviews = reviews.length;
+  const averageRating =
+    totalReviews > 0
+      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
+      : null;
+
+  // Star breakdown calculation
+  const starCounts = [5, 4, 3, 2, 1].map((stars) => {
+    const count = reviews.filter((r) => r.rating === stars).length;
+    const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
+    return { stars, count, percentage };
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName.trim() || !comment.trim()) return;
+
+    await submitReview({
+      productId,
+      customerName: customerName.trim(),
+      customerCity: customerCity.trim() || undefined,
+      rating,
+      comment: comment.trim(),
+    });
+
+    setIsSubmitted(true);
+    setTimeout(() => {
+      setIsSubmitted(false);
+      setIsModalOpen(false);
+      setCustomerName('');
+      setCustomerCity('');
+      setComment('');
+    }, 2000);
+  };
+
+  return (
+    <div className="space-y-6 pt-8 border-t border-gray-200">
+      {/* Header Summary & Rating Breakdown */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+        <div>
+          <h3 className="text-lg font-bold text-gray-950">Customer Reviews</h3>
+          {totalReviews > 0 ? (
+            <div className="space-y-3 mt-2">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold text-gray-950">{averageRating}</span>
+                <div>
+                  <div className="flex text-amber-500">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(Number(averageRating)) ? 'fill-current' : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs text-gray-500 font-normal">Based on {totalReviews} reviews</span>
+                </div>
+              </div>
+
+              {/* Star Rating Breakdown Bars */}
+              <div className="space-y-1 w-64 text-xs text-gray-600">
+                {starCounts.map((s) => (
+                  <div key={s.stars} className="flex items-center gap-2">
+                    <span className="w-12 text-[11px] font-medium">{s.stars} stars</span>
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500 rounded-full"
+                        style={{ width: `${s.percentage}%` }}
+                      />
+                    </div>
+                    <span className="w-6 text-[10px] text-gray-400 text-right">{s.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500 mt-1 font-normal">
+              No reviews yet. Share your experience with {productName} below!
+            </p>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-950 text-white rounded-lg text-xs font-semibold hover:bg-black transition-colors self-start sm:self-auto"
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>Write a Review</span>
+        </button>
+      </div>
+
+      {/* Reviews List */}
+      {totalReviews === 0 ? (
+        <div className="p-8 bg-gray-50 rounded-xl border border-gray-200 text-center space-y-2">
+          <p className="text-xs font-semibold text-gray-800">Authentic Customer Feedback</p>
+          <p className="text-xs text-gray-500 max-w-md mx-auto">
+            We value genuine reviews from real Pakistani customers. Once you receive your order, leave your feedback here.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {reviews.map((rev) => (
+            <div key={rev.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-xs text-gray-900">{rev.customerName}</span>
+                  {rev.customerCity && (
+                    <span className="text-xs text-gray-500 ml-1.5">({rev.customerCity})</span>
+                  )}
+                </div>
+                <div className="flex text-amber-500">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-3.5 h-3.5 ${star <= rev.rating ? 'fill-current' : 'text-gray-300'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-gray-700 leading-relaxed font-normal">{rev.comment}</p>
+              <div className="text-[10px] text-gray-400">
+                {new Date(rev.createdAt).toLocaleDateString('en-PK', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Review Submission Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl border border-gray-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+              <h4 className="font-bold text-gray-950 text-sm">Write a Review for {productName}</h4>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-black">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {isSubmitted ? (
+              <div className="p-6 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-center space-y-2">
+                <Check className="w-6 h-6 mx-auto text-emerald-600" />
+                <p className="text-xs font-bold">Thank you for your feedback!</p>
+                <p className="text-[11px]">Your review has been submitted successfully.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block font-semibold text-gray-800 mb-1">Your Rating</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className="p-1 text-amber-500 hover:scale-110 transition-transform"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${star <= rating ? 'fill-current' : 'text-gray-300'}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-800 mb-1">Your Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ali Raza"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-800 mb-1">City (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Lahore, Karachi, Faisalabad"
+                    value={customerCity}
+                    onChange={(e) => setCustomerCity(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-800 mb-1">Your Review *</label>
+                  <textarea
+                    rows={3}
+                    required
+                    placeholder="Share your thoughts on the fabric quality, stitching, and fit..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="py-2 px-4 bg-gray-100 text-gray-800 rounded-lg font-semibold hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="py-2 px-5 bg-gray-950 text-white rounded-lg font-semibold hover:bg-black"
+                  >
+                    Submit Review
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

@@ -1,0 +1,1555 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
+import { useStore } from '@/context/StoreContext';
+import { Product, ProductVariant, ProductMedia, ProductSize } from '@/types';
+import {
+  Package,
+  Plus,
+  Trash2,
+  Edit2,
+  Save,
+  Check,
+  Upload,
+  Film,
+  X,
+  Layers,
+  ArrowLeft,
+  Image as ImageIcon,
+  Boxes,
+  Sparkles,
+  Zap,
+  Sliders,
+} from 'lucide-react';
+
+export default function AdminProductsPage() {
+  const {
+    products,
+    categories,
+    subcategories,
+    saveProduct,
+    deleteProduct,
+    uploadMediaFile,
+  } = useStore();
+
+  // Mode: 'list' | 'editor'
+  const [viewMode, setViewMode] = useState<'list' | 'editor'>('list');
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+
+  // Notification Toast
+  const [notification, setNotification] = useState('');
+  const showNotice = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(''), 3000);
+  };
+
+  // ------------------ 1. BASIC PRODUCT INFO STATE ------------------
+  const [prodName, setProdName] = useState('');
+  const [prodSlug, setProdSlug] = useState('');
+  const [prodSubtitle, setProdSubtitle] = useState('');
+  const [prodDesc, setProdDesc] = useState('');
+  const [prodCategoryId, setProdCategoryId] = useState('');
+  const [prodSubcategoryId, setProdSubcategoryId] = useState('');
+  const [prodIsPublished, setProdIsPublished] = useState(true);
+  const [prodFeaturesText, setProdFeaturesText] = useState('');
+  const [prodCareText, setProdCareText] = useState('');
+  const [prodShippingText, setProdShippingText] = useState('');
+
+  // ------------------ 2. DYNAMIC VARIANT SYSTEM STATE ------------------
+  // Qualities
+  const [customQualities, setCustomQualities] = useState<string[]>(['High Quality', 'Standard Quality']);
+  const [newQualityInput, setNewQualityInput] = useState('');
+  const [isAddQualityOpen, setIsAddQualityOpen] = useState(false);
+
+  // Styles / Sleeves
+  const [customStyles, setCustomStyles] = useState<string[]>(['Sleeveless', 'Full Sleeve']);
+  const [newStyleInput, setNewStyleInput] = useState('');
+  const [isAddStyleOpen, setIsAddStyleOpen] = useState(false);
+
+  // Sizes
+  const [customSizes, setCustomSizes] = useState<string[]>(['S', 'M', 'L', 'XL', 'XXL']);
+  const [newSizeInput, setNewSizeInput] = useState('');
+  const [isAddSizeOpen, setIsAddSizeOpen] = useState(false);
+
+  // Matrix Generator Settings
+  const [genDefaultPrice, setGenDefaultPrice] = useState(480);
+  const [genDefaultComparePrice, setGenDefaultComparePrice] = useState<number | undefined>(undefined);
+  const [genDefaultStock, setGenDefaultStock] = useState(50);
+
+  // Individual Variant Add State
+  const [isAddSingleVarOpen, setIsAddSingleVarOpen] = useState(false);
+  const [singleVarQuality, setSingleVarQuality] = useState('');
+  const [singleVarStyle, setSingleVarStyle] = useState('');
+  const [singleVarSize, setSingleVarSize] = useState('');
+  const [singleVarPrice, setSingleVarPrice] = useState(480);
+  const [singleVarSalePrice, setSingleVarSalePrice] = useState<number | undefined>(undefined);
+  const [singleVarStock, setSingleVarStock] = useState(50);
+  const [singleVarSku, setSingleVarSku] = useState('');
+
+  // Master Variants List
+  const [variantsList, setVariantsList] = useState<ProductVariant[]>([]);
+
+  // ------------------ 3. MEDIA UPLOAD STATE ------------------
+  const [mediaList, setMediaList] = useState<ProductMedia[]>([]);
+  const [uploadQualityTarget, setUploadQualityTarget] = useState<string>('All');
+  const [uploadSleeveTarget, setUploadSleeveTarget] = useState<string>('All');
+  const [uploadMediaTitle, setUploadMediaTitle] = useState('');
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [videoUrlInput, setVideoUrlInput] = useState('');
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+
+  // Active Editor Tab
+  const [editorTab, setEditorTab] = useState<'basic' | 'variants' | 'media'>('basic');
+
+  // Available subcategories for chosen category
+  const activeSubcatsForCategory = useMemo(() => {
+    if (!prodCategoryId) return subcategories;
+    return subcategories.filter((s) => s.categoryId === prodCategoryId);
+  }, [prodCategoryId, subcategories]);
+
+  // Available styles extracted from current matrix for media target selector
+  const availableVariantStylesForMedia = useMemo(() => {
+    const fromVars = Array.from(new Set(variantsList.map((v) => v.sleeve).filter(Boolean)));
+    return fromVars.length > 0 ? fromVars : customStyles;
+  }, [variantsList, customStyles]);
+
+  // ------------------ OPEN CREATE FORM ------------------
+  const handleStartCreate = () => {
+    setEditingProductId(null);
+    setProdName('');
+    setProdSlug('');
+    setProdSubtitle('');
+    setProdDesc('');
+    const defaultCat = categories[0]?.id || '';
+    setProdCategoryId(defaultCat);
+    const defaultSub = subcategories.find((s) => s.categoryId === defaultCat)?.id || '';
+    setProdSubcategoryId(defaultSub);
+    setProdIsPublished(true);
+    setProdFeaturesText('100% Pure Combed Cotton\nAnti-Sag Neck Seams\nBreathable Rib Knit\nPreshrunk Fabric');
+    setProdCareText('Machine wash cold\nDo not bleach\nTumble dry low\nWarm iron if needed');
+    setProdShippingText('Nationwide Cash on Delivery (COD) across Pakistan. Free delivery on 4+ pieces.');
+
+    const initialQualities = ['High Quality', 'Standard Quality'];
+    const initialStyles = ['Sleeveless', 'Full Sleeve'];
+    const initialSizes = ['S', 'M', 'L', 'XL', 'XXL'];
+
+    setCustomQualities(initialQualities);
+    setCustomStyles(initialStyles);
+    setCustomSizes(initialSizes);
+
+    // Initial default seed variant
+    setVariantsList([
+      {
+        id: `var-new-1`,
+        productId: '',
+        quality: 'High Quality',
+        sleeve: 'Sleeveless',
+        size: 'L',
+        price: 480,
+        stock: 50,
+        sku: 'ARH-HQ-SL-L',
+        isAvailable: true,
+      },
+    ]);
+    setMediaList([]);
+    setEditorTab('basic');
+    setViewMode('editor');
+  };
+
+  // ------------------ OPEN EDIT FORM ------------------
+  const handleStartEdit = (prod: Product) => {
+    setEditingProductId(prod.id);
+    setProdName(prod.name);
+    setProdSlug(prod.slug);
+    setProdSubtitle(prod.subtitle || '');
+    setProdDesc(prod.description || '');
+    setProdCategoryId(prod.categoryId);
+    setProdSubcategoryId(prod.subcategoryId || '');
+    setProdIsPublished(prod.isPublished);
+    setProdFeaturesText(prod.features ? prod.features.join('\n') : '');
+    setProdCareText(prod.careInstructions ? prod.careInstructions.join('\n') : '');
+    setProdShippingText(prod.shippingInfo || '');
+
+    // Extract all unique qualities, styles, and sizes from the product's actual variants
+    const qualitiesFromVars = Array.from(
+      new Set(prod.variants.map((v) => v.quality).filter(Boolean))
+    );
+    const stylesFromVars = Array.from(
+      new Set(prod.variants.map((v) => v.sleeve).filter(Boolean))
+    );
+    const sizesFromVars = Array.from(
+      new Set(prod.variants.map((v) => v.size).filter(Boolean))
+    );
+
+    setCustomQualities(qualitiesFromVars.length > 0 ? qualitiesFromVars : ['High Quality', 'Standard Quality']);
+    setCustomStyles(stylesFromVars.length > 0 ? stylesFromVars : ['Sleeveless', 'Full Sleeve']);
+    setCustomSizes(sizesFromVars.length > 0 ? sizesFromVars : ['S', 'M', 'L', 'XL', 'XXL']);
+
+    setVariantsList(prod.variants || []);
+    setMediaList(prod.media || []);
+    setEditorTab('basic');
+    setViewMode('editor');
+  };
+
+  // ------------------ SAVE PRODUCT ------------------
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prodName.trim()) {
+      alert('Please enter a Product Name.');
+      return;
+    }
+
+    if (variantsList.length === 0) {
+      alert('Please add or generate at least 1 variant for this product.');
+      setEditorTab('variants');
+      return;
+    }
+
+    const currentId = editingProductId || `prod-${Date.now()}`;
+    const autoSlug = prodSlug.trim()
+      ? prodSlug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      : prodName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+    const featuresArray = prodFeaturesText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const careArray = prodCareText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const cleanVariants: ProductVariant[] = variantsList.map((v, i) => ({
+      ...v,
+      id: v.id || `var-${currentId}-${i + 1}`,
+      productId: currentId,
+    }));
+
+    const cleanMedia: ProductMedia[] = mediaList.map((m, i) => ({
+      ...m,
+      id: m.id || `med-${currentId}-${i + 1}`,
+      productId: currentId,
+    }));
+
+    const productToSave: Product = {
+      id: currentId,
+      categoryId: prodCategoryId || categories[0]?.id || '',
+      subcategoryId: prodSubcategoryId || undefined,
+      name: prodName.trim(),
+      slug: autoSlug,
+      subtitle: prodSubtitle.trim(),
+      description: prodDesc.trim(),
+      features: featuresArray,
+      qualityComparison: {
+        highQuality: {
+          neck: 'Ribbed binding with double top-stitch',
+          shoulders: 'Clean finished tape',
+          stitching: 'Reinforced anti-sag seams',
+          feel: '100% fine combed cotton',
+        },
+        standardQuality: {
+          neck: 'Standard rib finish',
+          shoulders: 'Single needle stitch',
+          stitching: 'Standard durable overlock',
+          feel: '100% pure cotton',
+        },
+      },
+      careInstructions: careArray,
+      shippingInfo: prodShippingText.trim(),
+      isPublished: prodIsPublished,
+      createdAt: editingProductId
+        ? products.find((p) => p.id === editingProductId)?.createdAt || new Date().toISOString()
+        : new Date().toISOString(),
+      variants: cleanVariants,
+      media: cleanMedia,
+    };
+
+    await saveProduct(productToSave);
+    showNotice(editingProductId ? 'Product updated successfully!' : 'New product created successfully!');
+    setViewMode('list');
+  };
+
+  // ------------------ DELETE PRODUCT ------------------
+  const handleDeleteProduct = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to permanently delete "${name}"?`)) {
+      await deleteProduct(id);
+      showNotice(`Product "${name}" deleted.`);
+    }
+  };
+
+  // ------------------ QUALITY MANAGEMENT ------------------
+  const handleAddQuality = () => {
+    const q = newQualityInput.trim();
+    if (!q) return;
+    if (!customQualities.includes(q)) {
+      setCustomQualities([...customQualities, q]);
+    }
+    setNewQualityInput('');
+    setIsAddQualityOpen(false);
+  };
+
+  const handleRemoveQuality = (qToRemove: string) => {
+    if (customQualities.length <= 1) {
+      alert('Product must have at least 1 quality option.');
+      return;
+    }
+    setCustomQualities(customQualities.filter((q) => q !== qToRemove));
+  };
+
+  // ------------------ STYLE MANAGEMENT ------------------
+  const handleAddStyle = () => {
+    const st = newStyleInput.trim();
+    if (!st) return;
+    if (!customStyles.includes(st)) {
+      setCustomStyles([...customStyles, st]);
+    }
+    setNewStyleInput('');
+    setIsAddStyleOpen(false);
+  };
+
+  const handleRemoveStyle = (styleToRemove: string) => {
+    if (customStyles.length <= 1) {
+      alert('Product must have at least 1 style option.');
+      return;
+    }
+    setCustomStyles(customStyles.filter((s) => s !== styleToRemove));
+  };
+
+  // ------------------ SIZE MANAGEMENT ------------------
+  const handleAddSize = () => {
+    const sz = newSizeInput.trim();
+    if (!sz) return;
+    if (!customSizes.includes(sz)) {
+      setCustomSizes([...customSizes, sz]);
+    }
+    setNewSizeInput('');
+    setIsAddSizeOpen(false);
+  };
+
+  const handleRemoveSize = (sizeToRemove: string) => {
+    if (customSizes.length <= 1) {
+      alert('Product must have at least 1 size option.');
+      return;
+    }
+    setCustomSizes(customSizes.filter((s) => s !== sizeToRemove));
+  };
+
+  // ------------------ BULK GENERATE ALL COMBINATIONS ------------------
+  const handleGenerateCombinations = () => {
+    if (customQualities.length === 0 || customStyles.length === 0 || customSizes.length === 0) {
+      alert('Please define at least 1 quality, 1 style, and 1 size before generating variants.');
+      return;
+    }
+
+    const prodPrefix = (prodName.trim() || 'ARH')
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 4);
+
+    const generated: ProductVariant[] = [];
+    let count = 1;
+
+    for (const q of customQualities) {
+      for (const st of customStyles) {
+        for (const sz of customSizes) {
+          const qShort = q.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 3);
+          const stShort = st.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 3);
+          const skuCode = `${prodPrefix}-${qShort}-${stShort}-${sz}`;
+
+          // Check if an existing variant already had custom prices/stock
+          const existing = variantsList.find(
+            (v) => v.quality === q && v.sleeve === st && v.size === sz
+          );
+
+          generated.push({
+            id: existing ? existing.id : `var-gen-${Date.now()}-${count++}`,
+            productId: editingProductId || '',
+            quality: q,
+            sleeve: st,
+            size: sz,
+            price: existing ? existing.price : genDefaultPrice,
+            salePrice: existing ? existing.salePrice : genDefaultComparePrice,
+            stock: existing ? existing.stock : genDefaultStock,
+            sku: existing?.sku || skuCode,
+            isAvailable: existing ? existing.isAvailable : true,
+          });
+        }
+      }
+    }
+
+    setVariantsList(generated);
+    showNotice(`Generated ${generated.length} variant combinations! You can now adjust or delete any combination.`);
+  };
+
+  // ------------------ ADD SINGLE CUSTOM VARIANT ------------------
+  const handleAddSingleVariant = () => {
+    const q = singleVarQuality || customQualities[0] || 'High Quality';
+    const st = singleVarStyle || customStyles[0] || 'Sleeveless';
+    const sz = singleVarSize || customSizes[0] || 'L';
+
+    const prodPrefix = (prodName.trim() || 'ARH')
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 4);
+    const qShort = q.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 3);
+    const stShort = st.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 3);
+    const autoSku = singleVarSku.trim() || `${prodPrefix}-${qShort}-${stShort}-${sz}`;
+
+    const newVariant: ProductVariant = {
+      id: `var-custom-${Date.now()}`,
+      productId: editingProductId || '',
+      quality: q,
+      sleeve: st,
+      size: sz,
+      price: Number(singleVarPrice) || 480,
+      salePrice: singleVarSalePrice ? Number(singleVarSalePrice) : undefined,
+      stock: Number(singleVarStock) || 50,
+      sku: autoSku,
+      isAvailable: true,
+    };
+
+    setVariantsList([...variantsList, newVariant]);
+    setIsAddSingleVarOpen(false);
+    showNotice(`Added custom variant: ${q} • ${st} • ${sz}`);
+  };
+
+  // ------------------ MATRIX ROW UPDATES ------------------
+  const handleUpdateVariantField = (
+    id: string,
+    field: keyof ProductVariant,
+    value: any
+  ) => {
+    setVariantsList((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, [field]: value } : v))
+    );
+  };
+
+  const handleRemoveVariant = (id: string) => {
+    setVariantsList((prev) => prev.filter((v) => v.id !== id));
+  };
+
+  // ------------------ MEDIA UPLOADS ------------------
+  const handleImageFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingFiles(true);
+    try {
+      const newItems: ProductMedia[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const uploadedUrl = await uploadMediaFile(file);
+
+        newItems.push({
+          id: `media-upl-${Date.now()}-${i}`,
+          productId: editingProductId || '',
+          type: 'photo',
+          url: uploadedUrl,
+          alt: `${prodName || 'Product'} photo`,
+          title: uploadMediaTitle || file.name,
+          displayOrder: mediaList.length + i + 1,
+          variantQuality: uploadQualityTarget === 'All' ? undefined : uploadQualityTarget,
+          variantSleeve: uploadSleeveTarget === 'All' ? undefined : uploadSleeveTarget,
+        });
+      }
+
+      setMediaList((prev) => [...prev, ...newItems]);
+      showNotice(`Successfully uploaded ${files.length} photo(s) to Supabase Storage.`);
+      setUploadMediaTitle('');
+    } catch (err) {
+      alert('Error uploading file to storage. Please try again.');
+    } finally {
+      setIsUploadingFiles(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleAddVideo = () => {
+    if (!videoUrlInput.trim()) return;
+    const newVideo: ProductMedia = {
+      id: `media-vid-${Date.now()}`,
+      productId: editingProductId || '',
+      type: 'video',
+      url: videoUrlInput.trim(),
+      alt: `${prodName || 'Product'} Video Demo`,
+      title: uploadMediaTitle || 'Product Video',
+      displayOrder: mediaList.length + 1,
+      variantQuality: uploadQualityTarget === 'All' ? undefined : uploadQualityTarget,
+      variantSleeve: uploadSleeveTarget === 'All' ? undefined : uploadSleeveTarget,
+    };
+    setMediaList((prev) => [...prev, newVideo]);
+    setVideoUrlInput('');
+    setIsVideoModalOpen(false);
+    showNotice('Video added successfully.');
+  };
+
+  const handleRemoveMedia = (id: string) => {
+    setMediaList((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  return (
+    <div className="space-y-6 max-w-7xl">
+      {/* Toast Notification */}
+      {notification && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 bg-gray-950 text-white rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-semibold animate-in fade-in">
+          <Check className="w-4 h-4 text-emerald-400" />
+          <span>{notification}</span>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 1. MASTER PRODUCTS LIST VIEW */}
+      {/* ========================================================================= */}
+      {viewMode === 'list' && (
+        <div className="space-y-6">
+          {/* Header Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-xs">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-950">
+                Products &amp; Dynamic Catalog Manager
+              </h1>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Manage garments, unlimited custom quality tiers, variant combinations, live pricing, stock, and variant-specific gallery photos.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleStartCreate}
+              className="inline-flex items-center justify-center gap-2 bg-gray-950 hover:bg-black text-white text-xs font-semibold h-10 px-4 rounded-lg shadow-xs transition-all active:scale-[0.99] self-start sm:self-auto flex-shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Product</span>
+            </button>
+          </div>
+
+          {/* Products List */}
+          {products.length === 0 ? (
+            <div className="bg-white p-12 text-center rounded-xl border border-gray-200 space-y-3">
+              <Package className="w-12 h-12 text-gray-300 mx-auto" />
+              <h3 className="font-bold text-base text-gray-800">No Products in Store</h3>
+              <p className="text-xs text-gray-500">
+                Click &quot;Add Product&quot; to create your first garment catalog entry.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {products.map((prod) => {
+                const category = categories.find((c) => c.id === prod.categoryId);
+                const subcategory = subcategories.find((s) => s.id === prod.subcategoryId);
+                const primaryImage = prod.media?.[0]?.url || '/images/products/sleevless high.jpeg';
+
+                const prices = prod.variants?.map((v) => v.price) || [480];
+                const minPrice = Math.min(...prices);
+                const maxPrice = Math.max(...prices);
+                const totalStock = prod.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+                const uniqueQualities = Array.from(new Set(prod.variants?.map((v) => v.quality).filter(Boolean)));
+                const uniqueSleeves = Array.from(new Set(prod.variants?.map((v) => v.sleeve).filter(Boolean)));
+
+                return (
+                  <div
+                    key={prod.id}
+                    className="bg-white p-4 sm:p-5 rounded-xl border border-gray-200 shadow-2xs hover:border-gray-300 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                  >
+                    {/* Left Product Info */}
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                      <div className="relative w-16 h-20 sm:w-20 sm:h-24 bg-gray-50 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 p-0.5">
+                        <Image
+                          src={primaryImage}
+                          alt={prod.name}
+                          fill
+                          sizes="80px"
+                          className="object-contain p-1"
+                        />
+                      </div>
+
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-gray-100 text-gray-800">
+                            {category?.name || 'Category'} {subcategory ? `• ${subcategory.name}` : ''}
+                          </span>
+                          {prod.isPublished ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                              Live on Store
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-200 text-gray-600">
+                              Draft / Hidden
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="font-bold text-base sm:text-lg text-gray-950 leading-tight">
+                          {prod.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 line-clamp-1">{prod.subtitle}</p>
+
+                        <div className="flex items-center gap-3 text-xs text-gray-600 pt-1 flex-wrap font-medium">
+                          <span>
+                            <strong>Price:</strong>{' '}
+                            {minPrice === maxPrice ? `Rs. ${minPrice}` : `Rs. ${minPrice} – Rs. ${maxPrice}`}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            <strong>Total Stock:</strong> {totalStock} pcs
+                          </span>
+                          <span>•</span>
+                          <span>
+                            <strong>Qualities:</strong> {uniqueQualities.length} ({uniqueQualities.join(', ')})
+                          </span>
+                          <span>•</span>
+                          <span>
+                            <strong>Variants:</strong> {prod.variants?.length || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Actions */}
+                    <div className="flex items-center gap-2 self-end md:self-center">
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit(prod)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gray-950 hover:bg-black text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Edit Product</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProduct(prod.id, prod.name)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
+                        title="Delete product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2. FULL PRODUCT EDIT / CREATE FORM */}
+      {/* ========================================================================= */}
+      {viewMode === 'editor' && (
+        <form onSubmit={handleSaveProduct} className="space-y-6">
+          {/* Top Bar Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-xs">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className="p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+                title="Back to all products"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-950">
+                  {editingProductId ? `Edit Product: ${prodName || 'Product'}` : 'Create New Product'}
+                </h1>
+                <p className="text-xs text-gray-500">
+                  Configure basic information, dynamic quality levels, style combinations, prices, stock, and variant images.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 px-5 py-2 bg-gray-950 hover:bg-black text-white text-xs font-semibold rounded-lg shadow-xs transition-all active:scale-[0.99]"
+              >
+                <Save className="w-4 h-4 text-emerald-400" />
+                <span>Save Product</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-2 border-b border-gray-200 pb-2 overflow-x-auto scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setEditorTab('basic')}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex-shrink-0 ${
+                editorTab === 'basic'
+                  ? 'bg-gray-950 text-white shadow-xs'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              1. Basic Information
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEditorTab('variants')}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                editorTab === 'variants'
+                  ? 'bg-gray-950 text-white shadow-xs'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <span>2. Dynamic Qualities &amp; Variants ({variantsList.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEditorTab('media')}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                editorTab === 'media'
+                  ? 'bg-gray-950 text-white shadow-xs'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <span>3. Photos &amp; Video by Variant ({mediaList.length})</span>
+            </button>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* TAB 1: BASIC INFORMATION */}
+          {/* ========================================================================= */}
+          {editorTab === 'basic' && (
+            <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-xs space-y-4 animate-in fade-in">
+              <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                Product Identification &amp; Taxonomy
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1">
+                    Product Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Men's Cotton Vest, Men's Boxer, Women's Camisole"
+                    value={prodName}
+                    onChange={(e) => setProdName(e.target.value)}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-900 focus:outline-none focus:ring-1 focus:ring-black"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1">
+                    Product URL Slug
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. mens-cotton-vest (auto-generated if empty)"
+                    value={prodSlug}
+                    onChange={(e) => setProdSlug(e.target.value)}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-mono text-gray-700 focus:outline-none focus:ring-1 focus:ring-black"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={prodCategoryId}
+                    onChange={(e) => setProdCategoryId(e.target.value)}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-900 focus:outline-none focus:ring-1 focus:ring-black"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1">
+                    Subcategory
+                  </label>
+                  <select
+                    value={prodSubcategoryId}
+                    onChange={(e) => setProdSubcategoryId(e.target.value)}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-black"
+                  >
+                    <option value="">-- None / General --</option>
+                    {activeSubcatsForCategory.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-800 mb-1">
+                  Tagline / Subtitle
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 100% Fine Combed Cotton &bull; Anti-Sag Neck Seams &bull; All-Day Comfort"
+                  value={prodSubtitle}
+                  onChange={(e) => setProdSubtitle(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-800 mb-1">
+                  Full Product Description
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Detailed craftsmanship, fabric composition, weave description..."
+                  value={prodDesc}
+                  onChange={(e) => setProdDesc(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs leading-relaxed text-gray-800 focus:outline-none focus:ring-1 focus:ring-black"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1">
+                    Key Features (One bullet per line)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={prodFeaturesText}
+                    onChange={(e) => setProdFeaturesText(e.target.value)}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1">
+                    Care Instructions (One per line)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={prodCareText}
+                    onChange={(e) => setProdCareText(e.target.value)}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-black"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="prodPublishCheck"
+                    checked={prodIsPublished}
+                    onChange={(e) => setProdIsPublished(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-gray-950 focus:ring-black"
+                  />
+                  <label htmlFor="prodPublishCheck" className="text-xs font-bold text-gray-900 cursor-pointer">
+                    Publish this garment live on the store
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 2: ADVANCED DYNAMIC VARIANT SYSTEM */}
+          {/* ========================================================================= */}
+          {editorTab === 'variants' && (
+            <div className="space-y-6 animate-in fade-in">
+              {/* STEP 1: Dynamic Qualities */}
+              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-bold text-xs text-gray-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Step 1: Product Construction Qualities</span>
+                      <span className="text-gray-400 font-normal">({customQualities.length})</span>
+                    </h3>
+                    <p className="text-[11px] text-gray-500">
+                      Add unlimited custom quality options (e.g. High Quality, Semi High Quality, Premium, Economy, Underrated Quality).
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAddQualityOpen(true)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-950 hover:bg-black text-white rounded-lg text-xs font-semibold transition-colors self-start sm:self-auto"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Quality</span>
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {customQualities.map((q) => (
+                    <div
+                      key={q}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-bold text-gray-900 shadow-2xs"
+                    >
+                      <span>{q}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveQuality(q)}
+                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete Quality Option"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {isAddQualityOpen && (
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-300 flex items-center gap-2 max-w-md animate-in fade-in">
+                    <input
+                      type="text"
+                      placeholder="e.g. Semi High Quality, Export Quality..."
+                      value={newQualityInput}
+                      onChange={(e) => setNewQualityInput(e.target.value)}
+                      className="flex-1 p-2 bg-white border border-gray-300 rounded text-xs focus:ring-1 focus:ring-black focus:outline-none"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddQuality}
+                      className="px-3 py-2 bg-gray-950 hover:bg-black text-white text-xs font-semibold rounded"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddQualityOpen(false)}
+                      className="p-1.5 text-gray-400 hover:text-gray-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* STEP 2: Dynamic Styles / Sleeves */}
+              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-bold text-xs text-gray-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Step 2: Styles / Sleeve Options</span>
+                      <span className="text-gray-400 font-normal">({customStyles.length})</span>
+                    </h3>
+                    <p className="text-[11px] text-gray-500">
+                      Add unlimited style variations for this product (e.g. Sleeveless, Full Sleeve, Half Sleeve, Boxer Briefs).
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAddStyleOpen(true)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-950 hover:bg-black text-white rounded-lg text-xs font-semibold transition-colors self-start sm:self-auto"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Style</span>
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {customStyles.map((st) => (
+                    <div
+                      key={st}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-bold text-gray-900 shadow-2xs"
+                    >
+                      <span>{st}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveStyle(st)}
+                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete Style Option"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {isAddStyleOpen && (
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-300 flex items-center gap-2 max-w-md animate-in fade-in">
+                    <input
+                      type="text"
+                      placeholder="e.g. Half Sleeve, Regular Fit, Straps..."
+                      value={newStyleInput}
+                      onChange={(e) => setNewStyleInput(e.target.value)}
+                      className="flex-1 p-2 bg-white border border-gray-300 rounded text-xs focus:ring-1 focus:ring-black focus:outline-none"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddStyle}
+                      className="px-3 py-2 bg-gray-950 hover:bg-black text-white text-xs font-semibold rounded"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddStyleOpen(false)}
+                      className="p-1.5 text-gray-400 hover:text-gray-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* STEP 3: Dynamic Sizes */}
+              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-bold text-xs text-gray-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Step 3: Size Options</span>
+                      <span className="text-gray-400 font-normal">({customSizes.length})</span>
+                    </h3>
+                    <p className="text-[11px] text-gray-500">
+                      Add standard or custom sizes (e.g. S, M, L, XL, XXL, or numeric sizes like 28, 30, 32, Free Size).
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAddSizeOpen(true)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-950 hover:bg-black text-white rounded-lg text-xs font-semibold transition-colors self-start sm:self-auto"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Size</span>
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {customSizes.map((sz) => (
+                    <div
+                      key={sz}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-bold text-gray-900 shadow-2xs"
+                    >
+                      <span>{sz}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSize(sz)}
+                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete Size Option"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {isAddSizeOpen && (
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-300 flex items-center gap-2 max-w-md animate-in fade-in">
+                    <input
+                      type="text"
+                      placeholder="e.g. 28, 30, 32, Free Size..."
+                      value={newSizeInput}
+                      onChange={(e) => setNewSizeInput(e.target.value)}
+                      className="flex-1 p-2 bg-white border border-gray-300 rounded text-xs focus:ring-1 focus:ring-black focus:outline-none"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSize}
+                      className="px-3 py-2 bg-gray-950 hover:bg-black text-white text-xs font-semibold rounded"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddSizeOpen(false)}
+                      className="p-1.5 text-gray-400 hover:text-gray-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* STEP 4: Variant Matrix Generator & Actions */}
+              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-xs text-gray-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 text-amber-500" />
+                      <span>Step 4: Generate or Manage Combinations</span>
+                    </h3>
+                    <p className="text-[11px] text-gray-500">
+                      Quickly generate all combinations of the defined Qualities ({customQualities.length}) × Styles ({customStyles.length}) × Sizes ({customSizes.length}).
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddSingleVarOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-100 border border-gray-300 text-gray-800 text-xs font-semibold rounded-lg shadow-2xs transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Individual Combination</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleGenerateCombinations}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-950 hover:bg-black text-white text-xs font-semibold rounded-lg shadow-xs transition-all active:scale-[0.99]"
+                    >
+                      <Zap className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Generate Matrix ({customQualities.length * customStyles.length * customSizes.length} combinations)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Generator Default Preset Inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
+                      Default Unit Price (Rs.)
+                    </label>
+                    <input
+                      type="number"
+                      value={genDefaultPrice}
+                      onChange={(e) => setGenDefaultPrice(Number(e.target.value))}
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-950 focus:ring-1 focus:ring-black focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
+                      Default Compare Price (Rs.) (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 580"
+                      value={genDefaultComparePrice || ''}
+                      onChange={(e) =>
+                        setGenDefaultComparePrice(
+                          e.target.value ? Number(e.target.value) : undefined
+                        )
+                      }
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-800 focus:ring-1 focus:ring-black focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
+                      Default Stock Units (Pcs)
+                    </label>
+                    <input
+                      type="number"
+                      value={genDefaultStock}
+                      onChange={(e) => setGenDefaultStock(Number(e.target.value))}
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-950 focus:ring-1 focus:ring-black focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Add Individual Single Variant Modal */}
+                {isAddSingleVarOpen && (
+                  <div className="p-4 bg-white rounded-xl border border-gray-300 space-y-3 animate-in fade-in">
+                    <h4 className="font-bold text-xs text-gray-900 uppercase">
+                      Add Specific Variant Combination
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-700 mb-1">Quality</label>
+                        <select
+                          value={singleVarQuality || customQualities[0]}
+                          onChange={(e) => setSingleVarQuality(e.target.value)}
+                          className="w-full p-2 bg-gray-50 border border-gray-300 rounded text-xs font-semibold"
+                        >
+                          {customQualities.map((q) => (
+                            <option key={q} value={q}>
+                              {q}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-700 mb-1">Style / Sleeve</label>
+                        <select
+                          value={singleVarStyle || customStyles[0]}
+                          onChange={(e) => setSingleVarStyle(e.target.value)}
+                          className="w-full p-2 bg-gray-50 border border-gray-300 rounded text-xs font-semibold"
+                        >
+                          {customStyles.map((st) => (
+                            <option key={st} value={st}>
+                              {st}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-700 mb-1">Size</label>
+                        <select
+                          value={singleVarSize || customSizes[0]}
+                          onChange={(e) => setSingleVarSize(e.target.value)}
+                          className="w-full p-2 bg-gray-50 border border-gray-300 rounded text-xs font-semibold"
+                        >
+                          {customSizes.map((sz) => (
+                            <option key={sz} value={sz}>
+                              {sz}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-700 mb-1">Price (Rs.)</label>
+                        <input
+                          type="number"
+                          value={singleVarPrice}
+                          onChange={(e) => setSingleVarPrice(Number(e.target.value))}
+                          className="w-full p-2 bg-gray-50 border border-gray-300 rounded text-xs font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddSingleVarOpen(false)}
+                        className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddSingleVariant}
+                        className="px-4 py-1.5 bg-gray-950 hover:bg-black text-white text-xs font-semibold rounded"
+                      >
+                        Add This Variant
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* STEP 5: Full Variant Matrix Table */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                <div className="p-4 sm:p-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-sm text-gray-950">
+                      Active Variant Matrix ({variantsList.length} combinations)
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      Edit unit price, compare-at price, stock, or remove any combination that does not exist.
+                    </p>
+                  </div>
+
+                  {variantsList.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm('Clear all variants from matrix?')) setVariantsList([]);
+                      }}
+                      className="text-xs text-red-600 hover:text-red-800 font-semibold self-start sm:self-auto"
+                    >
+                      Clear Matrix
+                    </button>
+                  )}
+                </div>
+
+                {variantsList.length === 0 ? (
+                  <div className="p-10 text-center space-y-2">
+                    <Boxes className="w-8 h-8 text-gray-300 mx-auto" />
+                    <p className="text-xs font-bold text-gray-800">No variants in matrix yet</p>
+                    <p className="text-xs text-gray-500">
+                      Click &quot;Generate Matrix&quot; above to create all combinations automatically.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-gray-100 text-gray-900 uppercase font-bold text-[11px] border-b border-gray-200">
+                        <tr>
+                          <th className="p-3">Quality</th>
+                          <th className="p-3">Style / Sleeve</th>
+                          <th className="p-3 text-center">Size</th>
+                          <th className="p-3">SKU</th>
+                          <th className="p-3">Unit Price (Rs.)</th>
+                          <th className="p-3">Compare Price</th>
+                          <th className="p-3">Stock Units</th>
+                          <th className="p-3 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 font-medium">
+                        {variantsList.map((v) => (
+                          <tr key={v.id} className="hover:bg-gray-50/70 transition-colors">
+                            <td className="p-3">
+                              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-800">
+                                {v.quality}
+                              </span>
+                            </td>
+                            <td className="p-3 font-semibold text-gray-900">{v.sleeve}</td>
+                            <td className="p-3 text-center">
+                              <span className="font-bold bg-gray-950 text-white px-2 py-0.5 rounded text-xs">
+                                {v.size}
+                              </span>
+                            </td>
+                            <td className="p-3 font-mono text-[11px] text-gray-500">
+                              <input
+                                type="text"
+                                value={v.sku}
+                                onChange={(e) => handleUpdateVariantField(v.id, 'sku', e.target.value)}
+                                className="w-32 px-2 py-1 bg-white border border-gray-300 rounded font-mono text-[11px] focus:ring-1 focus:ring-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <input
+                                type="number"
+                                value={v.price}
+                                onChange={(e) =>
+                                  handleUpdateVariantField(v.id, 'price', Number(e.target.value))
+                                }
+                                className="w-24 px-2 py-1 bg-white border border-gray-300 rounded font-bold text-gray-950 focus:ring-1 focus:ring-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <input
+                                type="number"
+                                placeholder="Optional"
+                                value={v.salePrice || ''}
+                                onChange={(e) =>
+                                  handleUpdateVariantField(
+                                    v.id,
+                                    'salePrice',
+                                    e.target.value ? Number(e.target.value) : undefined
+                                  )
+                                }
+                                className="w-24 px-2 py-1 bg-white border border-gray-300 rounded text-gray-700 focus:ring-1 focus:ring-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <input
+                                type="number"
+                                value={v.stock}
+                                onChange={(e) =>
+                                  handleUpdateVariantField(v.id, 'stock', Number(e.target.value))
+                                }
+                                className="w-20 px-2 py-1 bg-white border border-gray-300 rounded font-bold text-gray-950 focus:ring-1 focus:ring-black focus:outline-none"
+                              />
+                            </td>
+                            <td className="p-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveVariant(v.id)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Remove this combination"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 3: PHOTOS & VIDEOS (VARIANT SPECIFIC) */}
+          {/* ========================================================================= */}
+          {editorTab === 'media' && (
+            <div className="bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-xs space-y-6 animate-in fade-in">
+              <div>
+                <h3 className="font-bold text-sm text-gray-950">
+                  Variant-Specific Product Photos &amp; Video Demonstration
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Attach specific photos to exact combinations (e.g. Sleeveless High Quality vs Full Sleeve High Quality). The public storefront gallery will reactively update as the customer clicks different options!
+                </p>
+              </div>
+
+              {/* Upload Box */}
+              <div className="p-5 bg-gray-50 rounded-xl border border-dashed border-gray-300 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-800 mb-1">
+                      1. Quality Target:
+                    </label>
+                    <select
+                      value={uploadQualityTarget}
+                      onChange={(e) => setUploadQualityTarget(e.target.value)}
+                      className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-900 focus:ring-1 focus:ring-black focus:outline-none"
+                    >
+                      <option value="All">All Qualities</option>
+                      {customQualities.map((q) => (
+                        <option key={q} value={q}>
+                          For &quot;{q}&quot;
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-800 mb-1">
+                      2. Style / Sleeve Target:
+                    </label>
+                    <select
+                      value={uploadSleeveTarget}
+                      onChange={(e) => setUploadSleeveTarget(e.target.value)}
+                      className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-900 focus:ring-1 focus:ring-black focus:outline-none"
+                    >
+                      <option value="All">All Styles</option>
+                      {availableVariantStylesForMedia.map((sl) => (
+                        <option key={sl} value={sl}>
+                          For &quot;{sl}&quot;
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-800 mb-1">
+                      3. Photo Label (Optional):
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Front View, Collar Stitching"
+                      value={uploadMediaTitle}
+                      onChange={(e) => setUploadMediaTitle(e.target.value)}
+                      className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-black focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 items-center pt-1">
+                  <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-950 hover:bg-black text-white text-xs font-bold rounded-lg cursor-pointer transition-all active:scale-[0.99] shadow-xs">
+                    <Upload className="w-4 h-4" />
+                    <span>{isUploadingFiles ? 'Uploading Files...' : 'Choose Photos from Computer / Mobile'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageFilesChange}
+                      disabled={isUploadingFiles}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsVideoModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-100 text-gray-900 text-xs font-bold rounded-lg border border-gray-300 transition-colors shadow-2xs"
+                  >
+                    <Film className="w-4 h-4 text-red-600" />
+                    <span>+ Add Video URL</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Video Modal */}
+              {isVideoModalOpen && (
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-300 space-y-3 animate-in fade-in">
+                  <h4 className="font-bold text-xs text-gray-900 uppercase">
+                    Add Video Clip
+                  </h4>
+                  <input
+                    type="text"
+                    placeholder="https://example.com/video.mp4"
+                    value={videoUrlInput}
+                    onChange={(e) => setVideoUrlInput(e.target.value)}
+                    className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-black focus:outline-none"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsVideoModalOpen(false)}
+                      className="px-3 py-1.5 bg-gray-200 text-xs font-semibold rounded"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddVideo}
+                      className="px-4 py-1.5 bg-gray-950 text-white text-xs font-semibold rounded"
+                    >
+                      Add Video
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Gallery Grid */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-xs text-gray-900 uppercase tracking-wider">
+                  Gallery Photos &amp; Videos ({mediaList.length})
+                </h4>
+
+                {mediaList.length === 0 ? (
+                  <p className="text-xs text-gray-400 py-8 text-center border border-dashed border-gray-200 rounded-xl">
+                    No photos uploaded yet for this product. Use the file picker above to add photos.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+                    {mediaList.map((item, idx) => (
+                      <div
+                        key={item.id || idx}
+                        className="group relative bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-2xs flex flex-col"
+                      >
+                        <div className="relative aspect-3/4 w-full bg-white p-1">
+                          {item.type === 'video' ? (
+                            <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white text-xs font-bold">
+                              Video Clip
+                            </div>
+                          ) : (
+                            <Image
+                              src={item.url}
+                              alt={item.alt || 'Product Photo'}
+                              fill
+                              sizes="120px"
+                              className="object-contain p-1"
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMedia(item.id)}
+                            className="absolute top-2 right-2 p-1 bg-white/90 text-red-600 rounded-full shadow-sm hover:bg-red-50 transition-colors"
+                            title="Delete photo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="p-2.5 bg-white border-t border-gray-100 text-[10px] space-y-0.5">
+                          <p className="font-bold text-gray-900 truncate">
+                            {item.title || `Photo #${idx + 1}`}
+                          </p>
+                          <div className="flex items-center gap-1 text-gray-500 font-medium">
+                            <span>Q: {item.variantQuality || 'All'}</span>
+                            <span>&bull;</span>
+                            <span>S: {item.variantSleeve || 'All'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </form>
+      )}
+    </div>
+  );
+}

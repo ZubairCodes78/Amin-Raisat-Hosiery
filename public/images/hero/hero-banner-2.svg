@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 680" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bannerBg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#1E3A8A" />
+      <stop offset="100%" stop-color="#0A192F" />
+    </linearGradient>
+    <filter id="softGlow2" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="15" stdDeviation="20" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Full Width Background -->
+  <rect width="1920" height="680" fill="url(#bannerBg2)" />
+
+  <!-- Left Side Editorial Brand Message (Graphic) -->
+  <g transform="translate(140, 160)">
+    <rect x="0" y="0" width="220" height="32" rx="4" fill="#1E40AF" />
+    <text x="14" y="21" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF" letter-spacing="2">NATIONWIDE DELIVERY</text>
+    
+    <text x="0" y="110" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="800" fill="#FFFFFF" letter-spacing="-1">COMFORT TAILORED FOR YOU</text>
+    <text x="0" y="175" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="500" fill="#93C5FD">High Quality &amp; Standard Quality Options</text>
+    
+    <rect x="0" y="225" width="80" height="4" fill="#60A5FA" />
+    <text x="0" y="270" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="500" fill="#E2E8F0">100% Free Delivery on orders of 3+ pieces across Pakistan</text>
+  </g>
+
+  <!-- Right Visual Presentation (Fabric & Construction Macro View) -->
+  <g transform="translate(1200, 60)" filter="url(#softGlow2)">
+    <!-- Macro Neck Taping Segment -->
+    <path d="M 0 320 Q 300 440 600 320 L 600 560 L 0 560 Z" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <!-- Blue Reinforcement Tape -->
+    <path d="M 0 310 Q 300 430 600 310 L 600 345 Q 300 465 0 345 Z" fill="#1E40AF" />
+    <path d="M 0 318 Q 300 438 600 318" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="6 3" />
+    <path d="M 0 338 Q 300 458 600 338" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="6 3" />
+    
+    <!-- Info Badge Label -->
+    <g transform="translate(160, 160)">
+      <rect x="0" y="0" width="280" height="70" rx="8" fill="#FFFFFF" stroke="#3B82F6" stroke-width="2" />
+      <text x="20" y="30" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#0F172A">Reinforced Taped Collar</text>
+      <text x="20" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#64748B">Anti-sag shape retention</text>
+    </g>
+  </g>
+</svg>

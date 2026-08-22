@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 800" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgStudio2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="50%" stop-color="#1E293B" />
+      <stop offset="100%" stop-color="#334155" />
+    </linearGradient>
+    <linearGradient id="overlayDark2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#020617" stop-opacity="0.9" />
+      <stop offset="45%" stop-color="#020617" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#020617" stop-opacity="0.1" />
+    </linearGradient>
+    <filter id="glowSubtle" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="25" stdDeviation="30" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Deep Slate Studio Texture -->
+  <rect width="1920" height="800" fill="url(#bgStudio2)" />
+
+  <!-- Macro Cotton Craftsmanship Graphic on Right -->
+  <g transform="translate(1100, 100)" filter="url(#glowSubtle)">
+    <!-- Macro Neck Taping Segment -->
+    <path d="M 0 350 Q 300 480 600 350 L 600 600 L 0 600 Z" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <!-- Blue Reinforcement Tape -->
+    <path d="M 0 340 Q 300 470 600 340 L 600 375 Q 300 505 0 375 Z" fill="#1E3A8A" />
+    <path d="M 0 348 Q 300 478 600 348" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="6 3" />
+    <path d="M 0 368 Q 300 498 600 368" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="6 3" />
+    
+    <!-- Badge Annotation -->
+    <g transform="translate(180, 180)">
+      <rect x="0" y="0" width="280" height="70" rx="8" fill="#FFFFFF" stroke="#1E3A8A" stroke-width="2" />
+      <text x="20" y="30" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="#0F172A">Reinforced Taped Collar</text>
+      <text x="20" y="52" font-family="system-ui, sans-serif" font-size="12" font-weight="500" fill="#64748B">Anti-sag shape retention</text>
+    </g>
+  </g>
+
+  <!-- Left Editorial Dark Overlay for Text Legibility -->
+  <rect width="1250" height="800" fill="url(#overlayDark2)" />
+</svg>

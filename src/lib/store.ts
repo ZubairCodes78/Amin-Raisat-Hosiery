@@ -1,0 +1,958 @@
+import {
+  Category,
+  Subcategory,
+  Product,
+  Order,
+  SiteSettings,
+  ProductVariant,
+  ProductMedia,
+  OrderStatus,
+  ProductReview,
+  HeroSlide,
+} from '@/types';
+import {
+  INITIAL_CATEGORIES,
+  INITIAL_SUBCATEGORIES,
+  INITIAL_PRODUCTS,
+  INITIAL_SITE_SETTINGS,
+  INITIAL_HERO_SLIDES,
+} from '@/data/initialData';
+import { supabase, isSupabaseConfigured } from './supabase';
+
+const LOCAL_STORAGE_KEYS = {
+  PRODUCTS: 'arh_products_v5',
+  CATEGORIES: 'arh_categories_v2',
+  SUBCATEGORIES: 'arh_subcategories_v2',
+  SETTINGS: 'arh_settings_v2',
+  ORDERS: 'arh_orders_v2',
+  REVIEWS: 'arh_reviews_v2',
+  HERO_SLIDES: 'arh_hero_slides_v3',
+};
+
+export class DataStore {
+  private static isClient(): boolean {
+    return typeof window !== 'undefined';
+  }
+
+  // ============================================================================
+  // 1. FILE UPLOADER (SUPABASE STORAGE BUCKET -> PUBLIC CDN URL)
+  // ============================================================================
+  static async uploadMediaFile(file: File, bucket = 'product-media'): Promise<string> {
+    if (isSupabaseConfigured()) {
+      try {
+        const fileExt = file.name.split('.').pop() || 'jpg';
+        const cleanName = file.name
+          .replace(/\.[^/.]+$/, '')
+          .replace(/[^a-zA-Z0-9_-]/g, '_')
+          .toLowerCase();
+        const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
+
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true,
+          });
+
+        if (!error && data) {
+          const { data: publicUrlData } = supabase.storage
+            .from(bucket)
+            .getPublicUrl(fileName);
+          if (publicUrlData?.publicUrl) {
+            return publicUrlData.publicUrl;
+          }
+        } else if (error) {
+          console.warn('Supabase storage upload error:', error.message);
+        }
+      } catch (err) {
+        console.warn('Supabase storage upload exception, falling back to local reader:', err);
+      }
+    }
+
+    // Offline / Local fallback: Convert file to Base64 Data URL
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ============================================================================
+  // 2. CATEGORIES & SUBCATEGORIES CRUD
+  // ============================================================================
+  static async getSubcategories(): Promise<Subcategory[]> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('subcategories')
+          .select('*')
+          .order('display_order', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          return data.map((s: any) => ({
+            id: s.id,
+            categoryId: s.category_id,
+            name: s.name,
+            slug: s.slug,
+            description: s.description || '',
+            image: s.image_url,
+            isActive: s.is_active ?? true,
+            displayOrder: s.display_order || 0,
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase subcategories fetch error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.SUBCATEGORIES);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {}
+      }
+      localStorage.setItem(LOCAL_STORAGE_KEYS.SUBCATEGORIES, JSON.stringify(INITIAL_SUBCATEGORIES));
+    }
+
+    return INITIAL_SUBCATEGORIES;
+  }
+
+  static async saveSubcategory(subcat: Subcategory): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subcat.id);
+        const payload: any = {
+          category_id: subcat.categoryId,
+          name: subcat.name,
+          slug: subcat.slug,
+          description: subcat.description || '',
+          image_url: subcat.image,
+          is_active: subcat.isActive,
+          display_order: subcat.displayOrder,
+          updated_at: new Date().toISOString(),
+        };
+        if (isUuid) {
+          payload.id = subcat.id;
+        }
+
+        await supabase.from('subcategories').upsert(payload);
+      } catch (err) {
+        console.warn('Supabase saveSubcategory error', err);
+      }
+    }
+
+    const subcategories = await this.getSubcategories();
+    const index = subcategories.findIndex((s) => s.id === subcat.id);
+    if (index !== -1) {
+      subcategories[index] = subcat;
+    } else {
+      subcategories.push(subcat);
+    }
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.SUBCATEGORIES, JSON.stringify(subcategories));
+    }
+  }
+
+  static async deleteSubcategory(id: string): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('subcategories').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteSubcategory error', err);
+      }
+    }
+
+    const subcategories = await this.getSubcategories();
+    const filtered = subcategories.filter((s) => s.id !== id);
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.SUBCATEGORIES, JSON.stringify(filtered));
+    }
+  }
+
+  static async getCategories(): Promise<Category[]> {
+    let categories: Category[] = INITIAL_CATEGORIES;
+    const subcategories = await this.getSubcategories();
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .order('display_order', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          categories = data.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            description: c.description || '',
+            image: c.image_url,
+            isActive: c.is_active ?? true,
+            displayOrder: c.display_order || 0,
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase categories fetch error', err);
+      }
+    } else if (this.isClient()) {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.CATEGORIES);
+      if (stored) {
+        try {
+          categories = JSON.parse(stored);
+        } catch {}
+      } else {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
+      }
+    }
+
+    return categories.map((cat) => ({
+      ...cat,
+      subcategories: subcategories.filter((sub) => sub.categoryId === cat.id),
+    }));
+  }
+
+  static async saveCategory(category: Category): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category.id);
+        const payload: any = {
+          name: category.name,
+          slug: category.slug,
+          description: category.description || '',
+          image_url: category.image,
+          is_active: category.isActive,
+          display_order: category.displayOrder,
+          updated_at: new Date().toISOString(),
+        };
+        if (isUuid) {
+          payload.id = category.id;
+        }
+
+        await supabase.from('categories').upsert(payload);
+      } catch (err) {
+        console.warn('Supabase saveCategory error', err);
+      }
+    }
+
+    const categories = await this.getCategories();
+    const index = categories.findIndex((c) => c.id === category.id);
+    if (index !== -1) {
+      categories[index] = category;
+    } else {
+      categories.push(category);
+    }
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+    }
+  }
+
+  static async deleteCategory(id: string): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('categories').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteCategory error', err);
+      }
+    }
+
+    const categories = await this.getCategories();
+    const filtered = categories.filter((c) => c.id !== id);
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
+    }
+  }
+
+  // ============================================================================
+  // 3. PRODUCTS CRUD (MULTI-PRODUCT CATALOG WITH VARIANTS & MEDIA)
+  // ============================================================================
+  static async getProducts(): Promise<Product[]> {
+    let products: Product[] = INITIAL_PRODUCTS;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: prods, error } = await supabase
+          .from('products')
+          .select('*, product_variants(*), product_media(*)')
+          .order('created_at', { ascending: false });
+
+        if (!error && prods && prods.length > 0) {
+          products = prods.map((p: any) => ({
+            id: p.id,
+            categoryId: p.category_id,
+            subcategoryId: p.subcategory_id,
+            name: p.name,
+            slug: p.slug,
+            subtitle: p.subtitle || '',
+            description: p.description || '',
+            features: Array.isArray(p.features) ? p.features : [],
+            qualityComparison: p.quality_comparison || INITIAL_PRODUCTS[0].qualityComparison,
+            careInstructions: Array.isArray(p.care_instructions) ? p.care_instructions : INITIAL_PRODUCTS[0].careInstructions,
+            shippingInfo: p.shipping_info || INITIAL_PRODUCTS[0].shippingInfo,
+            returnPolicy: 'We offer hassle-free exchange within 7 days of delivery in case of sizing or defect issues. Product must be unwashed and in original condition.',
+            isPublished: p.is_published ?? true,
+            createdAt: p.created_at,
+            variants: Array.isArray(p.product_variants)
+              ? p.product_variants.map((v: any) => ({
+                  id: v.id,
+                  productId: v.product_id,
+                  quality: v.quality,
+                  sleeve: v.sleeve,
+                  size: v.size,
+                  price: Number(v.price) || 0,
+                  salePrice: v.sale_price ? Number(v.sale_price) : undefined,
+                  stock: Number(v.stock) || 0,
+                  sku: v.sku || '',
+                  isAvailable: v.is_available ?? true,
+                }))
+              : [],
+            media: Array.isArray(p.product_media)
+              ? p.product_media
+                  .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
+                  .map((m: any) => ({
+                    id: m.id,
+                    productId: m.product_id,
+                    type: m.media_type || 'photo',
+                    url: m.url,
+                    alt: m.alt_text || '',
+                    title: m.title || '',
+                    displayOrder: m.display_order || 0,
+                    variantQuality: m.variant_quality || undefined,
+                    variantSleeve: m.variant_sleeve || undefined,
+                  }))
+              : [],
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase fetch failed, fallback to local store', err);
+      }
+    } else if (this.isClient()) {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.PRODUCTS);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            products = parsed.map((p: Product) => {
+              const hasSvg = p.media?.some((m) => m.url?.includes('.svg'));
+              if (hasSvg) {
+                const initMatch = INITIAL_PRODUCTS.find((ip) => ip.id === p.id);
+                if (initMatch) {
+                  return { ...p, media: initMatch.media, variants: initMatch.variants };
+                }
+              }
+              return p;
+            });
+          }
+        } catch {}
+      } else {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+      }
+    }
+
+    // Attach approved customer reviews
+    const allReviews = await this.getReviews();
+    return products.map((prod) => ({
+      ...prod,
+      reviews: allReviews.filter((r) => r.productId === prod.id && r.isApproved),
+    }));
+  }
+
+  static async getProductBySlug(slug: string): Promise<Product | null> {
+    const products = await this.getProducts();
+    return products.find((p) => p.slug === slug || p.id === slug) || null;
+  }
+
+  static async saveProduct(product: Product): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.id);
+        const productPayload: any = {
+          category_id: product.categoryId || null,
+          subcategory_id: product.subcategoryId || null,
+          name: product.name,
+          slug: product.slug,
+          subtitle: product.subtitle || '',
+          description: product.description || '',
+          features: product.features || [],
+          quality_comparison: product.qualityComparison || {},
+          care_instructions: product.careInstructions || [],
+          shipping_info: product.shippingInfo || '',
+          is_published: product.isPublished,
+          updated_at: new Date().toISOString(),
+        };
+        if (isUuid) {
+          productPayload.id = product.id;
+        }
+
+        const { data: savedProd, error: prodErr } = await supabase
+          .from('products')
+          .upsert(productPayload)
+          .select()
+          .single();
+
+        if (!prodErr && savedProd) {
+          const targetProdId = savedProd.id;
+
+          // Delete existing variants and insert fresh
+          await supabase.from('product_variants').delete().eq('product_id', targetProdId);
+          if (product.variants && product.variants.length > 0) {
+            const variantsPayload = product.variants.map((v) => ({
+              product_id: targetProdId,
+              quality: v.quality,
+              sleeve: v.sleeve,
+              size: v.size,
+              price: Number(v.price) || 0,
+              sale_price: v.salePrice ? Number(v.salePrice) : null,
+              stock: Number(v.stock) || 0,
+              sku: v.sku || '',
+              is_available: v.isAvailable,
+            }));
+            await supabase.from('product_variants').insert(variantsPayload);
+          }
+
+          // Delete existing media and insert fresh
+          await supabase.from('product_media').delete().eq('product_id', targetProdId);
+          if (product.media && product.media.length > 0) {
+            const mediaPayload = product.media.map((m, idx) => ({
+              product_id: targetProdId,
+              media_type: m.type || 'photo',
+              url: m.url,
+              alt_text: m.alt || `${product.name} photo`,
+              title: m.title || '',
+              display_order: m.displayOrder ?? idx + 1,
+              variant_quality: m.variantQuality || null,
+              variant_sleeve: m.variantSleeve || null,
+            }));
+            await supabase.from('product_media').insert(mediaPayload);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase saveProduct error', err);
+      }
+    }
+
+    const products = await this.getProducts();
+    const index = products.findIndex((p) => p.id === product.id);
+    if (index !== -1) {
+      products[index] = product;
+    } else {
+      products.push(product);
+    }
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    }
+  }
+
+  static async saveProducts(products: Product[]): Promise<void> {
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    }
+  }
+
+  static async deleteProduct(id: string): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('products').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteProduct error', err);
+      }
+    }
+
+    const products = await this.getProducts();
+    const filtered = products.filter((p) => p.id !== id);
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
+    }
+  }
+
+  static async updateProductVariants(productId: string, variants: ProductVariant[]): Promise<void> {
+    const products = await this.getProducts();
+    const prod = products.find((p) => p.id === productId);
+    if (prod) {
+      prod.variants = variants;
+      await this.saveProduct(prod);
+    }
+  }
+
+  static async updateProductMedia(productId: string, media: ProductMedia[]): Promise<void> {
+    const products = await this.getProducts();
+    const prod = products.find((p) => p.id === productId);
+    if (prod) {
+      prod.media = media;
+      await this.saveProduct(prod);
+    }
+  }
+
+  // ============================================================================
+  // 4. ORDERS & GUEST CHECKOUT MANAGEMENT
+  // ============================================================================
+  static async getOrders(): Promise<Order[]> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*, order_items(*)')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          return data.map((o: any) => ({
+            id: o.id,
+            orderNumber: o.order_number,
+            customerName: o.customer_name,
+            customerPhone: o.customer_phone,
+            customerEmail: o.customer_email || undefined,
+            address: o.address,
+            city: o.city,
+            province: o.province,
+            orderNotes: o.order_notes || undefined,
+            subtotal: Number(o.subtotal) || 0,
+            deliveryFee: Number(o.delivery_fee) || 0,
+            totalAmount: Number(o.total_amount) || 0,
+            paymentMethod: o.payment_method || 'cod',
+            paymentReference: o.payment_reference || undefined,
+            status: (o.status || 'Pending') as OrderStatus,
+            createdAt: o.created_at,
+            items: Array.isArray(o.order_items)
+              ? o.order_items.map((it: any) => ({
+                  id: it.id,
+                  orderId: it.order_id,
+                  productId: it.product_id,
+                  variantId: it.variant_id,
+                  productName: it.product_name,
+                  quality: it.quality,
+                  sleeve: it.sleeve,
+                  size: it.size,
+                  unitPrice: Number(it.unit_price) || 0,
+                  quantity: Number(it.quantity) || 1,
+                  totalPrice: Number(it.total_price) || 0,
+                  image: it.image_url,
+                }))
+              : [],
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase getOrders error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.ORDERS);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {}
+      }
+    }
+    return [];
+  }
+
+  static async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'status'>): Promise<Order> {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const orderNumber = `ARH-${new Date().getFullYear()}-${randomSuffix}`;
+    const id = `ord-${Date.now()}-${randomSuffix}`;
+
+    const newOrder: Order = {
+      ...orderData,
+      id,
+      orderNumber,
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: insertedOrder, error: orderErr } = await supabase
+          .from('orders')
+          .insert({
+            order_number: orderNumber,
+            customer_name: orderData.customerName,
+            customer_phone: orderData.customerPhone,
+            customer_email: orderData.customerEmail || null,
+            address: orderData.address,
+            city: orderData.city,
+            province: orderData.province || 'Punjab',
+            order_notes: orderData.orderNotes || null,
+            subtotal: orderData.subtotal,
+            delivery_fee: orderData.deliveryFee,
+            total_amount: orderData.totalAmount,
+            payment_method: orderData.paymentMethod || 'cod',
+            payment_reference: orderData.paymentReference || null,
+            status: 'Pending',
+          })
+          .select()
+          .single();
+
+        if (!orderErr && insertedOrder) {
+          newOrder.id = insertedOrder.id;
+
+          // Insert line items
+          if (orderData.items && orderData.items.length > 0) {
+            const itemsPayload = orderData.items.map((it) => ({
+              order_id: insertedOrder.id,
+              product_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.productId)
+                ? it.productId
+                : null,
+              variant_id: it.variantId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.variantId)
+                ? it.variantId
+                : null,
+              product_name: it.productName,
+              quality: it.quality,
+              sleeve: it.sleeve,
+              size: it.size,
+              unit_price: it.unitPrice,
+              quantity: it.quantity,
+              total_price: it.totalPrice,
+              image_url: it.image,
+            }));
+            await supabase.from('order_items').insert(itemsPayload);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase createOrder error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const existing = await this.getOrders();
+      const updated = [newOrder, ...existing.filter((o) => o.orderNumber !== orderNumber)];
+      localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(updated));
+    }
+
+    return newOrder;
+  }
+
+  static async updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase
+          .from('orders')
+          .update({ status, updated_at: new Date().toISOString() })
+          .or(`id.eq.${orderId},order_number.eq.${orderId}`);
+      } catch (err) {
+        console.warn('Supabase updateOrderStatus error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const orders = await this.getOrders();
+      const index = orders.findIndex((o) => o.id === orderId || o.orderNumber === orderId);
+      if (index !== -1) {
+        orders[index].status = status;
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+      }
+    }
+  }
+
+  // ============================================================================
+  // 5. HERO SLIDES CRUD
+  // ============================================================================
+  static async getHeroSlides(): Promise<HeroSlide[]> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('hero_slides')
+          .select('*')
+          .order('display_order', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          return data.map((s: any) => ({
+            id: s.id,
+            desktopImage: s.desktop_image,
+            mobileImage: s.mobile_image || s.desktop_image,
+            title: s.title || undefined,
+            subtitle: s.subtitle || undefined,
+            link: s.link || '/shop',
+            buttonText: s.button_text || 'Shop Now',
+            displayOrder: s.display_order || 0,
+            isActive: s.is_active ?? true,
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase getHeroSlides error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.HERO_SLIDES);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.sort((a: HeroSlide, b: HeroSlide) => a.displayOrder - b.displayOrder);
+          }
+        } catch {}
+      }
+      localStorage.setItem(LOCAL_STORAGE_KEYS.HERO_SLIDES, JSON.stringify(INITIAL_HERO_SLIDES));
+    }
+    return INITIAL_HERO_SLIDES;
+  }
+
+  static async saveHeroSlide(slide: HeroSlide): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slide.id);
+        const payload: any = {
+          desktop_image: slide.desktopImage,
+          mobile_image: slide.mobileImage || slide.desktopImage,
+          title: slide.title || null,
+          subtitle: slide.subtitle || null,
+          link: slide.link || slide.buttonLink || '/shop',
+          button_text: slide.buttonText || 'Shop Now',
+          display_order: slide.displayOrder || 0,
+          is_active: slide.isActive ?? true,
+          updated_at: new Date().toISOString(),
+        };
+        if (isUuid) {
+          payload.id = slide.id;
+        }
+        await supabase.from('hero_slides').upsert(payload);
+      } catch (err) {
+        console.warn('Supabase saveHeroSlide error', err);
+      }
+    }
+
+    const slides = await this.getHeroSlides();
+    const index = slides.findIndex((s) => s.id === slide.id);
+    if (index !== -1) {
+      slides[index] = slide;
+    } else {
+      slides.push(slide);
+    }
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.HERO_SLIDES, JSON.stringify(slides));
+    }
+  }
+
+  static async deleteHeroSlide(id: string): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('hero_slides').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteHeroSlide error', err);
+      }
+    }
+
+    const slides = await this.getHeroSlides();
+    const filtered = slides.filter((s) => s.id !== id);
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.HERO_SLIDES, JSON.stringify(filtered));
+    }
+  }
+
+  // ============================================================================
+  // 6. SITE SETTINGS & SHIPPING BUSINESS RULES
+  // ============================================================================
+  static async getSettings(): Promise<SiteSettings> {
+    let settings: SiteSettings = INITIAL_SITE_SETTINGS;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: siteData } = await supabase.from('site_settings').select('*').limit(1).single();
+        const { data: shipData } = await supabase.from('shipping_settings').select('*').limit(1).single();
+
+        if (siteData || shipData) {
+          settings = {
+            ...INITIAL_SITE_SETTINGS,
+            brandName: siteData?.brand_name || INITIAL_SITE_SETTINGS.brandName,
+            ownerName: siteData?.owner_name || INITIAL_SITE_SETTINGS.ownerName,
+            phone: siteData?.phone || INITIAL_SITE_SETTINGS.phone,
+            whatsapp: siteData?.whatsapp || INITIAL_SITE_SETTINGS.whatsapp,
+            email: siteData?.email || INITIAL_SITE_SETTINGS.email,
+            market: siteData?.market || INITIAL_SITE_SETTINGS.market,
+            currency: siteData?.currency || INITIAL_SITE_SETTINGS.currency,
+            shipping: {
+              minOrderQty: shipData?.min_order_qty ?? INITIAL_SITE_SETTINGS.shipping.minOrderQty,
+              maxOrderQty: shipData?.max_order_qty ?? INITIAL_SITE_SETTINGS.shipping.maxOrderQty,
+              baseDeliveryCharge: shipData ? Number(shipData.base_delivery_charge) : INITIAL_SITE_SETTINGS.shipping.baseDeliveryCharge,
+              freeDeliveryThreshold: shipData?.free_delivery_threshold ?? INITIAL_SITE_SETTINGS.shipping.freeDeliveryThreshold,
+            },
+            bankDetails: {
+              bankName: siteData?.bank_name || INITIAL_SITE_SETTINGS.bankDetails.bankName,
+              accountTitle: siteData?.account_title || INITIAL_SITE_SETTINGS.bankDetails.accountTitle,
+              accountNumber: siteData?.account_number || INITIAL_SITE_SETTINGS.bankDetails.accountNumber,
+              iban: siteData?.iban || INITIAL_SITE_SETTINGS.bankDetails.iban,
+            },
+            isStoreOpen: siteData?.is_store_open ?? true,
+            announcementText: siteData?.announcement_text || INITIAL_SITE_SETTINGS.announcementText,
+          };
+        }
+      } catch (err) {
+        console.warn('Supabase settings fetch error', err);
+      }
+    } else if (this.isClient()) {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.SETTINGS);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {}
+      }
+      localStorage.setItem(LOCAL_STORAGE_KEYS.SETTINGS, JSON.stringify(INITIAL_SITE_SETTINGS));
+    }
+
+    return settings;
+  }
+
+  static async updateSettings(settings: SiteSettings): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('site_settings').upsert({
+          brand_name: settings.brandName,
+          owner_name: settings.ownerName,
+          phone: settings.phone,
+          whatsapp: settings.whatsapp,
+          email: settings.email,
+          market: settings.market,
+          currency: settings.currency,
+          bank_name: settings.bankDetails?.bankName,
+          account_title: settings.bankDetails?.accountTitle,
+          account_number: settings.bankDetails?.accountNumber,
+          iban: settings.bankDetails?.iban,
+          is_store_open: settings.isStoreOpen,
+          announcement_text: settings.announcementText,
+          updated_at: new Date().toISOString(),
+        });
+
+        await supabase.from('shipping_settings').upsert({
+          min_order_qty: settings.shipping.minOrderQty,
+          max_order_qty: settings.shipping.maxOrderQty,
+          base_delivery_charge: settings.shipping.baseDeliveryCharge,
+          free_delivery_threshold: settings.shipping.freeDeliveryThreshold,
+          updated_at: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn('Supabase updateSettings error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    }
+  }
+
+  // ============================================================================
+  // 7. CUSTOMER REVIEWS CRUD
+  // ============================================================================
+  static async getReviews(productId?: string): Promise<ProductReview[]> {
+    if (isSupabaseConfigured()) {
+      try {
+        let query = supabase.from('reviews').select('*').order('created_at', { ascending: false });
+        if (productId) {
+          query = query.eq('product_id', productId);
+        }
+        const { data, error } = await query;
+        if (!error && data) {
+          return data.map((r: any) => ({
+            id: r.id,
+            productId: r.product_id,
+            customerName: r.customer_name,
+            customerCity: r.customer_city || undefined,
+            rating: Number(r.rating) || 5,
+            comment: r.comment,
+            createdAt: r.created_at,
+            isApproved: r.is_approved ?? true,
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase getReviews error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.REVIEWS);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (productId) {
+            return parsed.filter((r: ProductReview) => r.productId === productId);
+          }
+          return parsed;
+        } catch {}
+      }
+    }
+    return [];
+  }
+
+  static async createReview(reviewData: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>): Promise<ProductReview> {
+    const newReview: ProductReview = {
+      ...reviewData,
+      id: `rev-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      isApproved: true,
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('reviews')
+          .insert({
+            product_id: reviewData.productId,
+            customer_name: reviewData.customerName,
+            customer_city: reviewData.customerCity || null,
+            rating: reviewData.rating,
+            comment: reviewData.comment,
+            is_approved: true,
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          newReview.id = data.id;
+        }
+      } catch (err) {
+        console.warn('Supabase createReview error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const all = await this.getReviews();
+      const updated = [newReview, ...all];
+      localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(updated));
+    }
+
+    return newReview;
+  }
+
+  static async submitReview(reviewData: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>): Promise<ProductReview> {
+    return this.createReview(reviewData);
+  }
+
+  static async deleteReview(id: string): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('reviews').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteReview error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const all = await this.getReviews();
+      const filtered = all.filter((r) => r.id !== id);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(filtered));
+    }
+  }
+
+  static async approveReview(id: string, isApproved: boolean): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('reviews').update({ is_approved: isApproved }).eq('id', id);
+      } catch (err) {
+        console.warn('Supabase approveReview error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const all = await this.getReviews();
+      const idx = all.findIndex((r) => r.id === id);
+      if (idx !== -1) {
+        all[idx].isApproved = isApproved;
+        localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(all));
+      }
+    }
+  }
+}
