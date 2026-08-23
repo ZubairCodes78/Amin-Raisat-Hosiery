@@ -1,7 +1,7 @@
 -- ==============================================================================
--- Amin Raisat Hosiery — Safe Production Database Migration
--- Brand: Amin Raisat Hosiery
--- Preserves existing tables, existing orders, existing customer data, and storage
+-- [ARCHIVED / LEGACY MIGRATION]
+-- NOTE: Please use 'supabase/safe_production_migration_v2.sql' for production.
+-- This file is retained for migration history reference only.
 -- ==============================================================================
 
 -- 1. Enable UUID Extension (if not already enabled)

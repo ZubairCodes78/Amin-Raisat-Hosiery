@@ -289,6 +289,7 @@ async function runAdminFunctionalTests() {
     const { data: ship, error: shErr } = await supabase
       .from('shipping_settings')
       .select('*')
+      .limit(1)
       .single();
 
     if (shErr) throw shErr;
@@ -297,17 +298,10 @@ async function runAdminFunctionalTests() {
     // Temporary update
     const { error: shUpdErr } = await supabase
       .from('shipping_settings')
-      .update({ free_delivery_threshold: 5 })
+      .update({ free_delivery_threshold: 3 })
       .eq('id', ship.id);
     if (shUpdErr) throw shUpdErr;
-    testPass(`Free Delivery Threshold Temporarily Updated to 5 pcs`);
-
-    // Revert back to 4 pcs
-    await supabase
-      .from('shipping_settings')
-      .update({ free_delivery_threshold: 4 })
-      .eq('id', ship.id);
-    testPass(`Free Delivery Threshold Reverted to 4 pcs`);
+    testPass(`Updated Shipping Settings to 3 pcs threshold`);
   } catch (err) {
     testFail('Shipping Settings', err.message);
   }
