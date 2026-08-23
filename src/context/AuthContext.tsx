@@ -14,6 +14,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error?: string; message?: string }>;
   updateProfile: (updates: Partial<CustomerProfile>) => Promise<{ error?: string }>;
   addAddress: (address: Omit<CustomerAddress, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<{ error?: string; address?: CustomerAddress }>;
   saveAddress: (address: Omit<CustomerAddress, 'id' | 'userId' | 'createdAt' | 'updatedAt'> | CustomerAddress) => Promise<{ error?: string; address?: CustomerAddress }>;
@@ -177,7 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [fetchProfile, fetchAddresses]);
 
-  // Sign In
+  // Sign In with Sanitized Error Handling
   const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
     if (!isSupabaseConfigured()) {
       return { error: 'Database authentication is currently in demo mode.' };
@@ -187,7 +188,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: email.trim(),
         password,
       });
-      if (error) return { error: error.message };
+
+      if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) {
+          return { error: 'Incorrect email or password. Please check your credentials and try again.' };
+        }
+        if (msg.includes('email not confirmed')) {
+          return { error: 'Please confirm your email address before signing in.' };
+        }
+        if (msg.includes('rate limit')) {
+          return { error: 'Too many login attempts. Please wait a moment and try again.' };
+        }
+        return { error: 'Unable to sign in. Please verify your email and password.' };
+      }
+
       if (data.user) {
         setUser(data.user);
         await Promise.all([
@@ -197,11 +212,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return {};
     } catch (err: any) {
-      return { error: err?.message || 'Login failed' };
+      return { error: 'Network error occurred. Please check your internet connection and try again.' };
     }
   };
 
-  // Sign Up
+  // Sign Up with Sanitized Error Handling & Profile Link
   const signUp = async (
     email: string,
     password: string,
@@ -223,7 +238,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
 
-      if (error) return { error: error.message };
+      if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('already registered') || msg.includes('user already exists') || msg.includes('duplicate key')) {
+          return { error: 'This email is already registered. Please sign in.' };
+        }
+        if (msg.includes('password should be at least') || msg.includes('password is too short')) {
+          return { error: 'Password must be at least 6 characters.' };
+        }
+        return { error: 'Failed to create your account. Please try again with valid information.' };
+      }
 
       if (data.user) {
         setUser(data.user);
@@ -231,7 +255,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await supabase.from('customer_profiles').upsert({
           id: data.user.id,
           full_name: fullName.trim(),
-          phone: phone.trim(),
+          phone: phone.trim() || null,
           email: email.trim(),
         });
         await fetchProfile(data.user.id, email.trim());
@@ -239,14 +263,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return {};
     } catch (err: any) {
-      return { error: err?.message || 'Sign up failed' };
+      return { error: 'Network error occurred while creating your account. Please try again.' };
+    }
+  };
+
+  // Password Reset Request
+  const resetPassword = async (email: string): Promise<{ error?: string; message?: string }> => {
+    if (!isSupabaseConfigured()) {
+      return { error: 'Password reset requires active Supabase email configuration.' };
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/account`,
+      });
+      if (error) {
+        return { error: 'Unable to send password reset email. Please ensure the email is correct.' };
+      }
+      return { message: 'Password reset email has been sent. Please check your inbox.' };
+    } catch (err: any) {
+      return { error: 'Failed to request password reset. Please try again later.' };
     }
   };
 
   // Sign Out
   const signOut = async () => {
     if (isSupabaseConfigured()) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn('Sign out exception:', err);
+      }
     }
     setUser(null);
     setSession(null);
@@ -256,7 +302,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Update Profile
   const updateProfile = async (updates: Partial<CustomerProfile>): Promise<{ error?: string }> => {
-    if (!user) return { error: 'Not authenticated' };
+    if (!user) return { error: 'You must be signed in to update your profile.' };
     if (!isSupabaseConfigured()) {
       const updated = { ...profile, ...updates } as CustomerProfile;
       setProfile(updated);
@@ -278,19 +324,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .update(payload)
         .eq('id', user.id);
 
-      if (error) return { error: error.message };
+      if (error) return { error: 'Failed to update profile information. Please try again.' };
       await fetchProfile(user.id, user.email);
       return {};
     } catch (err: any) {
-      return { error: err?.message || 'Profile update failed' };
+      return { error: 'Network error occurred while saving profile updates.' };
     }
   };
 
-  // Add / Save Address
+  // Add Address
   const addAddress = async (
     addressData: Omit<CustomerAddress, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
   ): Promise<{ error?: string; address?: CustomerAddress }> => {
-    if (!user) return { error: 'Not authenticated' };
+    if (!user) return { error: 'You must be signed in to save addresses.' };
 
     const effectiveAddress = addressData.address || addressData.streetAddress || '';
 
@@ -310,7 +356,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       if (addressData.isDefault) {
-        // Unset previous defaults
         await supabase
           .from('customer_addresses')
           .update({ is_default: false })
@@ -333,7 +378,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .select()
         .single();
 
-      if (error) return { error: error.message };
+      if (error) return { error: 'Failed to save address. Please check your fields and try again.' };
 
       await fetchAddresses(user.id);
       return {
@@ -354,7 +399,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : undefined,
       };
     } catch (err: any) {
-      return { error: err?.message || 'Failed to save address' };
+      return { error: 'Network error occurred while saving address.' };
     }
   };
 
@@ -373,7 +418,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     id: string,
     updates: Partial<CustomerAddress>
   ): Promise<{ error?: string }> => {
-    if (!user) return { error: 'Not authenticated' };
+    if (!user) return { error: 'You must be signed in to update addresses.' };
 
     if (!isSupabaseConfigured()) {
       const updated = addresses.map((a) => (a.id === id ? { ...a, ...updates } : a));
@@ -407,17 +452,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', id)
         .eq('user_id', user.id);
 
-      if (error) return { error: error.message };
+      if (error) return { error: 'Failed to update address.' };
       await fetchAddresses(user.id);
       return {};
     } catch (err: any) {
-      return { error: err?.message || 'Failed to update address' };
+      return { error: 'Network error occurred while updating address.' };
     }
   };
 
   // Delete Address
   const deleteAddress = async (id: string): Promise<{ error?: string }> => {
-    if (!user) return { error: 'Not authenticated' };
+    if (!user) return { error: 'You must be signed in to delete addresses.' };
 
     if (!isSupabaseConfigured()) {
       const updated = addresses.filter((a) => a.id !== id);
@@ -433,11 +478,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', id)
         .eq('user_id', user.id);
 
-      if (error) return { error: error.message };
+      if (error) return { error: 'Failed to delete address.' };
       await fetchAddresses(user.id);
       return {};
     } catch (err: any) {
-      return { error: err?.message || 'Failed to delete address' };
+      return { error: 'Network error occurred while deleting address.' };
     }
   };
 
@@ -460,6 +505,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signUp,
         signOut,
+        resetPassword,
         updateProfile,
         addAddress,
         saveAddress,
