@@ -29,19 +29,20 @@ export const Navbar: React.FC = () => {
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(true);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
 
-  // Filter and sort active categories dynamically
+  // Filter and sort active categories dynamically from Supabase
   const activeCategories = categories
     .filter((c) => c.isActive !== false)
     .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
-  // Get active subcategories for a given category
+  // Get active subcategories for a given category sorted by displayOrder
   const getActiveSubcategoriesForCat = (catId: string, directSubs?: any[]) => {
-    if (directSubs && directSubs.length > 0) {
-      return directSubs.filter((s) => s.isActive !== false);
-    }
-    return subcategories.filter(
-      (s) => s.categoryId === catId && s.isActive !== false
-    );
+    const rawList = (directSubs && directSubs.length > 0)
+      ? directSubs
+      : subcategories.filter((s) => s.categoryId === catId);
+
+    return rawList
+      .filter((s) => s.isActive !== false)
+      .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
   };
 
   // Scroll detection for subtle background transition
@@ -101,12 +102,12 @@ export const Navbar: React.FC = () => {
             {/* MOBILE NAVBAR ROW (md:hidden) */}
             {/* ========================================================================= */}
             <div className="flex items-center justify-between w-full md:hidden">
-              {/* Left: Mobile Hamburger Button */}
+              {/* Left: Mobile Hamburger Button (44px touch target) */}
               <div className="flex items-center flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="w-10 h-10 flex items-center justify-center text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] active:bg-[#202329] rounded-xl transition-colors"
+                  className="w-11 h-11 flex items-center justify-center text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] active:bg-[#202329] rounded-xl transition-colors"
                   aria-label="Toggle navigation menu"
                 >
                   {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -129,7 +130,7 @@ export const Navbar: React.FC = () => {
                 </Link>
               </div>
 
-              {/* Right: Mobile Action Buttons */}
+              {/* Right: Mobile Action Buttons (Consistent 40-44px touch targets) */}
               <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                 {/* Search Trigger */}
                 <button
@@ -230,21 +231,21 @@ export const Navbar: React.FC = () => {
                     />
                   </button>
 
-                  {/* Desktop Dropdown / Mega Menu */}
+                  {/* Desktop Dropdown / Mega Menu Container (Controlled max width, scalable) */}
                   {isCategoriesDropdownOpen && (
                     <div
-                      className={`absolute top-full left-0 mt-1 bg-[#17191D] rounded-2xl shadow-elevation border border-[#30343A] p-4 z-50 animate-in fade-in slide-in-from-top-1 duration-150 ${
+                      className={`absolute top-full left-0 mt-1 bg-[#17191D] rounded-2xl shadow-elevation border border-[#30343A] p-4 z-50 animate-in fade-in slide-in-from-top-1 duration-150 max-h-[75vh] overflow-y-auto ${
                         activeCategories.length > 3
-                          ? 'w-[560px] lg:w-[620px]'
+                          ? 'w-[560px] lg:w-[640px]'
                           : activeCategories.length > 1
                           ? 'w-[420px]'
-                          : 'w-[280px]'
+                          : 'w-[290px]'
                       }`}
                     >
                       <div className="px-3 py-2 border-b border-[#30343A] mb-3 flex items-center justify-between">
                         <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider flex items-center gap-1.5">
-                          <Layers className="w-3 h-3 text-[#C9A96A]" />
-                          <span>Garment Collections</span>
+                          <Layers className="w-3.5 h-3.5 text-[#C9A96A]" />
+                          <span>Garment Collections ({activeCategories.length})</span>
                         </span>
                         <Link
                           href="/shop"
@@ -433,16 +434,16 @@ export const Navbar: React.FC = () => {
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 text-sm font-semibold text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg"
+              className="block px-3 py-2.5 text-sm font-semibold text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl"
             >
               Home
             </Link>
 
             {/* 2. Dynamic Categories Accordion */}
-            <div className="border-t border-[#30343A] pt-2 space-y-1">
+            <div className="border-t border-[#30343A] pt-2 space-y-1.5">
               <div
                 onClick={() => setMobileCategoriesOpen(!mobileCategoriesOpen)}
-                className="flex items-center justify-between px-3 py-2 text-sm font-bold text-[#C9A96A] hover:bg-[#1D2025] rounded-lg cursor-pointer"
+                className="flex items-center justify-between px-3 py-2.5 text-sm font-bold text-[#C9A96A] hover:bg-[#1D2025] rounded-xl cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <Layers className="w-4 h-4" />
@@ -456,55 +457,51 @@ export const Navbar: React.FC = () => {
               </div>
 
               {mobileCategoriesOpen && (
-                <div className="pl-3 pr-1 space-y-1.5 pt-1">
+                <div className="space-y-2 pl-2 pr-1 pt-1">
                   {activeCategories.map((cat) => {
                     const subs = getActiveSubcategoriesForCat(cat.id, cat.subcategories);
                     const isExpanded = expandedMobileCategory === cat.id;
 
                     return (
                       <div key={cat.id} className="bg-[#1D2025] rounded-xl border border-[#30343A] overflow-hidden">
-                        <div className="flex items-center justify-between px-3 py-2.5">
+                        {/* Two usable interactions: Category Name link (44px) + Chevron toggle (44px) */}
+                        <div className="flex items-center justify-between min-h-[44px]">
+                          {/* 1. Category Link (Navigates directly to /category/[slug]) */}
                           <Link
                             href={`/category/${cat.slug}`}
                             onClick={() => setMobileMenuOpen(false)}
-                            className="font-bold text-xs text-[#F1F0EC] hover:text-[#C9A96A]"
+                            className="flex-1 py-3 px-3.5 font-bold text-xs text-[#F1F0EC] hover:text-[#C9A96A] flex items-center justify-between gap-1"
                           >
-                            {cat.name}
+                            <span>{cat.name}</span>
+                            <span className="text-[10px] text-[#85888E] font-normal">&rarr;</span>
                           </Link>
 
-                          {subs.length > 0 ? (
+                          {/* 2. Subcategory Accordion Toggle Button (Expands subcategories without page jump) */}
+                          {subs.length > 0 && (
                             <button
                               type="button"
                               onClick={() => setExpandedMobileCategory(isExpanded ? null : cat.id)}
-                              className="p-1 text-[#85888E] hover:text-[#C9A96A] rounded-md"
+                              className="w-11 h-11 flex items-center justify-center text-[#85888E] hover:text-[#C9A96A] hover:bg-[#202329] border-l border-[#30343A]/60"
                               aria-label={`Toggle ${cat.name} subcategories`}
                             >
                               <ChevronDown
-                                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                className={`w-4 h-4 transition-transform duration-200 ${
                                   isExpanded ? 'rotate-180 text-[#C9A96A]' : ''
                                 }`}
                               />
                             </button>
-                          ) : (
-                            <Link
-                              href={`/category/${cat.slug}`}
-                              onClick={() => setMobileMenuOpen(false)}
-                              className="text-[10px] text-[#C9A96A] font-semibold"
-                            >
-                              View &rarr;
-                            </Link>
                           )}
                         </div>
 
                         {/* Subcategories Accordion Content */}
                         {subs.length > 0 && isExpanded && (
-                          <div className="px-3 pb-2.5 pt-1 border-t border-[#30343A]/60 bg-[#17191D]/50 space-y-1">
+                          <div className="px-3.5 pb-3 pt-1 border-t border-[#30343A]/60 bg-[#17191D]/60 space-y-1 animate-in fade-in">
                             {subs.map((sub) => (
                               <Link
                                 key={sub.id}
                                 href={`/category/${cat.slug}/${sub.slug}`}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="block px-2 py-1 text-xs text-[#85888E] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-md transition-colors"
+                                className="block py-2 px-2 text-xs text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg transition-colors"
                               >
                                 &bull; {sub.name}
                               </Link>
@@ -522,7 +519,7 @@ export const Navbar: React.FC = () => {
             <Link
               href="/shop"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 text-sm font-semibold text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg border-t border-[#30343A] pt-2"
+              className="block px-3 py-2.5 text-sm font-semibold text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl border-t border-[#30343A] pt-2"
             >
               Shop All Products
             </Link>
@@ -532,21 +529,21 @@ export const Navbar: React.FC = () => {
               <Link
                 href={user ? '/account' : '/login'}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-[#C9A96A] hover:bg-[#1D2025] rounded-lg"
+                className="block px-3 py-2.5 text-sm font-semibold text-[#C9A96A] hover:bg-[#1D2025] rounded-xl"
               >
                 {user ? 'My Customer Account' : 'Sign In / Register'}
               </Link>
               <Link
                 href="/about"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg"
+                className="block px-3 py-2.5 text-sm font-semibold text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl"
               >
                 About Us
               </Link>
               <Link
                 href="/contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg"
+                className="block px-3 py-2.5 text-sm font-semibold text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl"
               >
                 Contact Us
               </Link>
