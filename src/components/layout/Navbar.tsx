@@ -180,11 +180,6 @@ export const Navbar: React.FC = () => {
                         }`}
                       >
                         <span>{category.name}</span>
-                        {isComingSoon && (
-                          <span className="text-[9px] font-semibold text-amber-300 bg-amber-950/60 border border-amber-800/60 px-1.5 py-0.2 rounded ml-0.5 normal-case">
-                            Coming Soon
-                          </span>
-                        )}
                         {subcats.length > 0 && (
                           <ChevronDown
                             className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
@@ -210,23 +205,15 @@ export const Navbar: React.FC = () => {
                           </div>
 
                           <div className="space-y-0.5">
-                            {subcats.map((sub) => {
-                              const subComingSoon = !sub.productCount || sub.productCount === 0;
-                              return (
-                                <Link
-                                  key={sub.id}
-                                  href={`/category/${category.slug}/${sub.slug}`}
-                                  className="flex items-center justify-between px-3 py-2 text-xs text-gray-300 hover:text-gold-400 hover:bg-dark-hover rounded-md transition-colors"
-                                >
-                                  <span className="font-medium">{sub.name}</span>
-                                  {subComingSoon && (
-                                    <span className="text-[9px] text-amber-300/80 bg-amber-950/40 border border-amber-800/40 px-1.5 py-0.5 rounded">
-                                      Coming Soon
-                                    </span>
-                                  )}
-                                </Link>
-                              );
-                            })}
+                            {subcats.map((sub) => (
+                              <Link
+                                key={sub.id}
+                                href={`/category/${category.slug}/${sub.slug}`}
+                                className="flex items-center justify-between px-3 py-2 text-xs text-gray-300 hover:text-gold-400 hover:bg-dark-hover rounded-md transition-colors"
+                              >
+                                <span className="font-medium">{sub.name}</span>
+                              </Link>
+                            ))}
                           </div>
                         </div>
                       )}
@@ -364,7 +351,6 @@ export const Navbar: React.FC = () => {
             {/* Mobile Dynamic Categories */}
             {categories.map((cat) => {
               const subcats = cat.subcategories || [];
-              const isComingSoon = !cat.productCount || cat.productCount === 0;
 
               return (
                 <div key={cat.id} className="space-y-1 pt-1 border-t border-dark-border">
@@ -374,35 +360,21 @@ export const Navbar: React.FC = () => {
                     className="flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-100 hover:text-gold-400 hover:bg-dark-hover rounded-lg"
                   >
                     <span>{cat.name}</span>
-                    {isComingSoon ? (
-                      <span className="text-[10px] text-amber-300 bg-amber-950/60 border border-amber-800/60 px-1.5 py-0.5 rounded font-normal">
-                        Coming Soon
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gold-400 font-normal">View All →</span>
-                    )}
+                    <span className="text-xs text-gold-400 font-normal">View All →</span>
                   </Link>
 
                   {subcats.length > 0 && (
                     <div className="pl-4 space-y-0.5">
-                      {subcats.map((sub) => {
-                        const subComingSoon = !sub.productCount || sub.productCount === 0;
-                        return (
-                          <Link
-                            key={sub.id}
-                            href={`/category/${cat.slug}/${sub.slug}`}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="flex items-center justify-between px-3 py-1.5 text-xs text-gray-400 hover:text-gold-400 hover:bg-dark-hover rounded"
-                          >
-                            <span>{sub.name}</span>
-                            {subComingSoon && (
-                              <span className="text-[9px] text-amber-300/80 bg-amber-950/40 border border-amber-800/40 px-1.5 py-0.2 rounded">
-                                Coming Soon
-                              </span>
-                            )}
-                          </Link>
-                        );
-                      })}
+                      {subcats.map((sub) => (
+                        <Link
+                          key={sub.id}
+                          href={`/category/${cat.slug}/${sub.slug}`}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center justify-between px-3 py-1.5 text-xs text-gray-400 hover:text-gold-400 hover:bg-dark-hover rounded"
+                        >
+                          <span>{sub.name}</span>
+                        </Link>
+                      ))}
                     </div>
                   )}
                 </div>

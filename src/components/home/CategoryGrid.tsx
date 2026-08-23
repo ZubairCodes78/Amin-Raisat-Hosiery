@@ -74,13 +74,9 @@ export const CategoryGrid: React.FC = () => {
                     <div className="w-11 h-11 rounded-xl bg-dark-card border border-dark-border text-gold-400 flex items-center justify-center shadow-xs">
                       <Icon className="w-5 h-5" />
                     </div>
-                    {hasActiveProducts ? (
+                    {hasActiveProducts && (
                       <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
-                        {activeCategoryProducts.length} Product{activeCategoryProducts.length > 1 ? 's' : ''} Live
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-950/50 text-amber-300 border border-amber-800/40">
-                        Coming Soon
+                        {activeCategoryProducts.length} Product{activeCategoryProducts.length > 1 ? 's' : ''}
                       </span>
                     )}
                   </div>
@@ -127,20 +123,13 @@ export const CategoryGrid: React.FC = () => {
                 </div>
 
                 <div className="pt-4 mt-2">
-                  {hasActiveProducts ? (
-                    <Link
-                      href={`/category/${category.slug}`}
-                      className="w-full py-2.5 px-4 bg-dark-card hover:bg-gold-500 hover:text-black text-gray-200 border border-dark-border hover:border-gold-500 rounded-lg text-xs font-bold flex items-center justify-between transition-all duration-200 shadow-2xs"
-                    >
-                      <span>View Collection</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </Link>
-                  ) : (
-                    <div className="w-full py-2.5 px-4 bg-dark-card/60 text-gray-500 border border-dark-border rounded-lg text-xs font-semibold flex items-center justify-between">
-                      <span>Coming Soon</span>
-                      <span className="text-[10px] text-gray-500 font-normal">In Production</span>
-                    </div>
-                  )}
+                  <Link
+                    href={`/category/${category.slug}`}
+                    className="w-full py-2.5 px-4 bg-dark-card hover:bg-gold-500 hover:text-black text-gray-200 border border-dark-border hover:border-gold-500 rounded-lg text-xs font-bold flex items-center justify-between transition-all duration-200 shadow-2xs"
+                  >
+                    <span>View Collection</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
                 </div>
               </div>
             );

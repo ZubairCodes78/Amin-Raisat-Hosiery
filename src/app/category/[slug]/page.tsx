@@ -123,17 +123,17 @@ export default function CategoryPage() {
 
         {/* Product Grid / Empty State */}
         {categoryProducts.length === 0 ? (
-          <div className="bg-dark-surface rounded-2xl p-12 text-center border border-dark-border max-w-lg mx-auto shadow-card space-y-4">
-            <div className="w-16 h-16 bg-dark-card rounded-2xl flex items-center justify-center mx-auto text-gold-400 border border-dark-border">
-              <Package className="w-7 h-7" />
+          <div className="bg-dark-surface rounded-2xl p-10 sm:p-12 text-center border border-dark-border max-w-lg mx-auto shadow-card space-y-4">
+            <div className="w-14 h-14 bg-dark-card rounded-2xl flex items-center justify-center mx-auto text-gold-400 border border-dark-border">
+              <Package className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-gray-100">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-100">
               {activeSubcatSlug !== 'all'
-                ? `${subcategories.find((s) => s.slug === activeSubcatSlug)?.name || 'Collection'} Coming Soon`
-                : `${categoryName}'s Collection Coming Soon`}
+                ? `No Products Found in ${subcategories.find((s) => s.slug === activeSubcatSlug)?.name || 'Collection'}`
+                : `No Products in ${categoryName}'s Collection`}
             </h3>
             <p className="text-xs text-gray-400 leading-relaxed">
-              We are carefully manufacturing genuine high quality cotton essentials for this collection. More products will be published soon by Muhammad Amin.
+              Explore our current in-stock pure cotton vests and innerwear in the main shop.
             </p>
             <div className="pt-2">
               <Link
@@ -141,7 +141,7 @@ export default function CategoryPage() {
                 className="inline-flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-black font-bold text-xs py-3 px-6 rounded-xl shadow-glow-gold transition-colors"
               >
                 <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
-                <span>Explore Available Garments</span>
+                <span>Explore Full Shop</span>
               </Link>
             </div>
           </div>
