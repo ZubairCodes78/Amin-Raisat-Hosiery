@@ -53,7 +53,7 @@ export const BenefitsStrip: React.FC = () => {
               >
                 {/* Compact icon container with restrained gold tone */}
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#1D2025] border border-[#30343A] flex items-center justify-center flex-shrink-0 text-[#C9A96A]">
-                  <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+                  <Icon className="w-4 h-4 sm:w-[18px] sm:h-[18px] stroke-[2.2]" />
                 </div>
                 
                 {/* Text Block */}

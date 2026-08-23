@@ -606,7 +606,7 @@ export default function AdminProductsPage() {
               onClick={handleStartCreate}
               className="inline-flex items-center justify-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-semibold min-h-[48px] px-5 sm:px-6 rounded-xl shadow-xs transition-all active:scale-[0.99] w-full sm:w-auto flex-shrink-0"
             >
-              <Plus className="w-4.5 h-4.5 stroke-[2.2]" />
+              <Plus className="w-[18px] h-[18px] stroke-[2.2]" />
               <span>Add Garment Listing</span>
             </button>
           </div>

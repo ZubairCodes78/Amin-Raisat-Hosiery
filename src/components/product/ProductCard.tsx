@@ -239,9 +239,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             aria-label="Add to cart"
           >
             {justAdded ? (
-              <Check className="w-4.5 h-4.5 text-[#3FB982] stroke-[2.5]" />
+              <Check className="w-[18px] h-[18px] text-[#3FB982] stroke-[2.5]" />
             ) : (
-              <ShoppingBag className="w-4.5 h-4.5 text-[#F1F0EC]" />
+              <ShoppingBag className="w-[18px] h-[18px] text-[#F1F0EC]" />
             )}
           </button>
 

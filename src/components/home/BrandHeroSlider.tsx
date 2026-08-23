@@ -24,16 +24,16 @@ export const BrandHeroSlider: React.FC = () => {
 
   const desktopSlides: HeroSlide[] = useMemo(() => {
     const list = allSlides.filter(
-      (s) => s.isActive !== false && (s.deviceType === 'desktop' || (!s.deviceType && !s.mobileImage?.includes('mobile')))
+      (s) => s.isActive !== false && (s.deviceType === 'desktop' || !s.deviceType)
     );
     return list.length > 0
       ? list
-      : INITIAL_HERO_SLIDES.filter((s) => s.deviceType === 'desktop');
+      : INITIAL_HERO_SLIDES.filter((s) => s.deviceType === 'desktop' || !s.deviceType);
   }, [allSlides]);
 
   const mobileSlides: HeroSlide[] = useMemo(() => {
     const list = allSlides.filter(
-      (s) => s.isActive !== false && (s.deviceType === 'mobile' || s.desktopImage?.includes('mobile') || s.mobileImage?.includes('mobile'))
+      (s) => s.isActive !== false && s.deviceType === 'mobile'
     );
     return list.length > 0
       ? list

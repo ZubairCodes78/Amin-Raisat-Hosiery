@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ShoppingBag, Menu, X, Search, ChevronDown, ChevronRight, User, Layers } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
@@ -12,6 +12,7 @@ import { AnnouncementMarquee } from '@/components/home/AnnouncementMarquee';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { totalQuantity, openDrawer } = useCart();
   const { categories, subcategories, settings } = useStore();
   const { user, profile } = useAuth();
@@ -78,7 +79,7 @@ export const Navbar: React.FC = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       setSearchOpen(false);
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -143,7 +144,7 @@ export const Navbar: React.FC = () => {
                   }`}
                   aria-label="Search products"
                 >
-                  <Search className="w-4.5 h-4.5" />
+                  <Search className="w-[18px] h-[18px]" />
                 </button>
 
                 {/* Customer Account Button */}
@@ -153,7 +154,7 @@ export const Navbar: React.FC = () => {
                   aria-label="Customer Account"
                   title={user ? 'My Account' : 'Sign In'}
                 >
-                  <User className="w-4.5 h-4.5" />
+                  <User className="w-[18px] h-[18px]" />
                 </Link>
 
                 {/* Shopping Cart Button */}
@@ -163,7 +164,7 @@ export const Navbar: React.FC = () => {
                   className="relative w-10 h-10 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] rounded-xl transition-all duration-200 flex items-center justify-center shadow-xs active:scale-[0.96]"
                   aria-label="Shopping Cart"
                 >
-                  <ShoppingBag className="w-4.5 h-4.5 text-[#101114] stroke-[2.2]" />
+                  <ShoppingBag className="w-[18px] h-[18px] text-[#101114] stroke-[2.2]" />
                   {totalQuantity > 0 && (
                     <span className="absolute -top-1 -right-1 bg-[#D96B6B] text-white text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-[#101114] shadow-xs">
                       {totalQuantity}

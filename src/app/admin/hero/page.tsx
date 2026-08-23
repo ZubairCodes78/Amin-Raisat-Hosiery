@@ -97,8 +97,8 @@ export default function AdminHeroPage() {
     const slideToSave: HeroSlide = {
       id: editingSlide ? editingSlide.id : `hero-${activeTab}-${Date.now()}`,
       title: title.trim() || `${activeTab.toUpperCase()} Hero Slide ${displayOrder}`,
-      desktopImage: activeTab === 'desktop' ? image : image,
-      mobileImage: activeTab === 'mobile' ? image : undefined,
+      desktopImage: activeTab === 'desktop' ? image : (editingSlide?.desktopImage || ''),
+      mobileImage: activeTab === 'mobile' ? image : (editingSlide?.mobileImage || undefined),
       deviceType: activeTab,
       link: buttonLink.trim() || '/shop',
       buttonLink: buttonLink.trim() || '/shop',
