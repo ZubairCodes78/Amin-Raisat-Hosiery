@@ -286,25 +286,37 @@ FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete own addresses" ON public.customer_addresses
 FOR DELETE USING (auth.uid() = user_id);
 
--- 5.4 Orders: Checkout Insert & Customer/Tracking Select (NO Public Update/Delete)
+-- 5.4 Orders: Checkout Insert with Strict Data Integrity & Select (NO Public Update/Delete)
 DROP POLICY IF EXISTS "Allow public insert orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow public select orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow public update orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow public delete orders" ON public.orders;
 
 CREATE POLICY "Allow public insert orders" ON public.orders
-FOR INSERT WITH CHECK (true);
+FOR INSERT WITH CHECK (
+    length(trim(customer_name)) > 0 AND 
+    length(trim(customer_phone)) >= 10 AND 
+    length(trim(address)) > 3 AND 
+    length(trim(city)) > 1 AND 
+    total_amount > 0
+);
 
 CREATE POLICY "Allow public select orders" ON public.orders
 FOR SELECT USING (true);
 
--- 5.5 Order Items: Checkout Insert & Tracking Select (NO Public Update/Delete)
+-- 5.5 Order Items: Checkout Insert with Strict Constraints & Select (NO Public Update/Delete)
 DROP POLICY IF EXISTS "Allow public insert order_items" ON public.order_items;
 DROP POLICY IF EXISTS "Allow public select order_items" ON public.order_items;
 DROP POLICY IF EXISTS "Allow public delete order_items" ON public.order_items;
 
 CREATE POLICY "Allow public insert order_items" ON public.order_items
-FOR INSERT WITH CHECK (true);
+FOR INSERT WITH CHECK (
+    order_id IS NOT NULL AND 
+    length(trim(product_name)) > 0 AND 
+    quantity >= 1 AND 
+    unit_price > 0 AND 
+    total_price > 0
+);
 
 CREATE POLICY "Allow public select order_items" ON public.order_items
 FOR SELECT USING (true);
@@ -342,7 +354,7 @@ DROP POLICY IF EXISTS "Allow full operations site_settings" ON public.site_setti
 DROP POLICY IF EXISTS "Allow public read site settings" ON public.site_settings;
 CREATE POLICY "Allow public read site settings" ON public.site_settings FOR SELECT USING (true);
 
--- 5.7 Reviews: Approved Read & Submission Insert (NO Public Update/Delete)
+-- 5.7 Reviews: Approved Read & Submission Insert with Rating Bounds (NO Public Update/Delete)
 DROP POLICY IF EXISTS "Allow full operations reviews" ON public.reviews;
 DROP POLICY IF EXISTS "Allow public read approved reviews" ON public.reviews;
 DROP POLICY IF EXISTS "Allow public insert reviews" ON public.reviews;
@@ -351,7 +363,11 @@ CREATE POLICY "Allow public read approved reviews" ON public.reviews
 FOR SELECT USING (is_approved = true);
 
 CREATE POLICY "Allow public insert reviews" ON public.reviews
-FOR INSERT WITH CHECK (true);
+FOR INSERT WITH CHECK (
+    length(trim(customer_name)) > 0 AND 
+    rating >= 1 AND rating <= 5 AND 
+    length(trim(comment)) >= 2
+);
 
 -- ==============================================================================
 -- 6. STORAGE BUCKETS & ACCESS POLICIES

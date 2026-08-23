@@ -532,6 +532,27 @@ export class DataStore {
   }
 
   static async createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'status'>): Promise<Order> {
+    if (this.isClient()) {
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.order) {
+            const existing = await this.getOrders();
+            const updated = [json.order, ...existing.filter((o) => o.id !== json.order.id)];
+            localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(updated));
+            return json.order;
+          }
+        }
+      } catch (err) {
+        console.warn('API /api/orders error, falling back to direct persistence:', err);
+      }
+    }
+
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `ARH-${new Date().getFullYear()}-${randomSuffix}`;
     const id = `ord-${Date.now()}-${randomSuffix}`;
@@ -599,7 +620,7 @@ export class DataStore {
 
     if (this.isClient()) {
       const existing = await this.getOrders();
-      const updated = [newOrder, ...existing.filter((o) => o.orderNumber !== orderNumber)];
+      const updated = [newOrder, ...existing];
       localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(updated));
     }
 
@@ -871,6 +892,27 @@ export class DataStore {
   }
 
   static async submitReview(review: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>): Promise<ProductReview> {
+    if (this.isClient()) {
+      try {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(review),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.review) {
+            const existing = await this.getReviews();
+            const updated = [json.review, ...existing.filter((r) => r.id !== json.review.id)];
+            localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(updated));
+            return json.review;
+          }
+        }
+      } catch (err) {
+        console.warn('API /api/reviews error, falling back to direct persistence:', err);
+      }
+    }
+
     const newReview: ProductReview = {
       ...review,
       id: `rev-${Date.now()}`,

@@ -6,6 +6,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const {
+      userId,
       customerName,
       customerPhone,
       customerEmail,
@@ -14,19 +15,29 @@ export async function POST(req: Request) {
       province,
       orderNotes,
       paymentMethod,
+      paymentReference,
       items,
     } = body;
 
+    const cleanName = customerName?.trim();
+    const cleanPhone = customerPhone?.trim();
+    const cleanAddress = address?.trim();
+    const cleanCity = city?.trim();
+
     if (
-      !customerName ||
-      !customerPhone ||
-      !address ||
-      !city ||
+      !cleanName ||
+      !cleanPhone ||
+      cleanPhone.length < 10 ||
+      !cleanAddress ||
+      !cleanCity ||
       !items ||
       !Array.isArray(items) ||
       items.length === 0
     ) {
-      return NextResponse.json({ error: 'Missing required order details' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Please provide valid customer details, delivery address, and order items.' },
+        { status: 400 }
+      );
     }
 
     // 1. Fetch live shipping settings from Supabase if configured
@@ -65,7 +76,7 @@ export async function POST(req: Request) {
     let subtotal = 0;
     const verifiedItems = items.map((it: any) => {
       const price = Number(it.unitPrice) || 480;
-      const qty = Number(it.quantity) || 2;
+      const qty = Math.max(1, Number(it.quantity) || 1);
       const itemTotal = price * qty;
       subtotal += itemTotal;
       return {
@@ -91,17 +102,18 @@ export async function POST(req: Request) {
           .from('orders')
           .insert({
             order_number: orderNumber,
-            customer_name: customerName,
-            customer_phone: customerPhone,
-            customer_email: customerEmail || null,
-            address: address,
-            city: city,
-            province: province || 'Punjab',
-            order_notes: orderNotes || null,
+            customer_name: cleanName,
+            customer_phone: cleanPhone,
+            customer_email: customerEmail?.trim() || null,
+            address: cleanAddress,
+            city: cleanCity,
+            province: province?.trim() || 'Punjab',
+            order_notes: orderNotes?.trim() || null,
             subtotal: subtotal,
             delivery_fee: deliveryFee,
             total_amount: totalAmount,
             payment_method: paymentMethod || 'cod',
+            payment_reference: paymentReference || null,
             status: 'Pending',
           })
           .select()
@@ -112,6 +124,12 @@ export async function POST(req: Request) {
 
           const itemsPayload = verifiedItems.map((it: any) => ({
             order_id: insertedOrder.id,
+            product_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.productId)
+              ? it.productId
+              : null,
+            variant_id: it.variantId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.variantId)
+              ? it.variantId
+              : null,
             product_name: it.productName,
             quality: it.quality,
             sleeve: it.sleeve,
@@ -132,17 +150,18 @@ export async function POST(req: Request) {
     const order = {
       id: orderId,
       orderNumber,
-      customerName,
-      customerPhone,
-      customerEmail,
-      address,
-      city,
-      province,
-      orderNotes,
+      customerName: cleanName,
+      customerPhone: cleanPhone,
+      customerEmail: customerEmail?.trim() || undefined,
+      address: cleanAddress,
+      city: cleanCity,
+      province: province?.trim() || 'Punjab',
+      orderNotes: orderNotes?.trim() || undefined,
       subtotal,
       deliveryFee,
       totalAmount,
       paymentMethod: paymentMethod || 'cod',
+      paymentReference: paymentReference || undefined,
       status: 'Pending',
       items: verifiedItems,
       createdAt: new Date().toISOString(),
