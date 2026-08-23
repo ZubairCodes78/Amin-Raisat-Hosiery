@@ -10,12 +10,20 @@ import { ArrowLeft, Package, ShoppingBag, ChevronRight } from 'lucide-react';
 export default function CategoryPage() {
   const params = useParams();
   const slug = params?.slug as string;
-  const { categories, products } = useStore();
+  const { categories, subcategories: allSubcategories, products } = useStore();
 
   const [activeSubcatSlug, setActiveSubcatSlug] = useState<string>('all');
 
-  const currentCategory = categories.find((c) => c.slug === slug);
-  const subcategories = currentCategory?.subcategories || [];
+  const currentCategory = categories.find(
+    (c) => c.slug?.toLowerCase() === slug?.toLowerCase() || c.id === slug
+  );
+  
+  // Find subcategories belonging to this category
+  const subcategories = (currentCategory?.subcategories && currentCategory.subcategories.length > 0)
+    ? currentCategory.subcategories.filter((s) => s.isActive !== false)
+    : allSubcategories.filter(
+        (s) => s.categoryId === currentCategory?.id && s.isActive !== false
+      );
 
   // Filter products by category and active subcategory tab
   const categoryProducts = products.filter((p) => {
@@ -37,12 +45,12 @@ export default function CategoryPage() {
 
   if (!currentCategory && slug !== 'men' && slug !== 'women' && slug !== 'kids') {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center bg-dark-bg text-gray-100 min-h-[70vh] flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold text-gray-100">Category Not Found</h1>
-        <p className="text-xs text-gray-400 mt-2">The category you requested does not exist.</p>
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center bg-[#101114] text-[#F1F0EC] min-h-[70vh] flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold text-[#F1F0EC]">Category Not Found</h1>
+        <p className="text-xs text-[#85888E] mt-2">The category you requested does not exist.</p>
         <Link
           href="/"
-          className="mt-6 inline-flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-black text-xs font-bold py-3 px-6 rounded-xl shadow-glow-gold"
+          className="mt-6 inline-flex items-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold py-3 px-6 rounded-xl shadow-xs"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Home
         </Link>
@@ -53,31 +61,31 @@ export default function CategoryPage() {
   const categoryName = currentCategory?.name || (slug === 'men' ? 'Men' : slug === 'women' ? 'Women' : 'Kids');
 
   return (
-    <div className="min-h-[85vh] py-10 bg-dark-bg text-gray-100">
+    <div className="min-h-[85vh] py-10 bg-[#101114] text-[#F1F0EC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
-          <Link href="/" className="hover:text-gold-400 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-[#85888E] mb-6">
+          <Link href="/" className="hover:text-[#C9A96A] transition-colors">
             Home
           </Link>
-          <ChevronRight className="w-3 h-3 text-gray-600" />
-          <Link href="/shop" className="hover:text-gold-400 transition-colors">
+          <ChevronRight className="w-3 h-3 text-[#30343A]" />
+          <Link href="/shop" className="hover:text-[#C9A96A] transition-colors">
             Shop
           </Link>
-          <ChevronRight className="w-3 h-3 text-gray-600" />
-          <span className="font-bold text-gray-200">{categoryName}&apos;s Collection</span>
+          <ChevronRight className="w-3 h-3 text-[#30343A]" />
+          <span className="font-bold text-[#F1F0EC]">{categoryName}&apos;s Collection</span>
         </div>
 
         {/* Category Header Banner */}
-        <div className="bg-dark-surface rounded-2xl p-6 sm:p-10 border border-dark-border shadow-card mb-8">
+        <div className="bg-[#17191D] rounded-2xl p-6 sm:p-10 border border-[#30343A] shadow-card mb-8">
           <div className="max-w-2xl">
-            <span className="text-[10px] font-bold text-gold-400 uppercase tracking-widest bg-dark-card px-3 py-1 rounded-full border border-dark-border inline-block mb-2">
+            <span className="text-[10px] font-bold text-[#C9A96A] uppercase tracking-widest bg-[#1D2025] px-3 py-1 rounded-full border border-[#30343A] inline-block mb-2">
               Category
             </span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-100 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#F1F0EC] tracking-tight">
               {categoryName}&apos;s Collection
             </h1>
-            <p className="text-xs sm:text-sm text-gray-300 mt-2 leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-[#B4B5BA] mt-2 leading-relaxed font-normal">
               {currentCategory?.description ||
                 `Browse our collection of breathable cotton essentials for ${categoryName.toLowerCase()}.`}
             </p>
@@ -85,15 +93,15 @@ export default function CategoryPage() {
 
           {/* Subcategories Filter Pills */}
           {subcategories.length > 0 && (
-            <div className="mt-6 pt-5 border-t border-dark-border">
+            <div className="mt-6 pt-5 border-t border-[#30343A]">
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                 <button
                   type="button"
                   onClick={() => setActiveSubcatSlug('all')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 ${
                     activeSubcatSlug === 'all'
-                      ? 'bg-gold-500 text-black shadow-glow-gold'
-                      : 'bg-dark-card text-gray-300 hover:bg-dark-hover border border-dark-border'
+                      ? 'bg-[#C9A96A] text-[#101114] shadow-xs'
+                      : 'bg-[#1D2025] text-[#B4B5BA] hover:text-[#F1F0EC] hover:bg-[#202329] border border-[#30343A]'
                   }`}
                 >
                   All {categoryName} Items
@@ -106,13 +114,13 @@ export default function CategoryPage() {
                     onClick={() => setActiveSubcatSlug(sub.slug)}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 flex items-center gap-1.5 ${
                       activeSubcatSlug === sub.slug
-                        ? 'bg-gold-500 text-black shadow-glow-gold'
-                        : 'bg-dark-card text-gray-300 hover:bg-dark-hover border border-dark-border'
+                        ? 'bg-[#C9A96A] text-[#101114] shadow-xs'
+                        : 'bg-[#1D2025] text-[#B4B5BA] hover:text-[#F1F0EC] hover:bg-[#202329] border border-[#30343A]'
                     }`}
                   >
                     <span>{sub.name}</span>
                     {sub.productCount && sub.productCount > 0 ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3FB982]" />
                     ) : null}
                   </button>
                 ))}
@@ -123,22 +131,22 @@ export default function CategoryPage() {
 
         {/* Product Grid / Empty State */}
         {categoryProducts.length === 0 ? (
-          <div className="bg-dark-surface rounded-2xl p-10 sm:p-12 text-center border border-dark-border max-w-lg mx-auto shadow-card space-y-4">
-            <div className="w-14 h-14 bg-dark-card rounded-2xl flex items-center justify-center mx-auto text-gold-400 border border-dark-border">
+          <div className="bg-[#17191D] rounded-2xl p-10 sm:p-12 text-center border border-[#30343A] max-w-lg mx-auto shadow-card space-y-4">
+            <div className="w-14 h-14 bg-[#1D2025] rounded-2xl flex items-center justify-center mx-auto text-[#C9A96A] border border-[#30343A]">
               <Package className="w-6 h-6" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-100">
+            <h3 className="text-lg sm:text-xl font-bold text-[#F1F0EC]">
               {activeSubcatSlug !== 'all'
                 ? `No Products Found in ${subcategories.find((s) => s.slug === activeSubcatSlug)?.name || 'Collection'}`
                 : `No Products in ${categoryName}'s Collection`}
             </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-[#85888E] leading-relaxed">
               Explore our current in-stock pure cotton vests and innerwear in the main shop.
             </p>
             <div className="pt-2">
               <Link
                 href="/shop"
-                className="inline-flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-black font-bold text-xs py-3 px-6 rounded-xl shadow-glow-gold transition-colors"
+                className="inline-flex items-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] font-bold text-xs py-3 px-6 rounded-xl shadow-xs transition-colors"
               >
                 <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
                 <span>Explore Full Shop</span>
@@ -148,7 +156,7 @@ export default function CategoryPage() {
         ) : (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <p className="text-xs font-semibold text-gray-400">
+              <p className="text-xs font-semibold text-[#85888E]">
                 Showing {categoryProducts.length} Product{categoryProducts.length > 1 ? 's' : ''}
               </p>
             </div>

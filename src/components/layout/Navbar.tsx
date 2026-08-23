@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { ShoppingBag, Menu, X, Search, ChevronDown, User } from 'lucide-react';
+import { ShoppingBag, Menu, X, Search, ChevronDown, ChevronRight, User, Layers } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
@@ -13,14 +13,36 @@ import { AnnouncementMarquee } from '@/components/home/AnnouncementMarquee';
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { totalQuantity, openDrawer } = useCart();
-  const { categories } = useStore();
+  const { categories, subcategories, settings } = useStore();
   const { user } = useAuth();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategoryMenu, setActiveCategoryMenu] = useState<string | null>(null);
+  
+  // Desktop Categories Dropdown / Mega Menu
+  const [isCategoriesDropdownOpen, setIsCategoriesDropdownOpen] = useState(false);
+  const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Mobile Accordion States
+  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(true);
+  const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
+
+  // Filter and sort active categories dynamically
+  const activeCategories = categories
+    .filter((c) => c.isActive !== false)
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+  // Get active subcategories for a given category
+  const getActiveSubcategoriesForCat = (catId: string, directSubs?: any[]) => {
+    if (directSubs && directSubs.length > 0) {
+      return directSubs.filter((s) => s.isActive !== false);
+    }
+    return subcategories.filter(
+      (s) => s.categoryId === catId && s.isActive !== false
+    );
+  };
 
   // Scroll detection for subtle background transition
   useEffect(() => {
@@ -31,6 +53,26 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Close menus on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setIsCategoriesDropdownOpen(false);
+    setSearchOpen(false);
+  }, [pathname]);
+
+  const handleMouseEnterCategories = () => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+    }
+    setIsCategoriesDropdownOpen(true);
+  };
+
+  const handleMouseLeaveCategories = () => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setIsCategoriesDropdownOpen(false);
+    }, 180);
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -39,6 +81,8 @@ export const Navbar: React.FC = () => {
     }
   };
 
+  const isCategoryActive = pathname.startsWith('/category');
+
   return (
     <header className="sticky top-0 z-40 w-full select-none">
       {/* 1. Continuous Motion Announcement Bar */}
@@ -46,28 +90,30 @@ export const Navbar: React.FC = () => {
 
       {/* 2. Main Brand Navbar */}
       <nav
-        className={`w-full bg-[#0D0D12]/95 backdrop-blur-md transition-all duration-300 border-b ${
-          isScrolled ? 'border-dark-border shadow-elevation py-0.5' : 'border-dark-border/80 py-1'
+        className={`w-full bg-[#101114]/95 backdrop-blur-md transition-all duration-300 border-b ${
+          isScrolled ? 'border-[#30343A] shadow-elevation py-0.5' : 'border-[#30343A]/80 py-1'
         }`}
       >
         <div className="mx-auto w-full md:w-[calc(100%-48px)] max-w-[1240px] px-3 sm:px-6 md:px-0">
           <div className="flex items-center justify-between h-16 md:h-18">
             
-            {/* === MOBILE NAVBAR ROW (md:hidden) === */}
+            {/* ========================================================================= */}
+            {/* MOBILE NAVBAR ROW (md:hidden) */}
+            {/* ========================================================================= */}
             <div className="flex items-center justify-between w-full md:hidden">
-              {/* Left: Mobile Hamburger Button (40px touch target) */}
+              {/* Left: Mobile Hamburger Button */}
               <div className="flex items-center flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="w-10 h-10 flex items-center justify-center text-gray-200 hover:text-gold-400 hover:bg-[#15151B] active:bg-[#1B1B22] rounded-xl transition-colors"
+                  className="w-10 h-10 flex items-center justify-center text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] active:bg-[#202329] rounded-xl transition-colors"
                   aria-label="Toggle navigation menu"
                 >
                   {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
               </div>
 
-              {/* Center: Mobile Header Logo (Enhanced scale +15-25%, crisp, centered) */}
+              {/* Center: Mobile Header Logo */}
               <div className="flex items-center justify-center flex-1 px-1 sm:px-2 min-w-0">
                 <Link href="/" className="flex items-center justify-center py-1 group">
                   <div className="relative w-36 xs:w-44 sm:w-52 h-12 xs:h-13 sm:h-15 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
@@ -83,7 +129,7 @@ export const Navbar: React.FC = () => {
                 </Link>
               </div>
 
-              {/* Right: Mobile Action Buttons (Consistent 40px touch targets, balanced spacing) */}
+              {/* Right: Mobile Action Buttons */}
               <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                 {/* Search Trigger */}
                 <button
@@ -91,8 +137,8 @@ export const Navbar: React.FC = () => {
                   onClick={() => setSearchOpen(!searchOpen)}
                   className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${
                     searchOpen
-                      ? 'bg-[#15151B] text-gold-400 border border-[#2A2A32]'
-                      : 'text-gray-200 hover:text-gold-400 hover:bg-[#15151B]'
+                      ? 'bg-[#1D2025] text-[#C9A96A] border border-[#30343A]'
+                      : 'text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025]'
                   }`}
                   aria-label="Search products"
                 >
@@ -102,7 +148,7 @@ export const Navbar: React.FC = () => {
                 {/* Customer Account Button */}
                 <Link
                   href={user ? '/account' : '/login'}
-                  className="w-10 h-10 flex items-center justify-center text-gray-200 hover:text-gold-400 hover:bg-[#15151B] rounded-xl transition-colors"
+                  className="w-10 h-10 flex items-center justify-center text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl transition-colors"
                   aria-label="Customer Account"
                   title={user ? 'My Account' : 'Sign In'}
                 >
@@ -113,12 +159,12 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={openDrawer}
-                  className="relative w-10 h-10 bg-gold-500 hover:bg-gold-400 text-black rounded-xl transition-all duration-200 flex items-center justify-center shadow-xs active:scale-[0.96]"
+                  className="relative w-10 h-10 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] rounded-xl transition-all duration-200 flex items-center justify-center shadow-xs active:scale-[0.96]"
                   aria-label="Shopping Cart"
                 >
-                  <ShoppingBag className="w-4.5 h-4.5 text-black stroke-[2.2]" />
+                  <ShoppingBag className="w-4.5 h-4.5 text-[#101114] stroke-[2.2]" />
                   {totalQuantity > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-black shadow-xs">
+                    <span className="absolute -top-1 -right-1 bg-[#D96B6B] text-white text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-[#101114] shadow-xs">
                       {totalQuantity}
                     </span>
                   )}
@@ -126,7 +172,9 @@ export const Navbar: React.FC = () => {
               </div>
             </div>
 
-            {/* === DESKTOP NAVBAR (hidden md:flex) === */}
+            {/* ========================================================================= */}
+            {/* DESKTOP NAVBAR (hidden md:flex) */}
+            {/* ========================================================================= */}
             <div className="hidden md:flex items-center justify-between w-full">
               {/* Desktop Header Logo */}
               <div className="flex items-center">
@@ -144,110 +192,159 @@ export const Navbar: React.FC = () => {
                 </Link>
               </div>
 
-              {/* Desktop Navigation Links */}
+              {/* Desktop Navigation Links: HOME | CATEGORIES ▾ | SHOP | ABOUT | CONTACT */}
               <div className="flex items-center space-x-1 lg:space-x-1.5">
+                {/* 1. HOME */}
                 <Link
                   href="/"
-                  className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
+                  className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/'
-                      ? 'text-gold-400 bg-dark-surface border border-dark-border'
-                      : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
+                      ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
+                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
                   }`}
                 >
                   Home
                 </Link>
 
-                {/* Dynamic Category Menus with Dropdowns */}
-                {categories.map((category) => {
-                  const subcats = category.subcategories || [];
-                  const isHovered = activeCategoryMenu === category.id;
-                  const isActive = pathname.startsWith(`/category/${category.slug}`);
+                {/* 2. DYNAMIC CATEGORIES ▾ DROPDOWN / MEGA MENU */}
+                <div
+                  className="relative"
+                  onMouseEnter={handleMouseEnterCategories}
+                  onMouseLeave={handleMouseLeaveCategories}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoriesDropdownOpen(!isCategoriesDropdownOpen)}
+                    className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg flex items-center gap-1.5 ${
+                      isCategoryActive || isCategoriesDropdownOpen
+                        ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
+                        : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
+                    }`}
+                    aria-expanded={isCategoriesDropdownOpen}
+                  >
+                    <span>Categories</span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-[#85888E] transition-transform duration-200 ${
+                        isCategoriesDropdownOpen ? 'rotate-180 text-[#C9A96A]' : ''
+                      }`}
+                    />
+                  </button>
 
-                  return (
+                  {/* Desktop Dropdown / Mega Menu */}
+                  {isCategoriesDropdownOpen && (
                     <div
-                      key={category.id}
-                      className="relative"
-                      onMouseEnter={() => setActiveCategoryMenu(category.id)}
-                      onMouseLeave={() => setActiveCategoryMenu(null)}
+                      className={`absolute top-full left-0 mt-1 bg-[#17191D] rounded-2xl shadow-elevation border border-[#30343A] p-4 z-50 animate-in fade-in slide-in-from-top-1 duration-150 ${
+                        activeCategories.length > 3
+                          ? 'w-[560px] lg:w-[620px]'
+                          : activeCategories.length > 1
+                          ? 'w-[420px]'
+                          : 'w-[280px]'
+                      }`}
                     >
-                      <Link
-                        href={`/category/${category.slug}`}
-                        className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg flex items-center gap-1 ${
-                          isActive
-                            ? 'text-gold-400 bg-dark-surface border border-dark-border'
-                            : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
+                      <div className="px-3 py-2 border-b border-[#30343A] mb-3 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider flex items-center gap-1.5">
+                          <Layers className="w-3 h-3 text-[#C9A96A]" />
+                          <span>Garment Collections</span>
+                        </span>
+                        <Link
+                          href="/shop"
+                          onClick={() => setIsCategoriesDropdownOpen(false)}
+                          className="text-[11px] font-semibold text-[#C9A96A] hover:text-[#D8BD88] transition-colors"
+                        >
+                          View All Products &rarr;
+                        </Link>
+                      </div>
+
+                      {/* Adaptive Grid for Categories */}
+                      <div
+                        className={`grid gap-4 ${
+                          activeCategories.length > 3
+                            ? 'grid-cols-3'
+                            : activeCategories.length > 1
+                            ? 'grid-cols-2'
+                            : 'grid-cols-1'
                         }`}
                       >
-                        <span>{category.name}</span>
-                        {subcats.length > 0 && (
-                          <ChevronDown
-                            className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
-                              isHovered ? 'rotate-180 text-gold-400' : ''
-                            }`}
-                          />
-                        )}
-                      </Link>
+                        {activeCategories.map((category) => {
+                          const subs = getActiveSubcategoriesForCat(category.id, category.subcategories);
 
-                      {/* Dropdown Menu */}
-                      {subcats.length > 0 && isHovered && (
-                        <div className="absolute top-full left-0 w-64 bg-dark-surface rounded-xl shadow-elevation border border-dark-border p-3 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-                          <div className="px-3 py-2 border-b border-dark-border mb-1 flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                              {category.name} Collections
-                            </span>
-                            <Link
-                              href={`/category/${category.slug}`}
-                              className="text-[10px] font-semibold text-gold-400 hover:underline"
-                            >
-                              View All →
-                            </Link>
-                          </div>
-
-                          <div className="space-y-0.5">
-                            {subcats.map((sub) => (
+                          return (
+                            <div key={category.id} className="space-y-2 p-2 rounded-xl hover:bg-[#1D2025]/50 transition-colors">
+                              {/* Main Category Header Link */}
                               <Link
-                                key={sub.id}
-                                href={`/category/${category.slug}/${sub.slug}`}
-                                className="flex items-center justify-between px-3 py-2 text-xs text-gray-300 hover:text-gold-400 hover:bg-dark-hover rounded-md transition-colors"
+                                href={`/category/${category.slug}`}
+                                onClick={() => setIsCategoriesDropdownOpen(false)}
+                                className="block font-bold text-xs text-[#F1F0EC] hover:text-[#C9A96A] transition-colors border-b border-[#30343A]/60 pb-1.5"
                               >
-                                <span className="font-medium">{sub.name}</span>
+                                <span>{category.name}</span>
                               </Link>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
 
+                              {/* Subcategories under this category */}
+                              {subs.length > 0 ? (
+                                <ul className="space-y-1 pl-1">
+                                  {subs.map((sub) => (
+                                    <li key={sub.id}>
+                                      <Link
+                                        href={`/category/${category.slug}/${sub.slug}`}
+                                        onClick={() => setIsCategoriesDropdownOpen(false)}
+                                        className="text-[11px] text-[#85888E] hover:text-[#F1F0EC] hover:underline flex items-center gap-1 transition-colors py-0.5"
+                                      >
+                                        <span className="text-[#C9A96A]/60">&bull;</span>
+                                        <span>{sub.name}</span>
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-[10px] text-[#85888E] italic pl-1">
+                                  View all {category.name.toLowerCase()} items
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Bottom Banner inside Dropdown */}
+                      <div className="mt-3 pt-2.5 border-t border-[#30343A] flex items-center justify-between text-[11px] text-[#85888E] px-2">
+                        <span>Free Delivery Across Pakistan on 3+ Pieces</span>
+                        <span className="text-[#3FB982] font-semibold">100% Combed Cotton</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. SHOP */}
                 <Link
                   href="/shop"
-                  className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
+                  className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/shop'
-                      ? 'text-gold-400 bg-dark-surface border border-dark-border'
-                      : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
+                      ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
+                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
                   }`}
                 >
                   Shop
                 </Link>
 
+                {/* 4. ABOUT */}
                 <Link
                   href="/about"
-                  className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
+                  className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/about'
-                      ? 'text-gold-400 bg-dark-surface border border-dark-border'
-                      : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
+                      ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
+                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
                   }`}
                 >
                   About
                 </Link>
 
+                {/* 5. CONTACT */}
                 <Link
                   href="/contact"
-                  className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
+                  className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/contact'
-                      ? 'text-gold-400 bg-dark-surface border border-dark-border'
-                      : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
+                      ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
+                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
                   }`}
                 >
                   Contact
@@ -262,8 +359,8 @@ export const Navbar: React.FC = () => {
                   onClick={() => setSearchOpen(!searchOpen)}
                   className={`w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-xl transition-colors ${
                     searchOpen
-                      ? 'bg-dark-surface text-gold-400 border border-dark-border'
-                      : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
+                      ? 'bg-[#17191D] text-[#C9A96A] border border-[#30343A]'
+                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
                   }`}
                   aria-label="Search products"
                 >
@@ -273,12 +370,12 @@ export const Navbar: React.FC = () => {
                 {/* Customer Account Button */}
                 <Link
                   href={user ? '/account' : '/login'}
-                  className="h-9 lg:h-10 px-3 text-gray-300 hover:text-gold-400 hover:bg-dark-surface rounded-xl transition-colors flex items-center gap-1.5 border border-transparent hover:border-dark-border"
+                  className="h-9 lg:h-10 px-3 text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D] rounded-xl transition-colors flex items-center gap-1.5 border border-transparent hover:border-[#30343A]"
                   aria-label="Customer Account"
                   title={user ? 'My Account' : 'Sign In'}
                 >
                   <User className="w-4 h-4" />
-                  <span className="text-[11px] font-semibold text-gray-200">
+                  <span className="text-[11px] font-semibold text-[#F1F0EC]">
                     {user ? 'Account' : 'Sign In'}
                   </span>
                 </Link>
@@ -287,13 +384,13 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={openDrawer}
-                  className="relative h-9 lg:h-10 px-3.5 bg-gold-500 hover:bg-gold-400 text-black rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 shadow-xs hover:shadow-glow-gold active:scale-[0.98]"
+                  className="relative h-9 lg:h-10 px-3.5 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 shadow-xs hover:shadow-xs active:scale-[0.98]"
                   aria-label="Shopping Cart"
                 >
-                  <ShoppingBag className="w-4 h-4 text-black stroke-[2.2]" />
-                  <span className="text-xs font-extrabold text-black">Cart</span>
+                  <ShoppingBag className="w-4 h-4 text-[#101114] stroke-[2.2]" />
+                  <span className="text-xs font-bold text-[#101114]">Cart</span>
                   {totalQuantity > 0 && (
-                    <span className="bg-black text-gold-400 text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center ml-0.5">
+                    <span className="bg-[#101114] text-[#C9A96A] text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center ml-0.5">
                       {totalQuantity}
                     </span>
                   )}
@@ -305,7 +402,7 @@ export const Navbar: React.FC = () => {
 
           {/* Integrated Search Bar Drawer */}
           {searchOpen && (
-            <div className="py-3 border-t border-dark-border animate-in fade-in">
+            <div className="py-3 border-t border-[#30343A] animate-in fade-in">
               <form onSubmit={handleSearchSubmit} className="relative max-w-lg mx-auto">
                 <input
                   type="text"
@@ -313,12 +410,12 @@ export const Navbar: React.FC = () => {
                   placeholder="Search products by name, category, or style..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-24 py-2.5 bg-dark-surface border border-dark-border text-gray-100 placeholder-gray-400 rounded-xl text-xs focus:outline-none focus:border-gold-500"
+                  className="w-full pl-10 pr-24 py-2.5 bg-[#17191D] border border-[#343840] text-[#F1F0EC] placeholder-[#85888E] rounded-xl text-xs focus:outline-none focus:border-[#C9A96A]"
                 />
-                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                <Search className="w-4 h-4 text-[#85888E] absolute left-3.5 top-3" />
                 <button
                   type="submit"
-                  className="absolute right-2 top-1.5 px-3 py-1 bg-gold-500 text-black rounded-lg text-xs font-bold hover:bg-gold-400"
+                  className="absolute right-2 top-1.5 px-3 py-1 bg-[#C9A96A] text-[#101114] rounded-lg text-xs font-bold hover:bg-[#D8BD88]"
                 >
                   Search
                 </button>
@@ -327,77 +424,129 @@ export const Navbar: React.FC = () => {
           )}
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* ========================================================================= */}
+        {/* MOBILE NAVIGATION DRAWER */}
+        {/* ========================================================================= */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-dark-border bg-dark-surface px-4 pt-3 pb-6 space-y-2 shadow-elevation max-h-[85vh] overflow-y-auto">
+          <div className="md:hidden border-t border-[#30343A] bg-[#17191D] px-4 pt-3 pb-6 space-y-2 shadow-elevation max-h-[85vh] overflow-y-auto">
+            {/* 1. Home */}
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 text-sm font-semibold text-gray-200 hover:text-gold-400 hover:bg-dark-hover rounded-lg"
+              className="block px-3 py-2 text-sm font-semibold text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg"
             >
               Home
             </Link>
 
+            {/* 2. Dynamic Categories Accordion */}
+            <div className="border-t border-[#30343A] pt-2 space-y-1">
+              <div
+                onClick={() => setMobileCategoriesOpen(!mobileCategoriesOpen)}
+                className="flex items-center justify-between px-3 py-2 text-sm font-bold text-[#C9A96A] hover:bg-[#1D2025] rounded-lg cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4" />
+                  <span>Categories ({activeCategories.length})</span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-[#85888E] transition-transform duration-200 ${
+                    mobileCategoriesOpen ? 'rotate-180 text-[#C9A96A]' : ''
+                  }`}
+                />
+              </div>
+
+              {mobileCategoriesOpen && (
+                <div className="pl-3 pr-1 space-y-1.5 pt-1">
+                  {activeCategories.map((cat) => {
+                    const subs = getActiveSubcategoriesForCat(cat.id, cat.subcategories);
+                    const isExpanded = expandedMobileCategory === cat.id;
+
+                    return (
+                      <div key={cat.id} className="bg-[#1D2025] rounded-xl border border-[#30343A] overflow-hidden">
+                        <div className="flex items-center justify-between px-3 py-2.5">
+                          <Link
+                            href={`/category/${cat.slug}`}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="font-bold text-xs text-[#F1F0EC] hover:text-[#C9A96A]"
+                          >
+                            {cat.name}
+                          </Link>
+
+                          {subs.length > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedMobileCategory(isExpanded ? null : cat.id)}
+                              className="p-1 text-[#85888E] hover:text-[#C9A96A] rounded-md"
+                              aria-label={`Toggle ${cat.name} subcategories`}
+                            >
+                              <ChevronDown
+                                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                  isExpanded ? 'rotate-180 text-[#C9A96A]' : ''
+                                }`}
+                              />
+                            </button>
+                          ) : (
+                            <Link
+                              href={`/category/${cat.slug}`}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="text-[10px] text-[#C9A96A] font-semibold"
+                            >
+                              View &rarr;
+                            </Link>
+                          )}
+                        </div>
+
+                        {/* Subcategories Accordion Content */}
+                        {subs.length > 0 && isExpanded && (
+                          <div className="px-3 pb-2.5 pt-1 border-t border-[#30343A]/60 bg-[#17191D]/50 space-y-1">
+                            {subs.map((sub) => (
+                              <Link
+                                key={sub.id}
+                                href={`/category/${cat.slug}/${sub.slug}`}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="block px-2 py-1 text-xs text-[#85888E] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-md transition-colors"
+                              >
+                                &bull; {sub.name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 3. Shop All Products */}
             <Link
               href="/shop"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 text-sm font-semibold text-gray-200 hover:text-gold-400 hover:bg-dark-hover rounded-lg"
+              className="block px-3 py-2 text-sm font-semibold text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg border-t border-[#30343A] pt-2"
             >
               Shop All Products
             </Link>
 
-            {/* Mobile Dynamic Categories */}
-            {categories.map((cat) => {
-              const subcats = cat.subcategories || [];
-
-              return (
-                <div key={cat.id} className="space-y-1 pt-1 border-t border-dark-border">
-                  <Link
-                    href={`/category/${cat.slug}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-100 hover:text-gold-400 hover:bg-dark-hover rounded-lg"
-                  >
-                    <span>{cat.name}</span>
-                    <span className="text-xs text-gold-400 font-normal">View All →</span>
-                  </Link>
-
-                  {subcats.length > 0 && (
-                    <div className="pl-4 space-y-0.5">
-                      {subcats.map((sub) => (
-                        <Link
-                          key={sub.id}
-                          href={`/category/${cat.slug}/${sub.slug}`}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center justify-between px-3 py-1.5 text-xs text-gray-400 hover:text-gold-400 hover:bg-dark-hover rounded"
-                        >
-                          <span>{sub.name}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            <div className="pt-2 border-t border-dark-border space-y-1">
+            {/* 4. Customer Account / Sign In */}
+            <div className="pt-2 border-t border-[#30343A] space-y-1">
               <Link
                 href={user ? '/account' : '/login'}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-gold-400 hover:bg-dark-hover rounded-lg"
+                className="block px-3 py-2 text-sm font-semibold text-[#C9A96A] hover:bg-[#1D2025] rounded-lg"
               >
                 {user ? 'My Customer Account' : 'Sign In / Register'}
               </Link>
               <Link
                 href="/about"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-gray-300 hover:text-gold-400 hover:bg-dark-hover rounded-lg"
+                className="block px-3 py-2 text-sm font-semibold text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg"
               >
                 About Us
               </Link>
               <Link
                 href="/contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 text-sm font-semibold text-gray-300 hover:text-gold-400 hover:bg-dark-hover rounded-lg"
+                className="block px-3 py-2 text-sm font-semibold text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg"
               >
                 Contact Us
               </Link>
