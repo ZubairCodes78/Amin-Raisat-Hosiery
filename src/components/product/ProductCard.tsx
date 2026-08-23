@@ -116,14 +116,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     <div className="group bg-dark-surface rounded-2xl border border-dark-border overflow-hidden flex flex-col justify-between shadow-card hover:border-dark-border-light hover:shadow-elevation transition-all duration-300 relative w-full h-full">
       <div>
         {/* 1. Medium, Balanced Product Image Area */}
-        <div className="relative w-full h-64 sm:h-72 bg-[#0c0c10] p-4 flex items-center justify-center overflow-hidden border-b border-dark-border">
+        <div className="relative w-full h-64 sm:h-72 bg-[#1D2025] p-4 flex items-center justify-center overflow-hidden border-b border-dark-border">
           {/* Badges */}
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-            <span className="bg-black/80 backdrop-blur-xs text-gold-400 border border-gold-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded shadow-xs uppercase tracking-wider">
+            <span className="bg-[#17191D]/90 backdrop-blur-xs text-[#C9A96A] border border-dark-border text-[10px] font-semibold px-2.5 py-0.5 rounded-md shadow-2xs uppercase tracking-wider">
               100% Combed Cotton
             </span>
             {stock <= 10 && stock > 0 && (
-              <span className="bg-rose-950/80 text-rose-300 border border-rose-800/60 text-[10px] font-semibold px-2 py-0.5 rounded">
+              <span className="bg-rose-950/80 text-rose-300 border border-rose-800/60 text-[10px] font-semibold px-2 py-0.5 rounded-md">
                 Only {stock} left
               </span>
             )}

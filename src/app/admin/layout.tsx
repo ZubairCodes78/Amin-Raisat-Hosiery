@@ -51,15 +51,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   if (pathname === '/admin/login') {
-    return <div className="min-h-screen bg-dark-bg">{children}</div>;
+    return <div className="min-h-screen bg-[#101114]">{children}</div>;
   }
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+      <div className="min-h-screen bg-[#101114] flex items-center justify-center">
         <div className="text-center space-y-2">
-          <div className="w-8 h-8 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs text-gray-400 font-semibold">Loading Admin Dashboard...</p>
+          <div className="w-8 h-8 border-3 border-[#C9A96A] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-[#85888E] font-medium">Loading Admin Dashboard...</p>
         </div>
       </div>
     );
@@ -77,13 +77,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg text-gray-100 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#101114] text-[#F1F0EC] flex flex-col md:flex-row">
       {/* Dedicated Admin Sidebar for Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-dark-surface text-gray-300 border-r border-dark-border p-5 justify-between flex-shrink-0 min-h-screen sticky top-0">
+      <aside className="hidden md:flex flex-col w-64 bg-[#0D0F12] text-[#D7D7D4] border-r border-[#30343A] p-5 justify-between flex-shrink-0 min-h-screen sticky top-0">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center gap-3 pb-4 border-b border-dark-border">
-            <div className="relative w-10 h-10 overflow-hidden flex-shrink-0">
+          <div className="flex items-center gap-3 pb-4 border-b border-[#30343A]">
+            <div className="relative w-10 h-10 overflow-hidden flex-shrink-0 bg-[#1D2025] rounded-xl border border-[#30343A] p-1">
               <Image
                 src="/images/Favicon Logo.jpeg"
                 alt="Amin Raisat Hosiery"
@@ -92,8 +92,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               />
             </div>
             <div>
-              <h2 className="font-bold text-sm text-gold-400 tracking-wider uppercase leading-none">Admin Portal</h2>
-              <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">Amin Raisat Hosiery</p>
+              <h2 className="font-bold text-xs text-[#C9A96A] tracking-wider uppercase leading-none">Admin Portal</h2>
+              <p className="text-[10px] text-[#8C8F95] font-medium tracking-wide mt-1">Amin Raisat Hosiery</p>
             </div>
           </div>
 
@@ -106,13 +106,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
                     isActive
-                      ? 'bg-gold-500 text-black shadow-glow-gold'
-                      : 'hover:bg-dark-card text-gray-400 hover:text-gray-100'
+                      ? 'bg-[#1F2227] text-[#F1F0EC] border-l-2 border-[#C9A96A] shadow-xs'
+                      : 'hover:bg-[#17191D] text-[#8C8F95] hover:text-[#D7D7D4]'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#C9A96A]' : 'text-[#8C8F95]'}`} />
                   <span>{link.label}</span>
                 </a>
               );
@@ -121,11 +121,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Bottom Actions */}
-        <div className="space-y-2 pt-4 border-t border-dark-border">
+        <div className="space-y-2 pt-4 border-t border-[#30343A]">
           <a
             href="/"
             target="_blank"
-            className="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-gold-400 hover:bg-dark-card transition-colors"
+            className="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[#8C8F95] hover:text-[#C9A96A] hover:bg-[#17191D] transition-colors"
           >
             <span className="flex items-center gap-2">
               <Store className="w-4 h-4" /> Live Storefront
@@ -136,7 +136,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-950/30 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[#D96B6B] hover:bg-[#D96B6B]/10 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span>Log Out</span>
@@ -145,9 +145,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Mobile Top Header Bar for Admin */}
-      <div className="md:hidden bg-dark-surface text-white p-4 flex items-center justify-between sticky top-0 z-40 border-b border-dark-border">
+      <div className="md:hidden bg-[#0D0F12] text-[#F1F0EC] p-4 flex items-center justify-between sticky top-0 z-40 border-b border-[#30343A]">
         <div className="flex items-center gap-2.5">
-          <div className="relative w-8 h-8 overflow-hidden flex-shrink-0">
+          <div className="relative w-8 h-8 overflow-hidden flex-shrink-0 bg-[#1D2025] rounded-lg border border-[#30343A] p-0.5">
             <Image
               src="/images/Favicon Logo.jpeg"
               alt="Amin Raisat Hosiery"
@@ -156,23 +156,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             />
           </div>
           <div>
-            <h2 className="font-bold text-sm leading-none text-gold-400">Admin Portal</h2>
-            <span className="text-[10px] text-gray-400">Amin Raisat Hosiery</span>
+            <h2 className="font-bold text-xs leading-none text-[#C9A96A]">Admin Portal</h2>
+            <span className="text-[10px] text-[#8C8F95]">Amin Raisat Hosiery</span>
           </div>
         </div>
 
         <button
+          type="button"
           onClick={() => setMobileNavOpen(!mobileNavOpen)}
-          className="p-1.5 text-gray-300 hover:text-white"
-          aria-label="Toggle admin menu"
+          className="p-2 text-[#8C8F95] hover:text-[#F1F0EC] hover:bg-[#17191D] rounded-xl"
         >
           {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer Menu */}
       {mobileNavOpen && (
-        <div className="md:hidden bg-dark-surface text-white p-4 space-y-1.5 border-b border-dark-border shadow-elevation">
+        <div className="md:hidden bg-[#0D0F12] border-b border-[#30343A] p-4 space-y-2 sticky top-[65px] z-30 animate-in fade-in">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -181,29 +181,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileNavOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold ${
-                  isActive ? 'bg-gold-500 text-black font-bold' : 'text-gray-300 hover:bg-dark-card'
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold ${
+                  isActive
+                    ? 'bg-[#1F2227] text-[#F1F0EC] border-l-2 border-[#C9A96A]'
+                    : 'text-[#8C8F95] hover:bg-[#17191D] hover:text-[#D7D7D4]'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-[#C9A96A]' : 'text-[#8C8F95]'}`} />
                 <span>{link.label}</span>
               </a>
             );
           })}
-          <div className="pt-2 border-t border-dark-border flex justify-between">
-            <a href="/" target="_blank" className="text-xs text-gray-400 flex items-center gap-1">
-              Live Store ↗
+
+          <div className="pt-2 border-t border-[#30343A] flex justify-between items-center text-xs">
+            <a href="/" target="_blank" className="text-[#8C8F95] hover:text-[#C9A96A] flex items-center gap-1">
+              <Store className="w-3.5 h-3.5" /> View Storefront
             </a>
-            <button onClick={handleLogout} className="text-xs font-semibold text-rose-400">
+            <button onClick={handleLogout} className="text-[#D96B6B] font-semibold">
               Log Out
             </button>
           </div>
         </div>
       )}
 
-      {/* Main Admin Page Content */}
-      <main className="flex-1 p-4 sm:p-8 lg:p-10 overflow-y-auto max-w-7xl">
-        {children}
+      {/* Main Admin Content Viewport */}
+      <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8 bg-[#101114]">
+        <div className="max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
   );
