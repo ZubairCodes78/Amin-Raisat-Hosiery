@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Lock, ArrowRight } from 'lucide-react';
+import { Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 
 const ADMIN_AUTH_KEY = 'arh_admin_auth_token_v1';
 const REQUIRED_ADMIN_PASS = 'Amin7866@';
@@ -23,28 +23,28 @@ export default function AdminLoginPage() {
       localStorage.setItem(ADMIN_AUTH_KEY, 'authenticated');
       router.push('/admin');
     } else {
-      setError('Incorrect password. Please try again.');
+      setError('Incorrect password. Please verify and try again.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-dark-surface border border-dark-border rounded-3xl p-8 sm:p-10 shadow-elevation space-y-6">
+    <div className="min-h-screen bg-[#101114] text-[#F1F0EC] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-[#17191D] border border-[#30343A] rounded-3xl p-8 sm:p-10 shadow-elevation space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto overflow-hidden flex items-center justify-center">
+          <div className="relative w-20 h-20 sm:w-22 sm:h-22 mx-auto overflow-hidden flex items-center justify-center bg-[#1D2025] rounded-2xl border border-[#30343A] p-2">
             <Image
               src="/images/Favicon Logo.jpeg"
               alt="Amin Raisat Hosiery"
               fill
-              className="object-contain rounded-2xl"
+              className="object-contain rounded-xl"
               priority
             />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-100">Owner Admin Login</h1>
-            <p className="font-serif italic text-xs sm:text-sm text-gold-400 mt-0.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#F1F0EC]">Owner Admin Portal</h1>
+            <p className="text-xs sm:text-sm text-[#C9A96A] font-semibold mt-0.5">
               Amin Raisat Hosiery
             </p>
           </div>
@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 bg-rose-950/60 border border-rose-800/60 text-rose-300 rounded-xl text-xs font-semibold text-center animate-in fade-in">
+          <div className="p-3.5 bg-[#D96B6B]/10 border border-[#D96B6B]/30 text-[#D96B6B] rounded-xl text-xs font-semibold text-center animate-in fade-in">
             {error}
           </div>
         )}
@@ -60,8 +60,8 @@ export default function AdminLoginPage() {
         {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-gray-300">
-              Admin Password
+            <label className="block text-xs font-semibold text-[#D8D8D4]">
+              Admin Security Password
             </label>
             <div className="relative">
               <input
@@ -72,28 +72,27 @@ export default function AdminLoginPage() {
                   setPassword(e.target.value);
                   if (error) setError('');
                 }}
-                className="w-full pl-10 pr-4 py-3 bg-dark-card border border-dark-border rounded-xl text-sm text-gray-100 focus:outline-none focus:border-gold-500 transition-all placeholder:text-gray-500"
+                className="w-full pl-10 pr-4 py-3 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none transition-all placeholder:text-[#85888E]"
                 autoFocus
                 required
               />
-              <Lock className="w-4 h-4 text-gold-400 absolute left-3.5 top-3.5" />
+              <Lock className="w-4 h-4 text-[#C9A96A] absolute left-3.5 top-3.5" />
             </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 px-6 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-bold text-xs shadow-glow-gold transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
+            className="w-full py-3.5 px-6 rounded-xl bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
           >
-            <span>{isLoading ? 'Verifying...' : 'Login to Dashboard'}</span>
+            <span>{isLoading ? 'Authenticating...' : 'Access Admin Dashboard'}</span>
             <ArrowRight className="w-4 h-4 stroke-[2.5]" />
           </button>
         </form>
 
-        <div className="pt-2 text-center">
-          <p className="text-[11px] text-gray-500">
-            Protected Store Owner Management Portal
-          </p>
+        <div className="pt-2 text-center flex items-center justify-center gap-1.5 text-[11px] text-[#85888E]">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#3FB982]" />
+          <span>Encrypted Store Management Session</span>
         </div>
       </div>
     </div>

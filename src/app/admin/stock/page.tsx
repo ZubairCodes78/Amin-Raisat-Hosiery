@@ -16,10 +16,12 @@ import {
   Edit2,
   XCircle,
   Eye,
+  Boxes,
+  CheckCircle,
 } from 'lucide-react';
 
 export default function AdminStockPage() {
-  const { products, categories, subcategories, updateProductVariants } = useStore();
+  const { products, categories, subcategories, updateProductVariants, isLoading } = useStore();
 
   // Working state for all products: { [productId]: ProductVariant[] }
   const [stockMap, setStockMap] = useState<{ [productId: string]: ProductVariant[] }>({});
@@ -80,10 +82,11 @@ export default function AdminStockPage() {
     try {
       await updateProductVariants(productId, variants);
       const prodName = products.find((p) => p.id === productId)?.name || 'Product';
-      setSaveSuccessMsg(`Stock numbers for "${prodName}" updated live!`);
+      setSaveSuccessMsg(`Stock levels for "${prodName}" updated live!`);
       setTimeout(() => setSaveSuccessMsg(''), 3000);
     } catch (err) {
-      alert('Failed to save stock numbers.');
+      setSaveSuccessMsg('Unable to save stock numbers. Please try again.');
+      setTimeout(() => setSaveSuccessMsg(''), 3000);
     } finally {
       setIsSaving(false);
     }
@@ -166,95 +169,100 @@ export default function AdminStockPage() {
   }, [activeDetailProduct, stockMap]);
 
   return (
-    <div className="space-y-6 max-w-7xl text-gray-100">
+    <div className="space-y-6 max-w-7xl text-[#F1F0EC]">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-dark-surface p-6 rounded-2xl border border-dark-border shadow-card">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#17191D] p-6 rounded-2xl border border-[#30343A] shadow-card">
         <div>
-          <h1 className="text-xl font-extrabold text-gray-100">
-            Inventory &amp; Stock Manager
-          </h1>
-          <p className="text-xs text-gray-400 mt-1">
-            Compact catalog inventory overview. Select any garment to inspect and adjust individual size/variant stock.
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-[#F1F0EC]">
+              Inventory &amp; Stock Matrix
+            </h1>
+            <span className="text-xs font-bold bg-[#1D2025] text-[#C9A96A] border border-[#30343A] px-2.5 py-0.5 rounded-lg">
+              {catalogSummary.totalStockUnits.toLocaleString()} Pcs Total
+            </span>
+          </div>
+          <p className="text-xs text-[#85888E] mt-1">
+            Real-time catalog inventory telemetry. Select any garment listing to inspect and adjust individual variant stock.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <Link
             href="/admin/products"
-            className="inline-flex items-center gap-1.5 bg-gold-500 hover:bg-gold-400 text-black text-xs font-bold h-10 px-4 rounded-xl shadow-glow-gold transition-all active:scale-[0.99]"
+            className="inline-flex items-center gap-1.5 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold h-10 px-4 rounded-xl shadow-xs transition-all active:scale-[0.99]"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add New Product</span>
+            <span>Add New Garment</span>
           </Link>
         </div>
       </div>
 
       {/* Success Notification */}
       {saveSuccessMsg && (
-        <div className="p-3.5 bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm animate-in fade-in">
-          <Check className="w-4 h-4 text-emerald-400" />
+        <div className="p-3.5 bg-[#17191D] text-[#F1F0EC] border border-[#3FB982]/40 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm animate-in fade-in">
+          <Check className="w-4 h-4 text-[#3FB982]" />
           <span>{saveSuccessMsg}</span>
         </div>
       )}
 
       {/* Summary Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <div className="bg-dark-surface p-4 rounded-2xl border border-dark-border shadow-card">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-            Total Products
+        <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
+            Total Garments
           </span>
-          <div className="text-lg sm:text-xl font-extrabold text-gold-400 mt-1">
+          <div className="text-lg sm:text-xl font-bold text-[#C9A96A] mt-1">
             {catalogSummary.totalProductsCount}
           </div>
-          <span className="text-[10px] text-gray-500 mt-0.5 block">Catalog Garments</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block">Live Listings</span>
         </div>
 
-        <div className="bg-dark-surface p-4 rounded-2xl border border-dark-border shadow-card">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+        <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
             Total Variants
           </span>
-          <div className="text-lg sm:text-xl font-extrabold text-gray-100 mt-1">
+          <div className="text-lg sm:text-xl font-bold text-[#F1F0EC] mt-1">
             {catalogSummary.totalVariantsCount}
           </div>
-          <span className="text-[10px] text-gray-500 mt-0.5 block">Size &amp; Style Tiers</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block">Size &amp; Sleeve Tiers</span>
         </div>
 
-        <div className="bg-dark-surface p-4 rounded-2xl border border-dark-border shadow-card">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+        <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
             Units In Stock
           </span>
-          <div className="text-lg sm:text-xl font-extrabold text-emerald-400 mt-1">
+          <div className="text-lg sm:text-xl font-bold text-[#3FB982] mt-1">
             {catalogSummary.totalStockUnits.toLocaleString()}
           </div>
-          <span className="text-[10px] text-gray-500 mt-0.5 block">Available Pieces</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block">Available Pieces</span>
         </div>
 
-        <div className="bg-dark-surface p-4 rounded-2xl border border-dark-border shadow-card">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+        <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
             Low Stock (&le; 10)
           </span>
-          <div className={`text-lg sm:text-xl font-extrabold mt-1 ${catalogSummary.lowStockCount > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+          <div className={`text-lg sm:text-xl font-bold mt-1 ${catalogSummary.lowStockCount > 0 ? 'text-[#D6A84F]' : 'text-[#3FB982]'}`}>
             {catalogSummary.lowStockCount}
           </div>
-          <span className="text-[10px] text-gray-500 mt-0.5 block">Need Replenishment</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block">Need Replenishment</span>
         </div>
 
-        <div className="bg-dark-surface p-4 rounded-2xl border border-dark-border shadow-card col-span-2 sm:col-span-1">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+        <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card col-span-2 sm:col-span-1">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
             Out of Stock
           </span>
-          <div className={`text-lg sm:text-xl font-extrabold mt-1 ${catalogSummary.outOfStockCount > 0 ? 'text-rose-400' : 'text-gray-100'}`}>
+          <div className={`text-lg sm:text-xl font-bold mt-1 ${catalogSummary.outOfStockCount > 0 ? 'text-[#D96B6B]' : 'text-[#F1F0EC]'}`}>
             {catalogSummary.outOfStockCount}
           </div>
-          <span className="text-[10px] text-gray-500 mt-0.5 block">0 Units Left</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block">0 Units Remaining</span>
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-dark-surface p-4 rounded-2xl border border-dark-border shadow-card">
+      <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
+            <label className="block text-[10px] font-bold text-[#85888E] uppercase mb-1">
               Category
             </label>
             <select
@@ -263,7 +271,7 @@ export default function AdminStockPage() {
                 setSelectedCategoryId(e.target.value);
                 setSelectedSubcatId('all');
               }}
-              className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+              className="w-full px-3 py-2 text-xs bg-[#1D2025] border border-[#343840] rounded-xl text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
             >
               <option value="all">All Categories ({categories.length})</option>
               {categories.map((cat) => (
@@ -275,13 +283,13 @@ export default function AdminStockPage() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
+            <label className="block text-[10px] font-bold text-[#85888E] uppercase mb-1">
               Subcategory
             </label>
             <select
               value={selectedSubcatId}
               onChange={(e) => setSelectedSubcatId(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+              className="w-full px-3 py-2 text-xs bg-[#1D2025] border border-[#343840] rounded-xl text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
             >
               <option value="all">All Subcategories</option>
               {availableSubcategories.map((sub) => (
@@ -293,13 +301,13 @@ export default function AdminStockPage() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
+            <label className="block text-[10px] font-bold text-[#85888E] uppercase mb-1">
               Stock Status
             </label>
             <select
               value={stockFilter}
               onChange={(e) => setStockFilter(e.target.value as any)}
-              className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+              className="w-full px-3 py-2 text-xs bg-[#1D2025] border border-[#343840] rounded-xl text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
             >
               <option value="all">All Statuses</option>
               <option value="in-stock">In Stock (&gt; 10)</option>
@@ -309,7 +317,7 @@ export default function AdminStockPage() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">
+            <label className="block text-[10px] font-bold text-[#85888E] uppercase mb-1">
               Search Garment
             </label>
             <div className="relative">
@@ -318,9 +326,9 @@ export default function AdminStockPage() {
                 placeholder="Product name, SKU..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+                className="w-full pl-8 pr-3 py-2 text-xs bg-[#1D2025] border border-[#343840] rounded-xl text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
               />
-              <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
+              <Search className="w-3.5 h-3.5 text-[#85888E] absolute left-2.5 top-2.5" />
             </div>
           </div>
         </div>
@@ -328,18 +336,18 @@ export default function AdminStockPage() {
 
       {/* Main Inventory Overview List */}
       {filteredProducts.length === 0 ? (
-        <div className="bg-dark-surface rounded-2xl p-12 text-center border border-dark-border space-y-3 shadow-card">
-          <Package className="w-10 h-10 text-gray-500 mx-auto" />
-          <h3 className="font-bold text-base text-gray-200">No products match your filter</h3>
-          <p className="text-xs text-gray-400 max-w-sm mx-auto">
+        <div className="bg-[#17191D] rounded-2xl p-12 text-center border border-[#30343A] space-y-3 shadow-card">
+          <Package className="w-10 h-10 text-[#85888E] mx-auto" />
+          <h3 className="font-bold text-base text-[#F1F0EC]">No products match your filter</h3>
+          <p className="text-xs text-[#85888E] max-w-sm mx-auto">
             Try adjusting your search criteria or add new garments from the Product Manager.
           </p>
         </div>
       ) : (
-        <div className="bg-dark-surface rounded-2xl border border-dark-border shadow-card overflow-hidden">
+        <div className="bg-[#17191D] rounded-2xl border border-[#30343A] shadow-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-dark-card text-gold-400 uppercase font-bold text-[10px] border-b border-dark-border">
+              <thead className="bg-[#1D2025] text-[#C9A96A] uppercase font-bold text-[10px] border-b border-[#30343A]">
                 <tr>
                   <th className="p-3.5">Product &amp; Category</th>
                   <th className="p-3.5 text-center">Total In Stock</th>
@@ -349,7 +357,7 @@ export default function AdminStockPage() {
                   <th className="p-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-dark-border font-medium text-gray-300">
+              <tbody className="divide-y divide-[#272A2F] font-medium text-[#B4B5BA]">
                 {filteredProducts.map((product) => {
                   const category = categories.find((c) => c.id === product.categoryId);
                   const subcategory = subcategories.find((s) => s.id === product.subcategoryId);
@@ -368,12 +376,12 @@ export default function AdminStockPage() {
                   return (
                     <tr
                       key={product.id}
-                      className="hover:bg-dark-hover transition-colors"
+                      className="hover:bg-[#1D2025]/60 transition-colors"
                     >
                       {/* Product & Category */}
                       <td className="p-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="relative w-12 h-14 bg-dark-card rounded-xl overflow-hidden border border-dark-border flex-shrink-0 p-0.5">
+                          <div className="relative w-12 h-14 bg-[#202329] rounded-xl overflow-hidden border border-[#30343A] flex-shrink-0 p-0.5">
                             <Image
                               src={primaryImage}
                               alt={product.name}
@@ -384,35 +392,35 @@ export default function AdminStockPage() {
                           </div>
 
                           <div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-gold-500/80 block">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#C9A96A] block">
                               {category?.name || 'Category'} {subcategory ? `• ${subcategory.name}` : ''}
                             </span>
-                            <h3 className="font-bold text-sm text-gray-100 leading-snug">
+                            <h3 className="font-bold text-sm text-[#F1F0EC] leading-snug">
                               {product.name}
                             </h3>
-                            <p className="text-[11px] text-gray-400 line-clamp-1">{product.subtitle}</p>
+                            <p className="text-[11px] text-[#85888E] line-clamp-1">{product.subtitle}</p>
                           </div>
                         </div>
                       </td>
 
                       {/* Total In Stock */}
                       <td className="p-3.5 text-center">
-                        <span className="font-extrabold text-sm text-gold-400">
+                        <span className="font-bold text-sm text-[#C9A96A]">
                           {totalStock.toLocaleString()}
                         </span>
-                        <span className="text-[10px] text-gray-500 block">Pieces</span>
+                        <span className="text-[10px] text-[#85888E] block">Pieces</span>
                       </td>
 
                       {/* Variants Count */}
                       <td className="p-3.5 text-center">
-                        <span className="font-bold text-xs bg-dark-card border border-dark-border text-gray-300 px-2 py-0.5 rounded">
+                        <span className="font-bold text-xs bg-[#202329] border border-[#30343A] text-[#B4B5BA] px-2 py-0.5 rounded-md">
                           {variants.length} Variants
                         </span>
                       </td>
 
                       {/* Price Range */}
                       <td className="p-3.5">
-                        <span className="font-bold text-xs text-gray-200">
+                        <span className="font-bold text-xs text-[#F1F0EC]">
                           {minPrice === maxPrice ? `Rs. ${minPrice}` : `Rs. ${minPrice} – Rs. ${maxPrice}`}
                         </span>
                       </td>
@@ -421,16 +429,16 @@ export default function AdminStockPage() {
                       <td className="p-3.5">
                         <div className="space-y-1">
                           {totalStock <= 0 ? (
-                            <span className="inline-flex items-center gap-1 text-rose-300 font-bold text-[10px] bg-rose-950/60 border border-rose-800/60 px-2 py-0.5 rounded">
-                              <XCircle className="w-3 h-3 text-rose-400" /> Out of Stock
+                            <span className="inline-flex items-center gap-1 text-[#D96B6B] font-bold text-[10px] bg-[#D96B6B]/15 border border-[#D96B6B]/30 px-2 py-0.5 rounded-md">
+                              <XCircle className="w-3 h-3 text-[#D96B6B]" /> Out of Stock
                             </span>
                           ) : lowStockVarsCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-amber-300 font-bold text-[10px] bg-amber-950/60 border border-amber-800/60 px-2 py-0.5 rounded">
-                              <AlertTriangle className="w-3 h-3 text-amber-400" /> {lowStockVarsCount} Low
+                            <span className="inline-flex items-center gap-1 text-[#D6A84F] font-bold text-[10px] bg-[#D6A84F]/15 border border-[#D6A84F]/30 px-2 py-0.5 rounded-md">
+                              <AlertTriangle className="w-3 h-3 text-[#D6A84F]" /> {lowStockVarsCount} Low
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold text-[10px] bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
-                              <Check className="w-3 h-3 text-emerald-400" /> In Stock
+                            <span className="inline-flex items-center gap-1 text-[#3FB982] font-semibold text-[10px] bg-[#3FB982]/15 border border-[#3FB982]/30 px-2 py-0.5 rounded-md">
+                              <Check className="w-3 h-3 text-[#3FB982]" /> In Stock
                             </span>
                           )}
                         </div>
@@ -441,10 +449,10 @@ export default function AdminStockPage() {
                         <button
                           type="button"
                           onClick={() => setActiveDetailProductId(product.id)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-dark-card hover:bg-dark-hover text-gray-200 hover:text-gold-400 border border-dark-border rounded-xl text-xs font-semibold transition-all"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#202329] hover:bg-[#272A2F] text-[#F1F0EC] hover:text-[#C9A96A] border border-[#30343A] rounded-xl text-xs font-semibold transition-all"
                         >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>View Details</span>
+                          <Eye className="w-3.5 h-3.5 text-[#C9A96A]" />
+                          <span>View Matrix</span>
                         </button>
                       </td>
                     </tr>
@@ -458,11 +466,11 @@ export default function AdminStockPage() {
 
       {/* Variant Details Modal */}
       {activeDetailProduct && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
-          <div className="bg-dark-surface rounded-2xl w-full max-w-5xl shadow-elevation border border-dark-border overflow-hidden flex flex-col max-h-[92vh]">
-            <div className="p-4 sm:p-6 border-b border-dark-border bg-dark-card flex items-start justify-between gap-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#101114]/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
+          <div className="bg-[#17191D] rounded-2xl w-full max-w-5xl shadow-elevation border border-[#30343A] overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="p-4 sm:p-6 border-b border-[#30343A] bg-[#1D2025] flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="relative w-14 h-16 sm:w-16 sm:h-20 bg-dark-surface rounded-xl overflow-hidden border border-dark-border flex-shrink-0 p-1">
+                <div className="relative w-14 h-16 sm:w-16 sm:h-20 bg-[#202329] rounded-xl overflow-hidden border border-[#30343A] flex-shrink-0 p-1">
                   <Image
                     src={
                       activeDetailProduct.media?.[0]?.url ||
@@ -476,11 +484,11 @@ export default function AdminStockPage() {
                 </div>
 
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-100">
+                  <h2 className="text-lg sm:text-xl font-bold text-[#F1F0EC]">
                     {activeDetailProduct.name}
                   </h2>
-                  <p className="text-xs text-gray-400">
-                    Total Stock: <strong className="text-gold-400">{activeProductVariants.reduce((sum, v) => sum + (v.stock || 0), 0)} pcs</strong>
+                  <p className="text-xs text-[#85888E]">
+                    Total Stock: <strong className="text-[#C9A96A]">{activeProductVariants.reduce((sum, v) => sum + (v.stock || 0), 0)} pcs</strong>
                   </p>
                 </div>
               </div>
@@ -488,7 +496,7 @@ export default function AdminStockPage() {
               <button
                 type="button"
                 onClick={() => setActiveDetailProductId(null)}
-                className="p-1.5 text-gray-400 hover:text-gray-100 rounded-lg hover:bg-dark-hover transition-colors"
+                className="p-1.5 text-[#85888E] hover:text-[#F1F0EC] rounded-lg hover:bg-[#202329] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -496,10 +504,10 @@ export default function AdminStockPage() {
 
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              <div className="border border-dark-border rounded-xl overflow-hidden shadow-card">
+              <div className="border border-[#30343A] rounded-xl overflow-hidden shadow-card">
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-dark-card text-gold-400 uppercase font-bold text-[10px] border-b border-dark-border">
+                    <thead className="bg-[#1D2025] text-[#C9A96A] uppercase font-bold text-[10px] border-b border-[#30343A]">
                       <tr>
                         <th className="p-3">Style</th>
                         <th className="p-3 text-center">Size</th>
@@ -510,7 +518,7 @@ export default function AdminStockPage() {
                         <th className="p-3">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-dark-border font-medium text-gray-300">
+                    <tbody className="divide-y divide-[#272A2F] font-medium text-[#B4B5BA]">
                       {activeProductVariants.map((variant) => {
                         const isLow = variant.stock > 0 && variant.stock <= 10;
                         const isOut = variant.stock <= 0;
@@ -518,20 +526,20 @@ export default function AdminStockPage() {
                         return (
                           <tr
                             key={variant.id}
-                            className={`hover:bg-dark-hover transition-colors ${
-                              isOut ? 'bg-rose-950/20' : isLow ? 'bg-amber-950/20' : ''
+                            className={`hover:bg-[#1D2025]/60 transition-colors ${
+                              isOut ? 'bg-[#D96B6B]/10' : isLow ? 'bg-[#D6A84F]/10' : ''
                             }`}
                           >
-                            <td className="p-3 text-gray-200 font-semibold">{variant.sleeve}</td>
+                            <td className="p-3 text-[#F1F0EC] font-semibold">{variant.sleeve}</td>
                             <td className="p-3 text-center">
-                              <span className="font-bold bg-gold-500 text-black px-2 py-0.5 rounded text-xs">
+                              <span className="font-bold bg-[#202329] text-[#C9A96A] border border-[#30343A] px-2 py-0.5 rounded-md text-xs">
                                 {variant.size}
                               </span>
                             </td>
-                            <td className="p-3 text-gray-400 font-mono text-[11px]">
+                            <td className="p-3 text-[#85888E] font-mono text-[11px]">
                               {variant.sku || '—'}
                             </td>
-                            <td className="p-3 font-bold text-gold-400">Rs. {variant.price}</td>
+                            <td className="p-3 font-bold text-[#C9A96A]">Rs. {variant.price}</td>
                             <td className="p-3">
                               <input
                                 type="number"
@@ -544,7 +552,7 @@ export default function AdminStockPage() {
                                     Number(e.target.value)
                                   )
                                 }
-                                className="w-20 sm:w-24 px-2.5 py-1.5 text-xs font-bold rounded-xl border bg-dark-card border-dark-border text-gray-100 focus:outline-none focus:border-gold-500"
+                                className="w-20 sm:w-24 px-2.5 py-1.5 text-xs font-bold rounded-xl border bg-[#1D2025] border-[#343840] text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
                               />
                             </td>
                             <td className="p-3">
@@ -554,7 +562,7 @@ export default function AdminStockPage() {
                                   onClick={() =>
                                     handleQuickAdjust(activeDetailProduct.id, variant.id, -5)
                                   }
-                                  className="px-2 py-1 bg-dark-card hover:bg-dark-hover text-gray-300 rounded-lg text-[11px] border border-dark-border"
+                                  className="px-2 py-1 bg-[#202329] hover:bg-[#272A2F] text-[#B4B5BA] rounded-lg text-[11px] border border-[#30343A]"
                                 >
                                   -5
                                 </button>
@@ -563,7 +571,7 @@ export default function AdminStockPage() {
                                   onClick={() =>
                                     handleQuickAdjust(activeDetailProduct.id, variant.id, 10)
                                   }
-                                  className="px-2 py-1 bg-dark-card hover:bg-dark-hover text-gray-300 rounded-lg text-[11px] border border-dark-border"
+                                  className="px-2 py-1 bg-[#202329] hover:bg-[#272A2F] text-[#B4B5BA] rounded-lg text-[11px] border border-[#30343A]"
                                 >
                                   +10
                                 </button>
@@ -572,7 +580,7 @@ export default function AdminStockPage() {
                                   onClick={() =>
                                     handleQuickAdjust(activeDetailProduct.id, variant.id, 50)
                                   }
-                                  className="px-2 py-1 bg-gold-500 text-black font-bold rounded-lg text-[11px]"
+                                  className="px-2 py-1 bg-[#C9A96A] text-[#101114] font-bold rounded-lg text-[11px]"
                                 >
                                   +50
                                 </button>
@@ -580,15 +588,15 @@ export default function AdminStockPage() {
                             </td>
                             <td className="p-3">
                               {isOut ? (
-                                <span className="inline-flex items-center gap-1 text-rose-300 font-bold text-[10px] bg-rose-950/60 border border-rose-800/60 px-2 py-0.5 rounded">
+                                <span className="inline-flex items-center gap-1 text-[#D96B6B] font-bold text-[10px] bg-[#D96B6B]/15 border border-[#D96B6B]/30 px-2 py-0.5 rounded-md">
                                   <XCircle className="w-3 h-3" /> Out
                                 </span>
                               ) : isLow ? (
-                                <span className="inline-flex items-center gap-1 text-amber-300 font-bold text-[10px] bg-amber-950/60 border border-amber-800/60 px-2 py-0.5 rounded">
+                                <span className="inline-flex items-center gap-1 text-[#D6A84F] font-bold text-[10px] bg-[#D6A84F]/15 border border-[#D6A84F]/30 px-2 py-0.5 rounded-md">
                                   <AlertTriangle className="w-3 h-3" /> Low ({variant.stock})
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold text-[10px] bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">
+                                <span className="inline-flex items-center gap-1 text-[#3FB982] font-semibold text-[10px] bg-[#3FB982]/15 border border-[#3FB982]/30 px-2 py-0.5 rounded-md">
                                   <Check className="w-3 h-3" /> Ready ({variant.stock})
                                 </span>
                               )}
@@ -603,11 +611,11 @@ export default function AdminStockPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 sm:p-5 border-t border-dark-border bg-dark-card flex items-center justify-between">
+            <div className="p-4 sm:p-5 border-t border-[#30343A] bg-[#1D2025] flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setActiveDetailProductId(null)}
-                className="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-gray-100 rounded-xl"
+                className="px-4 py-2 text-xs font-semibold text-[#85888E] hover:text-[#F1F0EC] rounded-xl"
               >
                 Close
               </button>
@@ -616,10 +624,10 @@ export default function AdminStockPage() {
                 type="button"
                 onClick={() => handleSaveProductStock(activeDetailProduct.id)}
                 disabled={isSaving}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gold-500 hover:bg-gold-400 text-black text-xs font-bold rounded-xl shadow-glow-gold transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
-                <span>{isSaving ? 'Saving Changes...' : 'Save Stock Changes'}</span>
+                <span>{isSaving ? 'Saving Changes...' : 'Save Stock Levels'}</span>
               </button>
             </div>
           </div>

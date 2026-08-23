@@ -17,7 +17,14 @@ import {
   ArrowLeft,
   Boxes,
   Zap,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
+import { ConfirmModal } from '@/components/admin/ConfirmModal';
 
 export default function AdminProductsPage() {
   const {
@@ -27,6 +34,7 @@ export default function AdminProductsPage() {
     saveProduct,
     deleteProduct,
     uploadMediaFile,
+    isLoading,
   } = useStore();
 
   // Mode: 'list' | 'editor'
@@ -34,14 +42,25 @@ export default function AdminProductsPage() {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   // Notification Toast
-  const [notification, setNotification] = useState('');
-  const showNotice = (msg: string) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(''), 3000);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const showNotice = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3500);
   };
+
+  // Delete Confirmation Modal State
+  const [deleteModalState, setDeleteModalState] = useState<{ isOpen: boolean; productId: string; productName: string }>({
+    isOpen: false,
+    productId: '',
+    productName: '',
+  });
+
+  // Clear Matrix Modal State
+  const [isClearMatrixModalOpen, setIsClearMatrixModalOpen] = useState(false);
 
   // ------------------ 1. BASIC PRODUCT INFO STATE ------------------
   const [prodName, setProdName] = useState('');
+  const [prodQualityGrade, setProdQualityGrade] = useState('High Quality');
   const [prodSlug, setProdSlug] = useState('');
   const [prodSubtitle, setProdSubtitle] = useState('');
   const [prodDesc, setProdDesc] = useState('');
@@ -53,7 +72,7 @@ export default function AdminProductsPage() {
   const [prodShippingText, setProdShippingText] = useState('');
 
   // ------------------ 2. DYNAMIC VARIANT SYSTEM STATE ------------------
-  const [customQualities, setCustomQualities] = useState<string[]>(['High Quality', 'Standard Quality']);
+  const [customQualities, setCustomQualities] = useState<string[]>(['High Quality']);
   const [newQualityInput, setNewQualityInput] = useState('');
   const [isAddQualityOpen, setIsAddQualityOpen] = useState(false);
 
@@ -88,12 +107,16 @@ export default function AdminProductsPage() {
   const [uploadQualityTarget, setUploadQualityTarget] = useState<string>('All');
   const [uploadSleeveTarget, setUploadSleeveTarget] = useState<string>('All');
   const [uploadMediaTitle, setUploadMediaTitle] = useState('');
-  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<'idle' | 'uploading' | 'uploaded' | 'failed'>('idle');
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   // Active Editor Tab
   const [editorTab, setEditorTab] = useState<'basic' | 'variants' | 'media'>('basic');
+
+  // Search & Filter
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   // Available subcategories for chosen category
   const activeSubcatsForCategory = useMemo(() => {
@@ -107,10 +130,23 @@ export default function AdminProductsPage() {
     return fromVars.length > 0 ? fromVars : customStyles;
   }, [variantsList, customStyles]);
 
+  // Filtered products list
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchSearch =
+        p.name.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+        (p.subtitle || '').toLowerCase().includes(catalogSearch.toLowerCase()) ||
+        p.slug.toLowerCase().includes(catalogSearch.toLowerCase());
+      const matchCategory = categoryFilter === 'all' || p.categoryId === categoryFilter;
+      return matchSearch && matchCategory;
+    });
+  }, [products, catalogSearch, categoryFilter]);
+
   // ------------------ OPEN CREATE FORM ------------------
   const handleStartCreate = () => {
     setEditingProductId(null);
     setProdName('');
+    setProdQualityGrade('High Quality');
     setProdSlug('');
     setProdSubtitle('');
     setProdDesc('');
@@ -119,11 +155,11 @@ export default function AdminProductsPage() {
     const defaultSub = subcategories.find((s) => s.categoryId === defaultCat)?.id || '';
     setProdSubcategoryId(defaultSub);
     setProdIsPublished(true);
-    setProdFeaturesText('100% Pure Combed Cotton\nAnti-Sag Neck Seams\nBreathable Rib Knit\nPreshrunk Fabric');
+    setProdFeaturesText('100% Pure Combed Cotton\nAnti-Sag Double Top-Stitched Neck\nBreathable 1x1 Rib Knit Weave\nPre-Shrunk Colorfast Fabric');
     setProdCareText('Machine wash cold\nDo not bleach\nTumble dry low\nWarm iron if needed');
     setProdShippingText('Nationwide Cash on Delivery (COD) across Pakistan. Free delivery on 3+ pieces.');
 
-    const initialQualities = ['High Quality', 'Standard Quality'];
+    const initialQualities = ['High Quality'];
     const initialStyles = ['Sleeveless', 'Full Sleeve'];
     const initialSizes = ['S', 'M', 'L', 'XL', 'XXL'];
 
@@ -153,6 +189,7 @@ export default function AdminProductsPage() {
   const handleStartEdit = (prod: Product) => {
     setEditingProductId(prod.id);
     setProdName(prod.name);
+    setProdQualityGrade(prod.variants?.[0]?.quality || 'High Quality');
     setProdSlug(prod.slug);
     setProdSubtitle(prod.subtitle || '');
     setProdDesc(prod.description || '');
@@ -173,7 +210,7 @@ export default function AdminProductsPage() {
       new Set(prod.variants.map((v) => v.size).filter(Boolean))
     );
 
-    setCustomQualities(qualitiesFromVars.length > 0 ? qualitiesFromVars : ['High Quality', 'Standard Quality']);
+    setCustomQualities(qualitiesFromVars.length > 0 ? qualitiesFromVars : ['High Quality']);
     setCustomStyles(stylesFromVars.length > 0 ? stylesFromVars : ['Sleeveless', 'Full Sleeve']);
     setCustomSizes(sizesFromVars.length > 0 ? sizesFromVars : ['S', 'M', 'L', 'XL', 'XXL']);
 
@@ -187,12 +224,13 @@ export default function AdminProductsPage() {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prodName.trim()) {
-      alert('Please enter a Product Name.');
+      showNotice('Please enter a Product Name.', 'error');
+      setEditorTab('basic');
       return;
     }
 
     if (variantsList.length === 0) {
-      alert('Please add or generate at least 1 variant for this product.');
+      showNotice('Please generate or add at least 1 variant for this product.', 'error');
       setEditorTab('variants');
       return;
     }
@@ -216,6 +254,7 @@ export default function AdminProductsPage() {
       ...v,
       id: v.id || `var-${currentId}-${i + 1}`,
       productId: currentId,
+      quality: v.quality || prodQualityGrade || 'High Quality',
     }));
 
     const cleanMedia: ProductMedia[] = mediaList.map((m, i) => ({
@@ -257,16 +296,25 @@ export default function AdminProductsPage() {
       media: cleanMedia,
     };
 
-    await saveProduct(productToSave);
-    showNotice(editingProductId ? 'Product updated successfully!' : 'New product created successfully!');
-    setViewMode('list');
+    try {
+      await saveProduct(productToSave);
+      showNotice(editingProductId ? `Updated "${productToSave.name}" successfully!` : `Created new garment "${productToSave.name}" live on store!`);
+      setViewMode('list');
+    } catch (err) {
+      showNotice('Unable to save product to Supabase. Please try again.', 'error');
+    }
   };
 
-  // ------------------ DELETE PRODUCT ------------------
-  const handleDeleteProduct = async (id: string, name: string) => {
-    if (confirm(`Are you sure you want to permanently delete "${name}"?`)) {
-      await deleteProduct(id);
-      showNotice(`Product "${name}" deleted.`);
+  // ------------------ DELETE PRODUCT CONFIRMATION ------------------
+  const handleConfirmDeleteProduct = async () => {
+    if (!deleteModalState.productId) return;
+    try {
+      await deleteProduct(deleteModalState.productId);
+      showNotice(`Garment "${deleteModalState.productName}" deleted from store.`);
+    } catch (err) {
+      showNotice('Unable to delete product.', 'error');
+    } finally {
+      setDeleteModalState({ isOpen: false, productId: '', productName: '' });
     }
   };
 
@@ -283,7 +331,7 @@ export default function AdminProductsPage() {
 
   const handleRemoveQuality = (qToRemove: string) => {
     if (customQualities.length <= 1) {
-      alert('Product must have at least 1 quality option.');
+      showNotice('Product listing must have at least 1 quality designation.', 'error');
       return;
     }
     setCustomQualities(customQualities.filter((q) => q !== qToRemove));
@@ -302,7 +350,7 @@ export default function AdminProductsPage() {
 
   const handleRemoveStyle = (styleToRemove: string) => {
     if (customStyles.length <= 1) {
-      alert('Product must have at least 1 style option.');
+      showNotice('Product must have at least 1 style option.', 'error');
       return;
     }
     setCustomStyles(customStyles.filter((s) => s !== styleToRemove));
@@ -321,7 +369,7 @@ export default function AdminProductsPage() {
 
   const handleRemoveSize = (sizeToRemove: string) => {
     if (customSizes.length <= 1) {
-      alert('Product must have at least 1 size option.');
+      showNotice('Product must have at least 1 size option.', 'error');
       return;
     }
     setCustomSizes(customSizes.filter((s) => s !== sizeToRemove));
@@ -330,7 +378,7 @@ export default function AdminProductsPage() {
   // ------------------ BULK GENERATE ALL COMBINATIONS ------------------
   const handleGenerateCombinations = () => {
     if (customQualities.length === 0 || customStyles.length === 0 || customSizes.length === 0) {
-      alert('Please define at least 1 quality, 1 style, and 1 size before generating variants.');
+      showNotice('Please define at least 1 quality, 1 style, and 1 size before generating variants.', 'error');
       return;
     }
 
@@ -372,7 +420,7 @@ export default function AdminProductsPage() {
     }
 
     setVariantsList(generated);
-    showNotice(`Generated ${generated.length} variant combinations! You can now adjust or delete any combination.`);
+    showNotice(`Generated matrix with ${generated.length} variant combinations!`);
   };
 
   // ------------------ ADD SINGLE CUSTOM VARIANT ------------------
@@ -429,12 +477,12 @@ export default function AdminProductsPage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setIsUploadingFiles(true);
+    setUploadProgress('uploading');
     try {
       const newItems: ProductMedia[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const uploadedUrl = await uploadMediaFile(file);
+        const uploadedUrl = await uploadMediaFile(file, 'products');
 
         newItems.push({
           id: `media-upl-${Date.now()}-${i}`,
@@ -450,12 +498,15 @@ export default function AdminProductsPage() {
       }
 
       setMediaList((prev) => [...prev, ...newItems]);
+      setUploadProgress('uploaded');
       showNotice(`Successfully uploaded ${files.length} photo(s) to Supabase Storage.`);
       setUploadMediaTitle('');
+      setTimeout(() => setUploadProgress('idle'), 3000);
     } catch (err) {
-      alert('Error uploading file to storage. Please try again.');
+      setUploadProgress('failed');
+      showNotice('Error uploading image to storage. Please try again.', 'error');
+      setTimeout(() => setUploadProgress('idle'), 4000);
     } finally {
-      setIsUploadingFiles(false);
       e.target.value = '';
     }
   };
@@ -476,7 +527,7 @@ export default function AdminProductsPage() {
     setMediaList((prev) => [...prev, newVideo]);
     setVideoUrlInput('');
     setIsVideoModalOpen(false);
-    showNotice('Video added successfully.');
+    showNotice('Video reference added successfully.');
   };
 
   const handleRemoveMedia = (id: string) => {
@@ -484,14 +535,51 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-6 max-w-7xl text-[#F1F0EC]">
       {/* Toast Notification */}
       {notification && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 bg-[#1D2025] text-[#F1F0EC] border border-[#30343A] rounded-xl shadow-elevation flex items-center gap-2.5 text-xs font-semibold animate-in fade-in">
-          <Check className="w-4 h-4 text-[#3FB982]" />
-          <span>{notification}</span>
+        <div
+          className={`fixed bottom-6 right-6 z-50 p-4 rounded-xl shadow-elevation flex items-center gap-2.5 text-xs font-semibold animate-in fade-in border ${
+            notification.type === 'success'
+              ? 'bg-[#17191D] text-[#F1F0EC] border-[#3FB982]/40'
+              : 'bg-[#17191D] text-[#D96B6B] border-[#D96B6B]/40'
+          }`}
+        >
+          {notification.type === 'success' ? (
+            <CheckCircle className="w-4 h-4 text-[#3FB982]" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-[#D96B6B]" />
+          )}
+          <span>{notification.message}</span>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModalState.isOpen}
+        title="Delete Garment Catalog Listing"
+        message={`Are you sure you want to permanently remove "${deleteModalState.productName}" and all associated variant combinations from the store?`}
+        confirmLabel="Delete Garment"
+        cancelLabel="Cancel"
+        isDestructive={true}
+        onConfirm={handleConfirmDeleteProduct}
+        onCancel={() => setDeleteModalState({ isOpen: false, productId: '', productName: '' })}
+      />
+
+      {/* Clear Matrix Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isClearMatrixModalOpen}
+        title="Clear All Combinations"
+        message="Are you sure you want to remove all variants from this matrix? You will need to regenerate or add variants before saving."
+        confirmLabel="Clear Matrix"
+        cancelLabel="Keep Variants"
+        isDestructive={true}
+        onConfirm={() => {
+          setVariantsList([]);
+          setIsClearMatrixModalOpen(false);
+        }}
+        onCancel={() => setIsClearMatrixModalOpen(false)}
+      />
 
       {/* ========================================================================= */}
       {/* 1. MASTER PRODUCTS LIST VIEW */}
@@ -501,11 +589,16 @@ export default function AdminProductsPage() {
           {/* Header Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#17191D] p-5 sm:p-6 rounded-2xl border border-[#30343A] shadow-card">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#F1F0EC]">
-                Products &amp; Dynamic Catalog Manager
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#F1F0EC]">
+                  Garments &amp; Dynamic Catalog
+                </h1>
+                <span className="text-xs font-bold bg-[#1D2025] text-[#C9A96A] border border-[#30343A] px-2.5 py-0.5 rounded-lg">
+                  {products.length} Products
+                </span>
+              </div>
               <p className="text-xs text-[#85888E] mt-1">
-                Manage garments, unlimited custom quality tiers, variant combinations, live pricing, stock, and variant-specific gallery photos.
+                Manage high quality and standard quality listings, dynamic sleeve tiers, sizes, real-time pricing, stock, and gallery photos.
               </p>
             </div>
             <button
@@ -514,22 +607,53 @@ export default function AdminProductsPage() {
               className="inline-flex items-center justify-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold h-10 px-4 rounded-xl shadow-xs transition-all active:scale-[0.99] self-start sm:self-auto flex-shrink-0"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Add Product</span>
+              <span>+ Add Garment Listing</span>
             </button>
           </div>
 
+          {/* Filter / Search Strip */}
+          <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="w-full sm:w-80">
+              <input
+                type="text"
+                placeholder="Search products by name, tagline, slug..."
+                value={catalogSearch}
+                onChange={(e) => setCatalogSearch(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs bg-[#1D2025] border border-[#343840] text-[#F1F0EC] placeholder-[#85888E] rounded-xl focus:border-[#C9A96A] focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs text-[#85888E]">Category:</span>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-3 py-2 text-xs bg-[#1D2025] border border-[#343840] text-[#F1F0EC] rounded-xl focus:border-[#C9A96A] focus:outline-none"
+              >
+                <option value="all">All Categories ({products.length})</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Products List */}
-          {products.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <div className="bg-[#17191D] p-12 text-center rounded-2xl border border-[#30343A] space-y-3">
               <Package className="w-12 h-12 text-[#85888E] mx-auto" />
-              <h3 className="font-bold text-base text-[#F1F0EC]">No Products in Store</h3>
+              <h3 className="font-bold text-base text-[#F1F0EC]">No Products Found</h3>
               <p className="text-xs text-[#85888E]">
-                Click &quot;Add Product&quot; to create your first garment catalog entry.
+                {catalogSearch || categoryFilter !== 'all'
+                  ? 'No garment matched your current search or category filter.'
+                  : 'Click "+ Add Garment Listing" above to create your first catalog entry.'}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {products.map((prod) => {
+              {filteredProducts.map((prod) => {
                 const category = categories.find((c) => c.id === prod.categoryId);
                 const subcategory = subcategories.find((s) => s.id === prod.subcategoryId);
                 const primaryImage = prod.media?.[0]?.url || '/images/products/sleevless high.jpeg';
@@ -539,6 +663,7 @@ export default function AdminProductsPage() {
                 const maxPrice = Math.max(...prices);
                 const totalStock = prod.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
                 const uniqueQualities = Array.from(new Set(prod.variants?.map((v) => v.quality).filter(Boolean)));
+                const uniqueSleeves = Array.from(new Set(prod.variants?.map((v) => v.sleeve).filter(Boolean)));
 
                 return (
                   <div
@@ -559,7 +684,7 @@ export default function AdminProductsPage() {
 
                       <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-[#23262B] text-[#B4B5B8] border border-[#30343A]">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-[#23262B] text-[#B4B5BA] border border-[#30343A]">
                             {category?.name || 'Category'} {subcategory ? `• ${subcategory.name}` : ''}
                           </span>
                           {prod.isPublished ? (
@@ -587,15 +712,15 @@ export default function AdminProductsPage() {
                           </span>
                           <span>•</span>
                           <span>
-                            <strong className="text-[#F1F0EC]">Total Stock:</strong> {totalStock} pcs
+                            <strong className="text-[#F1F0EC]">Stock:</strong> {totalStock} pcs
                           </span>
                           <span>•</span>
                           <span>
-                            <strong className="text-[#F1F0EC]">Qualities:</strong> {uniqueQualities.length} ({uniqueQualities.join(', ')})
+                            <strong className="text-[#F1F0EC]">Quality:</strong> {uniqueQualities.join(', ') || 'High Quality'}
                           </span>
                           <span>•</span>
                           <span>
-                            <strong className="text-[#F1F0EC]">Variants:</strong> {prod.variants?.length || 0}
+                            <strong className="text-[#F1F0EC]">Styles:</strong> {uniqueSleeves.join(', ') || 'Standard'}
                           </span>
                         </div>
                       </div>
@@ -603,20 +728,29 @@ export default function AdminProductsPage() {
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-2 self-end md:self-center">
+                      <a
+                        href={`/product/${prod.slug}`}
+                        target="_blank"
+                        className="p-2 bg-[#202329] hover:bg-[#272A2F] text-[#85888E] hover:text-[#C9A96A] rounded-xl border border-[#30343A] transition-colors"
+                        title="View live product"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </a>
+
                       <button
                         type="button"
                         onClick={() => handleStartEdit(prod)}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#23262B] hover:bg-[#2A2E35] text-[#F1F0EC] border border-[#30343A] hover:border-[#C9A96A] text-xs font-semibold rounded-xl shadow-xs transition-colors"
                       >
                         <Edit2 className="w-3.5 h-3.5 text-[#C9A96A]" />
-                        <span>Edit Product</span>
+                        <span>Edit Listing</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => handleDeleteProduct(prod.id, prod.name)}
+                        onClick={() => setDeleteModalState({ isOpen: true, productId: prod.id, productName: prod.name })}
                         className="p-2 text-[#D96B6B] hover:bg-[#D96B6B]/10 rounded-xl border border-[#D96B6B]/30 transition-colors"
-                        title="Delete product"
+                        title="Delete garment listing"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -647,10 +781,10 @@ export default function AdminProductsPage() {
               </button>
               <div>
                 <h1 className="text-lg sm:text-xl font-bold text-[#F1F0EC]">
-                  {editingProductId ? `Edit Product: ${prodName || 'Product'}` : 'Create New Product'}
+                  {editingProductId ? `Edit Garment: ${prodName || 'Product'}` : 'Create New Garment Listing'}
                 </h1>
                 <p className="text-xs text-[#85888E]">
-                  Configure basic information, dynamic quality levels, style combinations, prices, stock, and variant images.
+                  Configure single-quality listing details, sleeve styles, sizes, prices, stock, and variant photography.
                 </p>
               </div>
             </div>
@@ -659,7 +793,7 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className="px-4 py-2 text-xs font-semibold text-[#B4B5B8] bg-[#202329] border border-[#30343A] hover:bg-[#272A2F] hover:text-[#F1F0EC] rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-[#B4B5BA] bg-[#202329] border border-[#30343A] hover:bg-[#272A2F] hover:text-[#F1F0EC] rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -668,7 +802,7 @@ export default function AdminProductsPage() {
                 className="inline-flex items-center gap-2 px-5 py-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99]"
               >
                 <Save className="w-4 h-4 stroke-[2.2]" />
-                <span>Save Product</span>
+                <span>Save Garment</span>
               </button>
             </div>
           </div>
@@ -684,7 +818,7 @@ export default function AdminProductsPage() {
                   : 'bg-[#17191D] text-[#85888E] hover:text-[#F1F0EC] border border-[#30343A]'
               }`}
             >
-              1. Basic Information
+              1. Basic Info &amp; Taxonomy
             </button>
 
             <button
@@ -696,7 +830,7 @@ export default function AdminProductsPage() {
                   : 'bg-[#17191D] text-[#85888E] hover:text-[#F1F0EC] border border-[#30343A]'
               }`}
             >
-              <span>2. Dynamic Qualities &amp; Variants ({variantsList.length})</span>
+              <span>2. Styles &amp; Variants ({variantsList.length})</span>
             </button>
 
             <button
@@ -708,7 +842,7 @@ export default function AdminProductsPage() {
                   : 'bg-[#17191D] text-[#85888E] hover:text-[#F1F0EC] border border-[#30343A]'
               }`}
             >
-              <span>3. Photos &amp; Video by Variant ({mediaList.length})</span>
+              <span>3. Photos &amp; Video ({mediaList.length})</span>
             </button>
           </div>
 
@@ -716,19 +850,24 @@ export default function AdminProductsPage() {
           {/* TAB 1: BASIC INFORMATION */}
           {/* ========================================================================= */}
           {editorTab === 'basic' && (
-            <div className="bg-[#17191D] p-5 sm:p-6 rounded-2xl border border-[#30343A] shadow-card space-y-4 animate-in fade-in">
-              <h2 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider">
-                Product Identification &amp; Taxonomy
-              </h2>
+            <div className="bg-[#17191D] p-5 sm:p-6 rounded-2xl border border-[#30343A] shadow-card space-y-5 animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-[#30343A] pb-3">
+                <h2 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider">
+                  Product Identification &amp; Craftsmanship
+                </h2>
+                <span className="text-[11px] text-[#85888E]">
+                  Rule: Each garment listing represents ONE quality tier.
+                </span>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
-                    Product Name <span className="text-[#D96B6B]">*</span>
+                    Garment Name <span className="text-[#D96B6B]">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Men's Cotton Vest, Men's Boxer, Women's Camisole"
+                    placeholder="e.g. Men's Pure Cotton Vest — High Quality"
                     value={prodName}
                     onChange={(e) => setProdName(e.target.value)}
                     className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
@@ -738,19 +877,37 @@ export default function AdminProductsPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
-                    Product URL Slug
+                    Quality Level <span className="text-[#D96B6B]">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. mens-cotton-vest (auto-generated if empty)"
+                    placeholder="e.g. High Quality, Standard Quality"
+                    value={prodQualityGrade}
+                    onChange={(e) => {
+                      setProdQualityGrade(e.target.value);
+                      if (!customQualities.includes(e.target.value) && e.target.value.trim()) {
+                        setCustomQualities([e.target.value.trim()]);
+                      }
+                    }}
+                    className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-bold text-[#C9A96A] focus:border-[#C9A96A] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
+                    URL Slug
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. mens-cotton-vest-high-quality"
                     value={prodSlug}
                     onChange={(e) => setProdSlug(e.target.value)}
                     className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-mono text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
                     Category <span className="text-[#D96B6B]">*</span>
@@ -777,7 +934,7 @@ export default function AdminProductsPage() {
                     onChange={(e) => setProdSubcategoryId(e.target.value)}
                     className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
                   >
-                    <option value="" className="bg-[#17191D] text-[#F1F0EC]">-- None / General --</option>
+                    <option value="" className="bg-[#17191D] text-[#F1F0EC]">-- General / None --</option>
                     {activeSubcatsForCategory.map((s) => (
                       <option key={s.id} value={s.id} className="bg-[#17191D] text-[#F1F0EC]">
                         {s.name}
@@ -802,11 +959,11 @@ export default function AdminProductsPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
-                  Full Product Description
+                  Craftsmanship Description
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Detailed craftsmanship, fabric composition, weave description..."
+                  placeholder="Detailed description of yarn quality, weave, softness, and durability..."
                   value={prodDesc}
                   onChange={(e) => setProdDesc(e.target.value)}
                   className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs leading-relaxed text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
@@ -861,86 +1018,16 @@ export default function AdminProductsPage() {
           {/* ========================================================================= */}
           {editorTab === 'variants' && (
             <div className="space-y-6 animate-in fade-in">
-              {/* STEP 1: Dynamic Qualities */}
+              {/* STEP 1: Styles / Sleeves */}
               <div className="bg-[#17191D] p-5 rounded-2xl border border-[#30343A] shadow-card space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h3 className="font-bold text-xs text-[#F1F0EC] uppercase tracking-wider flex items-center gap-1.5">
-                      <span>Step 1: Product Construction Qualities</span>
-                      <span className="text-[#85888E] font-normal">({customQualities.length})</span>
-                    </h3>
-                    <p className="text-[11px] text-[#85888E]">
-                      Add unlimited custom quality options (e.g. High Quality, Semi High Quality, Premium, Economy, Underrated Quality).
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsAddQualityOpen(true)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#23262B] hover:bg-[#2A2E35] border border-[#30343A] hover:border-[#C9A96A] text-[#F1F0EC] rounded-xl text-xs font-semibold transition-colors self-start sm:self-auto"
-                  >
-                    <Plus className="w-3.5 h-3.5 text-[#C9A96A]" />
-                    <span>Add Quality</span>
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {customQualities.map((q) => (
-                    <div
-                      key={q}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#202329] border border-[#30343A] rounded-xl text-xs font-semibold text-[#F1F0EC]"
-                    >
-                      <span>{q}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveQuality(q)}
-                        className="text-[#85888E] hover:text-[#D96B6B] transition-colors"
-                        title="Delete Quality Option"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {isAddQualityOpen && (
-                  <div className="p-3 bg-[#1D2025] rounded-xl border border-[#343840] flex items-center gap-2 max-w-md animate-in fade-in">
-                    <input
-                      type="text"
-                      placeholder="e.g. Semi High Quality, Export Quality..."
-                      value={newQualityInput}
-                      onChange={(e) => setNewQualityInput(e.target.value)}
-                      className="flex-1 p-2 bg-[#202329] border border-[#343840] rounded-lg text-xs text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddQuality}
-                      className="px-3 py-2 bg-[#C9A96A] text-[#101114] text-xs font-bold rounded-lg"
-                    >
-                      Add
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsAddQualityOpen(false)}
-                      className="p-1.5 text-[#85888E] hover:text-[#F1F0EC]"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* STEP 2: Dynamic Styles / Sleeves */}
-              <div className="bg-[#17191D] p-5 rounded-2xl border border-[#30343A] shadow-card space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h3 className="font-bold text-xs text-[#F1F0EC] uppercase tracking-wider flex items-center gap-1.5">
-                      <span>Step 2: Styles / Sleeve Options</span>
+                      <span>Step 1: Style / Sleeve Options</span>
                       <span className="text-[#85888E] font-normal">({customStyles.length})</span>
                     </h3>
                     <p className="text-[11px] text-[#85888E]">
-                      Add unlimited style variations for this product (e.g. Sleeveless, Full Sleeve, Half Sleeve, Boxer Briefs).
+                      Define styles for this garment (e.g. Sleeveless, Full Sleeve, Half Sleeve, Boxer Briefs).
                     </p>
                   </div>
 
@@ -977,7 +1064,7 @@ export default function AdminProductsPage() {
                   <div className="p-3 bg-[#1D2025] rounded-xl border border-[#343840] flex items-center gap-2 max-w-md animate-in fade-in">
                     <input
                       type="text"
-                      placeholder="e.g. Half Sleeve, Regular Fit, Straps..."
+                      placeholder="e.g. Half Sleeve, Regular Fit..."
                       value={newStyleInput}
                       onChange={(e) => setNewStyleInput(e.target.value)}
                       className="flex-1 p-2 bg-[#202329] border border-[#343840] rounded-lg text-xs text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
@@ -1001,16 +1088,16 @@ export default function AdminProductsPage() {
                 )}
               </div>
 
-              {/* STEP 3: Dynamic Sizes */}
+              {/* STEP 2: Sizes */}
               <div className="bg-[#17191D] p-5 rounded-2xl border border-[#30343A] shadow-card space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h3 className="font-bold text-xs text-[#F1F0EC] uppercase tracking-wider flex items-center gap-1.5">
-                      <span>Step 3: Size Options</span>
+                      <span>Step 2: Size Options</span>
                       <span className="text-[#85888E] font-normal">({customSizes.length})</span>
                     </h3>
                     <p className="text-[11px] text-[#85888E]">
-                      Add standard or custom sizes (e.g. S, M, L, XL, XXL, or numeric sizes like 28, 30, 32, Free Size).
+                      Select sizes for this garment (e.g. S, M, L, XL, XXL, Free Size).
                     </p>
                   </div>
 
@@ -1047,7 +1134,7 @@ export default function AdminProductsPage() {
                   <div className="p-3 bg-[#1D2025] rounded-xl border border-[#343840] flex items-center gap-2 max-w-md animate-in fade-in">
                     <input
                       type="text"
-                      placeholder="e.g. 28, 30, 32, Free Size..."
+                      placeholder="e.g. 28, 30, Free Size..."
                       value={newSizeInput}
                       onChange={(e) => setNewSizeInput(e.target.value)}
                       className="flex-1 p-2 bg-[#202329] border border-[#343840] rounded-lg text-xs text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
@@ -1071,16 +1158,16 @@ export default function AdminProductsPage() {
                 )}
               </div>
 
-              {/* STEP 4: Variant Matrix Generator & Actions */}
+              {/* STEP 3: Matrix Generator Settings & Action */}
               <div className="bg-[#17191D] p-5 rounded-2xl border border-[#30343A] shadow-card space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-xs text-[#F1F0EC] uppercase tracking-wider flex items-center gap-1.5">
                       <Zap className="w-4 h-4 text-[#C9A96A]" />
-                      <span>Step 4: Generate or Manage Combinations</span>
+                      <span>Step 3: Generate Matrix Combinations</span>
                     </h3>
                     <p className="text-[11px] text-[#85888E]">
-                      Quickly generate all combinations of the defined Qualities ({customQualities.length}) × Styles ({customStyles.length}) × Sizes ({customSizes.length}).
+                      Auto-generate combination rows for Styles ({customStyles.length}) &times; Sizes ({customSizes.length}).
                     </p>
                   </div>
 
@@ -1091,7 +1178,7 @@ export default function AdminProductsPage() {
                       className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#23262B] hover:bg-[#2A2E35] border border-[#30343A] text-[#F1F0EC] text-xs font-semibold rounded-xl transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5 text-[#C9A96A]" />
-                      <span>Add Individual Combination</span>
+                      <span>+ Custom Combination</span>
                     </button>
 
                     <button
@@ -1100,7 +1187,7 @@ export default function AdminProductsPage() {
                       className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99]"
                     >
                       <Zap className="w-3.5 h-3.5" />
-                      <span>Generate Matrix ({customQualities.length * customStyles.length * customSizes.length} combinations)</span>
+                      <span>Generate Matrix ({customStyles.length * customSizes.length} items)</span>
                     </button>
                   </div>
                 </div>
@@ -1158,17 +1245,12 @@ export default function AdminProductsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                       <div>
                         <label className="block text-[11px] font-semibold text-[#D8D8D4] mb-1">Quality</label>
-                        <select
-                          value={singleVarQuality || customQualities[0]}
+                        <input
+                          type="text"
+                          value={singleVarQuality || prodQualityGrade}
                           onChange={(e) => setSingleVarQuality(e.target.value)}
                           className="w-full p-2 bg-[#202329] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC]"
-                        >
-                          {customQualities.map((q) => (
-                            <option key={q} value={q} className="bg-[#17191D] text-[#F1F0EC]">
-                              {q}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </div>
 
                       <div>
@@ -1216,7 +1298,7 @@ export default function AdminProductsPage() {
                       <button
                         type="button"
                         onClick={() => setIsAddSingleVarOpen(false)}
-                        className="px-3 py-1.5 bg-[#23262B] text-[#B4B5B8] border border-[#30343A] text-xs font-semibold rounded-xl"
+                        className="px-3 py-1.5 bg-[#23262B] text-[#B4B5BA] border border-[#30343A] text-xs font-semibold rounded-xl"
                       >
                         Cancel
                       </button>
@@ -1232,7 +1314,7 @@ export default function AdminProductsPage() {
                 )}
               </div>
 
-              {/* STEP 5: Full Variant Matrix Table */}
+              {/* STEP 4: Full Variant Matrix Table */}
               <div className="bg-[#17191D] rounded-2xl border border-[#30343A] shadow-card overflow-hidden">
                 <div className="p-4 sm:p-5 border-b border-[#30343A] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
@@ -1240,16 +1322,14 @@ export default function AdminProductsPage() {
                       Active Variant Matrix ({variantsList.length} combinations)
                     </h3>
                     <p className="text-xs text-[#85888E]">
-                      Edit unit price, compare-at price, stock, or remove any combination that does not exist.
+                      Live pricing, compare price, and inventory units for each combination.
                     </p>
                   </div>
 
                   {variantsList.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm('Clear all variants from matrix?')) setVariantsList([]);
-                      }}
+                      onClick={() => setIsClearMatrixModalOpen(true)}
                       className="text-xs text-[#D96B6B] hover:underline font-semibold self-start sm:self-auto"
                     >
                       Clear Matrix
@@ -1262,7 +1342,7 @@ export default function AdminProductsPage() {
                     <Boxes className="w-8 h-8 text-[#85888E] mx-auto" />
                     <p className="text-xs font-bold text-[#F1F0EC]">No variants in matrix yet</p>
                     <p className="text-xs text-[#85888E]">
-                      Click &quot;Generate Matrix&quot; above to create all combinations automatically.
+                      Click &quot;Generate Matrix&quot; above to create combinations automatically.
                     </p>
                   </div>
                 ) : (
@@ -1284,7 +1364,7 @@ export default function AdminProductsPage() {
                         {variantsList.map((v) => (
                           <tr key={v.id} className="hover:bg-[#1D2025]/60 transition-colors">
                             <td className="p-3">
-                              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-[#23262B] text-[#B4B5B8] border border-[#30343A]">
+                              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-[#23262B] text-[#B4B5BA] border border-[#30343A]">
                                 {v.quality}
                               </span>
                             </td>
@@ -1367,7 +1447,7 @@ export default function AdminProductsPage() {
                   Variant-Specific Product Photos &amp; Video Demonstration
                 </h3>
                 <p className="text-xs text-[#85888E] mt-0.5">
-                  Attach specific photos to exact combinations (e.g. Sleeveless High Quality vs Full Sleeve High Quality). The public storefront gallery will reactively update as the customer clicks different options!
+                  Attach specific photos to exact sleeve options (e.g. Sleeveless vs Full Sleeve). The public storefront gallery will reactively update as the customer clicks different style options!
                 </p>
               </div>
 
@@ -1416,7 +1496,7 @@ export default function AdminProductsPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Front View, Collar Stitching"
+                      placeholder="e.g. Front View, Stitching Detail"
                       value={uploadMediaTitle}
                       onChange={(e) => setUploadMediaTitle(e.target.value)}
                       className="w-full p-2.5 bg-[#202329] border border-[#343840] rounded-xl text-xs text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
@@ -1427,13 +1507,17 @@ export default function AdminProductsPage() {
                 <div className="flex flex-wrap gap-3 items-center pt-1">
                   <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold rounded-xl cursor-pointer transition-all active:scale-[0.99] shadow-xs">
                     <Upload className="w-4 h-4" />
-                    <span>{isUploadingFiles ? 'Uploading Files...' : 'Choose Photos from Computer / Mobile'}</span>
+                    <span>
+                      {uploadProgress === 'uploading'
+                        ? 'Uploading Files to Supabase Storage...'
+                        : 'Choose Photos from Computer / Mobile'}
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
                       multiple
                       onChange={handleImageFilesChange}
-                      disabled={isUploadingFiles}
+                      disabled={uploadProgress === 'uploading'}
                       className="hidden"
                     />
                   </label>
@@ -1446,6 +1530,12 @@ export default function AdminProductsPage() {
                     <Film className="w-4 h-4 text-[#D96B6B]" />
                     <span>+ Add Video URL</span>
                   </button>
+
+                  {uploadProgress === 'uploaded' && (
+                    <span className="text-xs text-[#3FB982] font-semibold flex items-center gap-1">
+                      <Check className="w-4 h-4" /> Uploaded!
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -1453,7 +1543,7 @@ export default function AdminProductsPage() {
               {isVideoModalOpen && (
                 <div className="p-4 bg-[#1D2025] rounded-xl border border-[#30343A] space-y-3 animate-in fade-in">
                   <h4 className="font-bold text-xs text-[#C9A96A] uppercase">
-                    Add Video Clip
+                    Add Video Clip URL
                   </h4>
                   <input
                     type="text"
@@ -1466,7 +1556,7 @@ export default function AdminProductsPage() {
                     <button
                       type="button"
                       onClick={() => setIsVideoModalOpen(false)}
-                      className="px-3 py-1.5 bg-[#23262B] text-[#B4B5B8] text-xs font-semibold rounded-xl"
+                      className="px-3 py-1.5 bg-[#23262B] text-[#B4B5BA] text-xs font-semibold rounded-xl"
                     >
                       Cancel
                     </button>
@@ -1489,7 +1579,7 @@ export default function AdminProductsPage() {
 
                 {mediaList.length === 0 ? (
                   <p className="text-xs text-[#85888E] py-8 text-center border border-dashed border-[#30343A] rounded-2xl">
-                    No photos uploaded yet for this product. Use the file picker above to add photos.
+                    No photos uploaded yet for this garment listing. Use the file picker above to add photos.
                   </p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">

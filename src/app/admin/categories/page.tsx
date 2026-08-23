@@ -11,7 +11,9 @@ import {
   Check,
   FolderPlus,
   X,
+  CheckCircle,
 } from 'lucide-react';
+import { ConfirmModal } from '@/components/admin/ConfirmModal';
 
 export default function AdminCategoriesPage() {
   const {
@@ -35,6 +37,19 @@ export default function AdminCategoriesPage() {
   // Modal States
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false);
+
+  // Delete Confirm Modal State
+  const [deleteModalState, setDeleteModalState] = useState<{
+    isOpen: boolean;
+    type: 'category' | 'subcategory';
+    id: string;
+    name: string;
+  }>({
+    isOpen: false,
+    type: 'category',
+    id: '',
+    name: '',
+  });
 
   // Edit / Form states
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
@@ -80,10 +95,14 @@ export default function AdminCategoriesPage() {
     e.preventDefault();
     if (!editingCategory?.name || !editingCategory.slug) return;
 
-    await saveCategory(editingCategory as Category);
-    setIsCategoryModalOpen(false);
-    setEditingCategory(null);
-    showToast('Category saved successfully!');
+    try {
+      await saveCategory(editingCategory as Category);
+      setIsCategoryModalOpen(false);
+      setEditingCategory(null);
+      showToast('Category saved successfully!');
+    } catch (err) {
+      showToast('Error saving category.');
+    }
   };
 
   // Save Subcategory Form
@@ -91,22 +110,69 @@ export default function AdminCategoriesPage() {
     e.preventDefault();
     if (!editingSubcategory?.name || !editingSubcategory.slug || !editingSubcategory.categoryId) return;
 
-    await saveSubcategory(editingSubcategory as Subcategory);
-    setIsSubcategoryModalOpen(false);
-    setEditingSubcategory(null);
-    showToast('Subcategory saved successfully!');
+    try {
+      await saveSubcategory(editingSubcategory as Subcategory);
+      setIsSubcategoryModalOpen(false);
+      setEditingSubcategory(null);
+      showToast('Subcategory saved successfully!');
+    } catch (err) {
+      showToast('Error saving subcategory.');
+    }
+  };
+
+  // Handle Delete Confirmation
+  const handleConfirmDelete = async () => {
+    if (!deleteModalState.id) return;
+    try {
+      if (deleteModalState.type === 'category') {
+        await deleteCategory(deleteModalState.id);
+        showToast(`Category "${deleteModalState.name}" removed.`);
+      } else {
+        await deleteSubcategory(deleteModalState.id);
+        showToast(`Subcategory "${deleteModalState.name}" removed.`);
+      }
+    } catch (err) {
+      showToast('Error deleting item.');
+    } finally {
+      setDeleteModalState({ isOpen: false, type: 'category', id: '', name: '' });
+    }
   };
 
   return (
-    <div className="space-y-6 text-gray-100 max-w-7xl">
+    <div className="space-y-6 text-[#F1F0EC] max-w-7xl">
+      {/* Toast Notification */}
+      {saveToast && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 bg-[#17191D] text-[#F1F0EC] border border-[#3FB982]/40 rounded-xl shadow-elevation flex items-center gap-2.5 text-xs font-semibold animate-in fade-in">
+          <Check className="w-4 h-4 text-[#3FB982]" />
+          <span>{saveToast}</span>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteModalState.isOpen}
+        title={`Delete ${deleteModalState.type === 'category' ? 'Category' : 'Subcategory'}`}
+        message={`Are you sure you want to permanently delete "${deleteModalState.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        isDestructive={true}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteModalState({ isOpen: false, type: 'category', id: '', name: '' })}
+      />
+
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-dark-surface p-6 rounded-2xl border border-dark-border shadow-card">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#17191D] p-6 rounded-2xl border border-[#30343A] shadow-card">
         <div>
-          <h1 className="text-xl font-extrabold text-gray-100">
-            Categories &amp; Subcategories
-          </h1>
-          <p className="text-xs text-gray-400 mt-1">
-            Manage your store hierarchy (Men, Women, Kids and subcategories like Vests, Boxers, Briefs).
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-[#F1F0EC]">
+              Categories &amp; Taxonomy
+            </h1>
+            <span className="text-xs font-bold bg-[#1D2025] text-[#C9A96A] border border-[#30343A] px-2.5 py-0.5 rounded-lg">
+              {categories.length} Categories
+            </span>
+          </div>
+          <p className="text-xs text-[#85888E] mt-1">
+            Organize catalog hierarchy (Men, Women, Kids and garment subcategories like Vests, Boxers, Briefs).
           </p>
         </div>
 
@@ -114,16 +180,16 @@ export default function AdminCategoriesPage() {
           <button
             type="button"
             onClick={handleOpenAddCategory}
-            className="inline-flex items-center justify-center gap-2 bg-dark-card border border-dark-border hover:bg-dark-hover text-gray-200 text-xs font-bold h-10 px-4 rounded-xl shadow-card transition-colors"
+            className="inline-flex items-center justify-center gap-2 bg-[#202329] border border-[#30343A] hover:bg-[#272A2F] text-[#F1F0EC] text-xs font-bold h-10 px-4 rounded-xl shadow-xs transition-colors"
           >
-            <Plus className="w-4 h-4 text-gold-400" />
+            <Plus className="w-4 h-4 text-[#C9A96A]" />
             <span>+ Add Main Category</span>
           </button>
 
           <button
             type="button"
             onClick={handleOpenAddSubcategory}
-            className="inline-flex items-center justify-center gap-2 bg-gold-500 hover:bg-gold-400 text-black text-xs font-bold h-10 px-4 rounded-xl shadow-glow-gold transition-colors"
+            className="inline-flex items-center justify-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold h-10 px-4 rounded-xl shadow-xs transition-colors"
           >
             <FolderPlus className="w-4 h-4" />
             <span>+ Add Subcategory</span>
@@ -131,19 +197,12 @@ export default function AdminCategoriesPage() {
         </div>
       </div>
 
-      {saveToast && (
-        <div className="p-3.5 bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm animate-in fade-in">
-          <Check className="w-4 h-4 text-emerald-400" />
-          <span>{saveToast}</span>
-        </div>
-      )}
-
       {/* Main Container */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Main Categories List */}
-        <div className="lg:col-span-5 bg-dark-surface rounded-2xl p-5 border border-dark-border shadow-card space-y-4">
-          <div className="flex items-center justify-between border-b border-dark-border pb-3">
-            <h2 className="text-xs font-bold text-gold-400 uppercase tracking-wider flex items-center gap-2">
+        <div className="lg:col-span-5 bg-[#17191D] rounded-2xl p-5 border border-[#30343A] shadow-card space-y-4">
+          <div className="flex items-center justify-between border-b border-[#30343A] pb-3">
+            <h2 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider flex items-center gap-2">
               <Layers className="w-4 h-4" />
               Main Categories ({categories.length})
             </h2>
@@ -160,25 +219,25 @@ export default function AdminCategoriesPage() {
                   onClick={() => setSelectedCatId(cat.id)}
                   className={`cursor-pointer p-3.5 rounded-xl border transition-all flex items-center justify-between ${
                     isSelected
-                      ? 'border-gold-500 bg-dark-card shadow-glow-gold/10'
-                      : 'border-dark-border bg-dark-card/60 hover:bg-dark-card'
+                      ? 'border-[#C9A96A] bg-[#1D2025] shadow-xs'
+                      : 'border-[#30343A] bg-[#17191D] hover:bg-[#1D2025]'
                   }`}
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-sm text-gray-100">{cat.name}</h3>
+                      <h3 className="font-bold text-sm text-[#F1F0EC]">{cat.name}</h3>
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                           cat.isActive
-                            ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60'
-                            : 'bg-rose-950/60 text-rose-300 border border-rose-800/60'
+                            ? 'bg-[#3FB982]/15 text-[#3FB982] border border-[#3FB982]/30'
+                            : 'bg-[#D96B6B]/15 text-[#D96B6B] border border-[#D96B6B]/30'
                         }`}
                       >
                         {cat.isActive ? 'Active' : 'Hidden'}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5 font-normal">
-                      Slug: <span className="font-mono text-gold-400">/{cat.slug}</span> • {catSubCount} subcategories
+                    <p className="text-xs text-[#85888E] mt-0.5 font-normal">
+                      Slug: <span className="font-mono text-[#C9A96A]">/{cat.slug}</span> &bull; {catSubCount} subcategories
                     </p>
                   </div>
 
@@ -189,7 +248,7 @@ export default function AdminCategoriesPage() {
                         setEditingCategory(cat);
                         setIsCategoryModalOpen(true);
                       }}
-                      className="p-1.5 text-gray-400 hover:text-gold-400 hover:bg-dark-hover rounded-lg transition-colors"
+                      className="p-1.5 text-[#85888E] hover:text-[#C9A96A] hover:bg-[#202329] rounded-lg transition-colors"
                       title="Edit Category"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -197,13 +256,15 @@ export default function AdminCategoriesPage() {
                     {categories.length > 1 && (
                       <button
                         type="button"
-                        onClick={async () => {
-                          if (confirm(`Delete category "${cat.name}"?`)) {
-                            await deleteCategory(cat.id);
-                            showToast('Category deleted');
-                          }
+                        onClick={() => {
+                          setDeleteModalState({
+                            isOpen: true,
+                            type: 'category',
+                            id: cat.id,
+                            name: cat.name,
+                          });
                         }}
-                        className="p-1.5 text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors"
+                        className="p-1.5 text-[#D96B6B] hover:bg-[#D96B6B]/10 rounded-lg transition-colors"
                         title="Delete Category"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -217,13 +278,13 @@ export default function AdminCategoriesPage() {
         </div>
 
         {/* Right: Subcategories under Selected Category */}
-        <div className="lg:col-span-7 bg-dark-surface rounded-2xl p-5 sm:p-6 border border-dark-border shadow-card space-y-4">
-          <div className="flex items-center justify-between border-b border-dark-border pb-3 flex-wrap gap-2">
+        <div className="lg:col-span-7 bg-[#17191D] rounded-2xl p-5 sm:p-6 border border-[#30343A] shadow-card space-y-4">
+          <div className="flex items-center justify-between border-b border-[#30343A] pb-3 flex-wrap gap-2">
             <div>
-              <h2 className="text-sm font-bold text-gray-100">
+              <h2 className="text-sm font-bold text-[#F1F0EC]">
                 Subcategories under &quot;{selectedCategory?.name}&quot;
               </h2>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-[#85888E]">
                 Products can be assigned to these subcategories (e.g. Vests, Boxers, Briefs)
               </p>
             </div>
@@ -231,35 +292,35 @@ export default function AdminCategoriesPage() {
             <button
               type="button"
               onClick={handleOpenAddSubcategory}
-              className="text-xs font-bold bg-gold-500 hover:bg-gold-400 text-black h-8 px-3 rounded-xl shadow-glow-gold transition-colors"
+              className="text-xs font-bold bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] h-8 px-3 rounded-xl shadow-xs transition-colors"
             >
               + Add Subcategory
             </button>
           </div>
 
           {activeSubcategories.length === 0 ? (
-            <div className="text-center py-12 space-y-2 bg-dark-card rounded-xl border border-dark-border">
-              <p className="text-xs font-bold text-gray-200">No subcategories found for {selectedCategory?.name}.</p>
-              <p className="text-[11px] text-gray-400">Click &quot;+ Add Subcategory&quot; to create one.</p>
+            <div className="text-center py-12 space-y-2 bg-[#1D2025] rounded-xl border border-[#30343A]">
+              <p className="text-xs font-bold text-[#F1F0EC]">No subcategories found for {selectedCategory?.name}.</p>
+              <p className="text-[11px] text-[#85888E]">Click &quot;+ Add Subcategory&quot; to create one.</p>
             </div>
           ) : (
-            <div className="border border-dark-border rounded-xl divide-y divide-dark-border overflow-hidden">
+            <div className="border border-[#30343A] rounded-xl divide-y divide-[#30343A] overflow-hidden">
               {activeSubcategories.map((sub) => (
-                <div key={sub.id} className="p-3.5 flex items-center justify-between hover:bg-dark-hover transition-colors bg-dark-card">
+                <div key={sub.id} className="p-3.5 flex items-center justify-between hover:bg-[#1D2025] transition-colors bg-[#17191D]">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-xs sm:text-sm text-gray-100">{sub.name}</h4>
-                      <span className="text-[10px] text-gray-400 font-mono bg-dark-surface px-1.5 py-0.5 rounded border border-dark-border">
+                      <h4 className="font-bold text-xs sm:text-sm text-[#F1F0EC]">{sub.name}</h4>
+                      <span className="text-[10px] text-[#85888E] font-mono bg-[#1D2025] px-1.5 py-0.5 rounded border border-[#30343A]">
                         /{sub.slug}
                       </span>
                       {sub.productCount && sub.productCount > 0 ? (
-                        <span className="text-[9px] font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">
-                          {sub.productCount} Product
+                        <span className="text-[9px] font-bold bg-[#3FB982]/15 text-[#3FB982] border border-[#3FB982]/30 px-1.5 py-0.5 rounded">
+                          {sub.productCount} Garments
                         </span>
                       ) : null}
                     </div>
                     {sub.description && (
-                      <p className="text-xs text-gray-400 mt-0.5 font-normal">{sub.description}</p>
+                      <p className="text-xs text-[#85888E] mt-0.5 font-normal">{sub.description}</p>
                     )}
                   </div>
 
@@ -270,20 +331,22 @@ export default function AdminCategoriesPage() {
                         setEditingSubcategory(sub);
                         setIsSubcategoryModalOpen(true);
                       }}
-                      className="p-1.5 text-gray-400 hover:text-gold-400 hover:bg-dark-hover rounded-lg transition-colors"
+                      className="p-1.5 text-[#85888E] hover:text-[#C9A96A] hover:bg-[#202329] rounded-lg transition-colors"
                       title="Edit Subcategory"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={async () => {
-                        if (confirm(`Delete subcategory "${sub.name}"?`)) {
-                          await deleteSubcategory(sub.id);
-                          showToast('Subcategory removed');
-                        }
+                      onClick={() => {
+                        setDeleteModalState({
+                          isOpen: true,
+                          type: 'subcategory',
+                          id: sub.id,
+                          name: sub.name,
+                        });
                       }}
-                      className="p-1.5 text-rose-400 hover:bg-rose-950/30 rounded-lg transition-colors"
+                      className="p-1.5 text-[#D96B6B] hover:bg-[#D96B6B]/10 rounded-lg transition-colors"
                       title="Delete Subcategory"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -298,16 +361,16 @@ export default function AdminCategoriesPage() {
 
       {/* MODAL 1: Add / Edit Main Category */}
       {isCategoryModalOpen && editingCategory && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-dark-surface rounded-2xl p-6 max-w-md w-full shadow-elevation border border-dark-border space-y-4 text-gray-100">
-            <div className="flex items-center justify-between border-b border-dark-border pb-3">
-              <h3 className="font-bold text-base text-gray-100">
+        <div className="fixed inset-0 z-50 bg-[#101114]/85 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#17191D] rounded-2xl p-6 max-w-md w-full shadow-elevation border border-[#30343A] space-y-4 text-[#F1F0EC]">
+            <div className="flex items-center justify-between border-b border-[#30343A] pb-3">
+              <h3 className="font-bold text-base text-[#F1F0EC]">
                 {editingCategory.name ? `Edit Category` : `Add Main Category`}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsCategoryModalOpen(false)}
-                className="text-gray-400 hover:text-white p-1"
+                className="text-[#85888E] hover:text-[#F1F0EC] p-1"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -315,7 +378,7 @@ export default function AdminCategoriesPage() {
 
             <form onSubmit={handleSaveCategoryForm} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold text-gray-300 mb-1">Category Name *</label>
+                <label className="block font-semibold text-[#D8D8D4] mb-1">Category Name *</label>
                 <input
                   type="text"
                   required
@@ -326,30 +389,30 @@ export default function AdminCategoriesPage() {
                     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                     setEditingCategory({ ...editingCategory, name, slug });
                   }}
-                  className="w-full px-3 py-2 bg-dark-card border border-dark-border rounded-xl font-semibold text-gray-100"
+                  className="w-full px-3 py-2 bg-[#1D2025] border border-[#343840] rounded-xl font-semibold text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-300 mb-1">URL Slug *</label>
+                <label className="block font-semibold text-[#D8D8D4] mb-1">URL Slug *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. men, women, kids"
                   value={editingCategory.slug || ''}
                   onChange={(e) => setEditingCategory({ ...editingCategory, slug: e.target.value })}
-                  className="w-full px-3 py-2 bg-dark-card border border-dark-border rounded-xl font-mono text-gold-400"
+                  className="w-full px-3 py-2 bg-[#1D2025] border border-[#343840] rounded-xl font-mono text-[#C9A96A] focus:border-[#C9A96A] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-300 mb-1">Description</label>
+                <label className="block font-semibold text-[#D8D8D4] mb-1">Description</label>
                 <textarea
                   rows={2}
                   placeholder="Short description of this category..."
                   value={editingCategory.description || ''}
                   onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-dark-card border border-dark-border rounded-xl text-gray-100"
+                  className="w-full px-3 py-2 bg-[#1D2025] border border-[#343840] rounded-xl text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
                 />
               </div>
 
@@ -359,24 +422,24 @@ export default function AdminCategoriesPage() {
                   id="cat-active"
                   checked={editingCategory.isActive ?? true}
                   onChange={(e) => setEditingCategory({ ...editingCategory, isActive: e.target.checked })}
-                  className="rounded accent-gold-500 w-4 h-4"
+                  className="rounded accent-[#C9A96A] w-4 h-4"
                 />
-                <label htmlFor="cat-active" className="font-semibold text-gray-300 cursor-pointer">
+                <label htmlFor="cat-active" className="font-semibold text-[#F1F0EC] cursor-pointer">
                   Visible &amp; Active in Navigation
                 </label>
               </div>
 
-              <div className="pt-3 border-t border-dark-border flex justify-end gap-2">
+              <div className="pt-3 border-t border-[#30343A] flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCategoryModalOpen(false)}
-                  className="h-9 px-4 bg-dark-card hover:bg-dark-hover text-gray-300 font-semibold rounded-xl border border-dark-border"
+                  className="h-9 px-4 bg-[#202329] hover:bg-[#272A2F] text-[#B4B5BA] font-semibold rounded-xl border border-[#30343A]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="h-9 px-5 bg-gold-500 hover:bg-gold-400 text-black font-bold rounded-xl shadow-glow-gold"
+                  className="h-9 px-5 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] font-bold rounded-xl shadow-xs"
                 >
                   Save Category
                 </button>
@@ -388,16 +451,16 @@ export default function AdminCategoriesPage() {
 
       {/* MODAL 2: Add / Edit Subcategory */}
       {isSubcategoryModalOpen && editingSubcategory && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-dark-surface rounded-2xl p-6 max-w-md w-full shadow-elevation border border-dark-border space-y-4 text-gray-100">
-            <div className="flex items-center justify-between border-b border-dark-border pb-3">
-              <h3 className="font-bold text-base text-gray-100">
+        <div className="fixed inset-0 z-50 bg-[#101114]/85 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#17191D] rounded-2xl p-6 max-w-md w-full shadow-elevation border border-[#30343A] space-y-4 text-[#F1F0EC]">
+            <div className="flex items-center justify-between border-b border-[#30343A] pb-3">
+              <h3 className="font-bold text-base text-[#F1F0EC]">
                 {editingSubcategory.name ? `Edit Subcategory` : `Add Subcategory`}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsSubcategoryModalOpen(false)}
-                className="text-gray-400 hover:text-white p-1"
+                className="text-[#85888E] hover:text-[#F1F0EC] p-1"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -405,14 +468,14 @@ export default function AdminCategoriesPage() {
 
             <form onSubmit={handleSaveSubcategoryForm} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold text-gray-300 mb-1">Parent Category *</label>
+                <label className="block font-semibold text-[#D8D8D4] mb-1">Parent Category *</label>
                 <select
                   value={editingSubcategory.categoryId || selectedCategory?.id}
                   onChange={(e) => setEditingSubcategory({ ...editingSubcategory, categoryId: e.target.value })}
-                  className="w-full px-3 py-2 bg-dark-card border border-dark-border rounded-xl font-semibold text-gray-100"
+                  className="w-full px-3 py-2 bg-[#1D2025] border border-[#343840] rounded-xl font-semibold text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
                 >
                   {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.id} className="bg-[#17191D] text-[#F1F0EC]">
                       {c.name}
                     </option>
                   ))}
@@ -420,7 +483,7 @@ export default function AdminCategoriesPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-300 mb-1">Subcategory Name *</label>
+                <label className="block font-semibold text-[#D8D8D4] mb-1">Subcategory Name *</label>
                 <input
                   type="text"
                   required
@@ -431,44 +494,44 @@ export default function AdminCategoriesPage() {
                     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                     setEditingSubcategory({ ...editingSubcategory, name, slug });
                   }}
-                  className="w-full px-3 py-2 bg-dark-card border border-dark-border rounded-xl font-semibold text-gray-100"
+                  className="w-full px-3 py-2 bg-[#1D2025] border border-[#343840] rounded-xl font-semibold text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-300 mb-1">URL Slug *</label>
+                <label className="block font-semibold text-[#D8D8D4] mb-1">URL Slug *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. vests, boxers, briefs"
                   value={editingSubcategory.slug || ''}
                   onChange={(e) => setEditingSubcategory({ ...editingSubcategory, slug: e.target.value })}
-                  className="w-full px-3 py-2 bg-dark-card border border-dark-border rounded-xl font-mono text-gold-400"
+                  className="w-full px-3 py-2 bg-[#1D2025] border border-[#343840] rounded-xl font-mono text-[#C9A96A] focus:border-[#C9A96A] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-gray-300 mb-1">Description</label>
+                <label className="block font-semibold text-[#D8D8D4] mb-1">Description</label>
                 <textarea
                   rows={2}
                   placeholder="Short summary of this subcategory..."
                   value={editingSubcategory.description || ''}
                   onChange={(e) => setEditingSubcategory({ ...editingSubcategory, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-dark-card border border-dark-border rounded-xl text-gray-100"
+                  className="w-full px-3 py-2 bg-[#1D2025] border border-[#343840] rounded-xl text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
                 />
               </div>
 
-              <div className="pt-3 border-t border-dark-border flex justify-end gap-2">
+              <div className="pt-3 border-t border-[#30343A] flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsSubcategoryModalOpen(false)}
-                  className="h-9 px-4 bg-dark-card hover:bg-dark-hover text-gray-300 font-semibold rounded-xl border border-dark-border"
+                  className="h-9 px-4 bg-[#202329] hover:bg-[#272A2F] text-[#B4B5BA] font-semibold rounded-xl border border-[#30343A]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="h-9 px-5 bg-gold-500 hover:bg-gold-400 text-black font-bold rounded-xl shadow-glow-gold"
+                  className="h-9 px-5 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] font-bold rounded-xl shadow-xs"
                 >
                   Save Subcategory
                 </button>
