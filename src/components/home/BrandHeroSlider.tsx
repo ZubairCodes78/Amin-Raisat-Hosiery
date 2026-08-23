@@ -147,25 +147,6 @@ export const BrandHeroSlider: React.FC = () => {
               </div>
             );
           })}
-
-          {/* Desktop Slide Indicator Dots */}
-          {desktopSlides.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-[#101114]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#30343A]">
-              {desktopSlides.map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setCurrentSlide(idx)}
-                  aria-label={`Go to slide ${idx + 1}`}
-                  className={`h-2 rounded-full transition-all duration-500 ${
-                    (currentSlide % desktopSlides.length) === idx
-                      ? 'w-8 bg-[#C9A96A] shadow-xs'
-                      : 'w-2 bg-[#85888E]/50 hover:bg-[#F1F0EC]'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
         </div>
 
         {/* ========================================================================= */}
@@ -212,25 +193,6 @@ export const BrandHeroSlider: React.FC = () => {
               </div>
             );
           })}
-
-          {/* Mobile Slide Indicator Dots */}
-          {mobileSlides.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-[#101114]/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#30343A]">
-              {mobileSlides.map((_, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setCurrentSlide(idx)}
-                  aria-label={`Go to mobile slide ${idx + 1}`}
-                  className={`h-1.5 rounded-full transition-all duration-500 ${
-                    (currentSlide % mobileSlides.length) === idx
-                      ? 'w-6 bg-[#C9A96A] shadow-xs'
-                      : 'w-1.5 bg-[#85888E]/50 hover:bg-[#F1F0EC]'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
         </div>
 
       </div>
