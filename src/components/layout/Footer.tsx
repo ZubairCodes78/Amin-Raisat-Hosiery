@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useStore } from '@/context/StoreContext';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
+import { Phone, Mail, MapPin } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const { settings, categories } = useStore();
@@ -14,48 +15,56 @@ export const Footer: React.FC = () => {
     .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
   return (
-    <footer className="bg-[#0D0F12] text-[#85888E] border-t border-[#30343A]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+    <footer className="bg-[#0D0F12] text-[#B4B5BA] border-t border-[#30343A] text-left">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-12 sm:py-14 lg:py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 text-left items-start">
           {/* 1. Brand Column */}
-          <div className="space-y-3">
-            <Link href="/" className="inline-flex items-center group py-1">
+          <div className="space-y-3.5 text-left">
+            <Link href="/" className="inline-flex items-center group py-0.5">
               <div className="relative w-44 h-14 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                 <Image
                   src="/images/Logo.png"
                   alt={settings.brandName}
                   fill
                   sizes="200px"
-                  className="object-contain"
+                  className="object-contain object-left"
                 />
               </div>
             </Link>
-            <p className="text-xs text-[#85888E] leading-relaxed font-normal">
+            <p className="text-xs text-[#B4B5BA] leading-relaxed font-normal text-left">
               Specialized in 100% pure combed cotton hosiery essentials and innerwear engineered for daily breathability and long-lasting durability across Pakistan.
             </p>
-            <div className="pt-1">
-              <Link href="/about" className="text-xs font-semibold text-[#C9A96A] hover:text-[#D8BD88] transition-colors">
-                Read Our Story &rarr;
+            <div className="pt-0.5 text-left">
+              <Link
+                href="/about"
+                className="text-xs font-semibold text-[#C9A96A] hover:text-[#D8BD88] transition-colors inline-flex items-center gap-1"
+              >
+                Read Our Heritage Story &rarr;
               </Link>
             </div>
           </div>
 
           {/* 2. Shop Collections */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider">Collections</h4>
-            <ul className="space-y-2 text-xs">
+          <div className="space-y-3 text-left">
+            <h4 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider text-left">
+              Collections
+            </h4>
+            <ul className="space-y-2.5 text-xs text-left">
               {activeCategories.map((cat) => (
-                <li key={cat.id}>
+                <li key={cat.id} className="text-left">
                   <Link
                     href={`/category/${cat.slug}`}
-                    className="hover:text-[#C9A96A] transition-colors"
+                    className="text-[#B4B5BA] hover:text-[#C9A96A] transition-colors block py-0.5"
                   >
                     {cat.name}&apos;s Collection
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link href="/shop" className="hover:text-[#C9A96A] transition-colors font-medium">
+              <li className="text-left">
+                <Link
+                  href="/shop"
+                  className="text-[#F1F0EC] hover:text-[#C9A96A] transition-colors font-semibold block py-0.5"
+                >
                   All Products
                 </Link>
               </li>
@@ -63,59 +72,87 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* 3. Customer Support */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider">Customer Support</h4>
-            <ul className="space-y-2.5 text-xs">
-              <li>
+          <div className="space-y-3 text-left">
+            <h4 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider text-left">
+              Customer Support
+            </h4>
+            <ul className="space-y-2.5 text-xs text-left">
+              <li className="text-left">
                 <a
                   href={`https://wa.me/92${settings.whatsapp.replace(/^0/, '').replace(/[\s-]/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-[#25D366] transition-colors flex items-center gap-2 text-[#F1F0EC] font-medium"
+                  className="hover:text-[#25D366] transition-colors inline-flex items-center gap-2 text-[#F1F0EC] font-medium py-0.5"
                 >
-                  <WhatsAppIcon size={14} className="text-[#25D366] fill-current" />
+                  <WhatsAppIcon size={14} className="text-[#25D366] fill-current flex-shrink-0" />
                   <span>WhatsApp: {settings.whatsapp}</span>
                 </a>
               </li>
-              <li>
-                <a href={`tel:${settings.phone || settings.whatsapp}`} className="hover:text-[#F1F0EC] transition-colors">
-                  Phone: {settings.phone || settings.whatsapp}
+              <li className="text-left">
+                <a
+                  href={`tel:${settings.phone || settings.whatsapp}`}
+                  className="text-[#B4B5BA] hover:text-[#F1F0EC] transition-colors inline-flex items-center gap-2 py-0.5"
+                >
+                  <Phone className="w-3.5 h-3.5 text-[#85888E] flex-shrink-0" />
+                  <span>Call: {settings.phone || settings.whatsapp}</span>
                 </a>
               </li>
-              <li>
-                <a href={`mailto:${settings.email}`} className="hover:text-[#F1F0EC] transition-colors">
-                  Email: {settings.email}
+              <li className="text-left">
+                <a
+                  href={`mailto:${settings.email}`}
+                  className="text-[#B4B5BA] hover:text-[#F1F0EC] transition-colors inline-flex items-center gap-2 py-0.5 break-all"
+                >
+                  <Mail className="w-3.5 h-3.5 text-[#85888E] flex-shrink-0" />
+                  <span>{settings.email}</span>
                 </a>
               </li>
-              <li>
-                <Link href="/contact" className="hover:text-[#F1F0EC] transition-colors">
-                  Contact Us Form
+              <li className="text-left">
+                <Link
+                  href="/contact"
+                  className="text-[#B4B5BA] hover:text-[#F1F0EC] transition-colors inline-flex items-center gap-2 py-0.5"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-[#85888E] flex-shrink-0" />
+                  <span>Faisalabad, Pakistan</span>
                 </Link>
               </li>
             </ul>
           </div>
 
           {/* 4. Information & Policies */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider">Information</h4>
-            <ul className="space-y-2 text-xs text-[#85888E]">
-              <li>
-                <Link href="/shipping-policy" className="hover:text-[#F1F0EC] transition-colors">
+          <div className="space-y-3 text-left">
+            <h4 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider text-left">
+              Information &amp; Trust
+            </h4>
+            <ul className="space-y-2.5 text-xs text-left">
+              <li className="text-left">
+                <Link
+                  href="/shipping-policy"
+                  className="text-[#B4B5BA] hover:text-[#F1F0EC] transition-colors block py-0.5"
+                >
                   Shipping Policy (3+ Free Delivery)
                 </Link>
               </li>
-              <li>
-                <Link href="/exchange-returns" className="hover:text-[#F1F0EC] transition-colors">
-                  Exchange &amp; Returns (7 Days)
+              <li className="text-left">
+                <Link
+                  href="/exchange-returns"
+                  className="text-[#B4B5BA] hover:text-[#F1F0EC] transition-colors block py-0.5"
+                >
+                  Exchange &amp; Returns ({settings.exchangeReturnDays || 7} Days)
                 </Link>
               </li>
-              <li>
-                <Link href="/privacy-policy" className="hover:text-[#F1F0EC] transition-colors">
+              <li className="text-left">
+                <Link
+                  href="/privacy-policy"
+                  className="text-[#B4B5BA] hover:text-[#F1F0EC] transition-colors block py-0.5"
+                >
                   Privacy Policy
                 </Link>
               </li>
-              <li>
-                <Link href="/terms-conditions" className="hover:text-[#F1F0EC] transition-colors">
+              <li className="text-left">
+                <Link
+                  href="/terms-conditions"
+                  className="text-[#B4B5BA] hover:text-[#F1F0EC] transition-colors block py-0.5"
+                >
                   Terms &amp; Conditions
                 </Link>
               </li>
@@ -124,9 +161,9 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Line */}
-        <div className="mt-12 pt-6 border-t border-[#30343A] flex flex-col sm:flex-row items-center justify-between text-xs text-[#85888E] gap-4">
-          <p>&copy; {new Date().getFullYear()} {settings.brandName}. All rights reserved.</p>
-          <p className="font-normal">100% Combed Cotton &bull; Market: Pakistan (PKR / Rs.)</p>
+        <div className="mt-10 sm:mt-12 pt-6 border-t border-[#30343A] flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-[#85888E] gap-2.5 sm:gap-4 text-left">
+          <p className="text-left">&copy; {new Date().getFullYear()} {settings.brandName}. All rights reserved.</p>
+          <p className="font-normal text-left">100% Combed Cotton &bull; Market: Pakistan (PKR / Rs.)</p>
         </div>
       </div>
     </footer>

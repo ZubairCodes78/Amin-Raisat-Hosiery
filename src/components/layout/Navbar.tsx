@@ -114,15 +114,15 @@ export const Navbar: React.FC = () => {
                 </button>
               </div>
 
-              {/* Center: Mobile Header Logo */}
+              {/* Center: Mobile Header Logo (Existing Logo.png at 78-84px width) */}
               <div className="flex items-center justify-center flex-1 px-1 sm:px-2 min-w-0">
-                <Link href="/" className="flex items-center justify-center py-1 group">
-                  <div className="relative w-36 xs:w-44 sm:w-52 h-12 xs:h-13 sm:h-15 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                <Link href="/" className="flex items-center justify-center py-0.5 group">
+                  <div className="relative w-[78px] xs:w-[84px] h-11 xs:h-12 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.03]">
                     <Image
-                      src="/images/header logo.png"
+                      src="/images/Logo.png"
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="(max-width: 640px) 210px, 240px"
+                      sizes="100px"
                       className="object-contain"
                       priority
                     />
