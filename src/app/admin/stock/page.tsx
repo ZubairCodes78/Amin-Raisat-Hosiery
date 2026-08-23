@@ -13,11 +13,9 @@ import {
   Package,
   Plus,
   X,
-  Edit2,
   XCircle,
   Eye,
   Boxes,
-  CheckCircle,
 } from 'lucide-react';
 
 export default function AdminStockPage() {
@@ -177,7 +175,7 @@ export default function AdminStockPage() {
             <h1 className="text-xl font-bold text-[#F1F0EC]">
               Inventory &amp; Stock Matrix
             </h1>
-            <span className="text-xs font-bold bg-[#1D2025] text-[#C9A96A] border border-[#30343A] px-2.5 py-0.5 rounded-lg">
+            <span className="text-xs font-bold bg-[#1D2025] text-[#C9A96A] border border-[#30343A] px-2.5 py-0.5 rounded-lg whitespace-nowrap">
               {catalogSummary.totalStockUnits.toLocaleString()} Pcs Total
             </span>
           </div>
@@ -189,9 +187,9 @@ export default function AdminStockPage() {
         <div className="flex items-center gap-2.5">
           <Link
             href="/admin/products"
-            className="inline-flex items-center gap-1.5 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold h-10 px-4 rounded-xl shadow-xs transition-all active:scale-[0.99]"
+            className="inline-flex items-center justify-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-semibold min-h-[44px] px-5 rounded-xl shadow-xs transition-all active:scale-[0.99] whitespace-nowrap"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <Plus className="w-4 h-4 stroke-[2.2]" />
             <span>Add New Garment</span>
           </Link>
         </div>
@@ -208,53 +206,53 @@ export default function AdminStockPage() {
       {/* Summary Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card">
-          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block whitespace-nowrap">
             Total Garments
           </span>
           <div className="text-lg sm:text-xl font-bold text-[#C9A96A] mt-1">
             {catalogSummary.totalProductsCount}
           </div>
-          <span className="text-[10px] text-[#85888E] mt-0.5 block">Live Listings</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block whitespace-nowrap">Live Listings</span>
         </div>
 
         <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card">
-          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block whitespace-nowrap">
             Total Variants
           </span>
           <div className="text-lg sm:text-xl font-bold text-[#F1F0EC] mt-1">
             {catalogSummary.totalVariantsCount}
           </div>
-          <span className="text-[10px] text-[#85888E] mt-0.5 block">Size &amp; Sleeve Tiers</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block whitespace-nowrap">Size &amp; Sleeve Tiers</span>
         </div>
 
         <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card">
-          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block whitespace-nowrap">
             Units In Stock
           </span>
           <div className="text-lg sm:text-xl font-bold text-[#3FB982] mt-1">
             {catalogSummary.totalStockUnits.toLocaleString()}
           </div>
-          <span className="text-[10px] text-[#85888E] mt-0.5 block">Available Pieces</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block whitespace-nowrap">Available Pieces</span>
         </div>
 
         <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card">
-          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block whitespace-nowrap">
             Low Stock (&le; 10)
           </span>
           <div className={`text-lg sm:text-xl font-bold mt-1 ${catalogSummary.lowStockCount > 0 ? 'text-[#D6A84F]' : 'text-[#3FB982]'}`}>
             {catalogSummary.lowStockCount}
           </div>
-          <span className="text-[10px] text-[#85888E] mt-0.5 block">Need Replenishment</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block whitespace-nowrap">Need Replenishment</span>
         </div>
 
         <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card col-span-2 sm:col-span-1">
-          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block">
+          <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider block whitespace-nowrap">
             Out of Stock
           </span>
           <div className={`text-lg sm:text-xl font-bold mt-1 ${catalogSummary.outOfStockCount > 0 ? 'text-[#D96B6B]' : 'text-[#F1F0EC]'}`}>
             {catalogSummary.outOfStockCount}
           </div>
-          <span className="text-[10px] text-[#85888E] mt-0.5 block">0 Units Remaining</span>
+          <span className="text-[10px] text-[#85888E] mt-0.5 block whitespace-nowrap">0 Units Remaining</span>
         </div>
       </div>
 
@@ -344,127 +342,215 @@ export default function AdminStockPage() {
           </p>
         </div>
       ) : (
-        <div className="bg-[#17191D] rounded-2xl border border-[#30343A] shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-[#1D2025] text-[#C9A96A] uppercase font-bold text-[10px] border-b border-[#30343A]">
-                <tr>
-                  <th className="p-3.5">Product &amp; Category</th>
-                  <th className="p-3.5 text-center">Total In Stock</th>
-                  <th className="p-3.5 text-center">Variants Count</th>
-                  <th className="p-3.5">Price Range</th>
-                  <th className="p-3.5">Stock Status</th>
-                  <th className="p-3.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#272A2F] font-medium text-[#B4B5BA]">
-                {filteredProducts.map((product) => {
-                  const category = categories.find((c) => c.id === product.categoryId);
-                  const subcategory = subcategories.find((s) => s.id === product.subcategoryId);
-                  const primaryImage =
-                    product.media?.[0]?.url || '/images/products/sleevless high.jpeg';
+        <>
+          {/* ========================================================================= */}
+          {/* 1. DESKTOP DATA TABLE (hidden on mobile < md) */}
+          {/* ========================================================================= */}
+          <div className="hidden md:block bg-[#17191D] rounded-2xl border border-[#30343A] shadow-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-[#1D2025] text-[#C9A96A] uppercase font-bold text-[11px] border-b border-[#30343A]">
+                  <tr>
+                    <th className="p-4 min-w-[280px]">Product &amp; Category</th>
+                    <th className="p-4 w-32 text-center whitespace-nowrap">Total In Stock</th>
+                    <th className="p-4 w-36 text-center whitespace-nowrap">Variants Count</th>
+                    <th className="p-4 w-44 whitespace-nowrap">Price Range</th>
+                    <th className="p-4 w-36 whitespace-nowrap">Stock Status</th>
+                    <th className="p-4 w-36 text-right whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#272A2F] font-medium text-[#B4B5BA]">
+                  {filteredProducts.map((product) => {
+                    const category = categories.find((c) => c.id === product.categoryId);
+                    const subcategory = subcategories.find((s) => s.id === product.subcategoryId);
+                    const primaryImage =
+                      product.media?.[0]?.url || '/images/products/sleevless high.jpeg';
 
-                  const variants = stockMap[product.id] || product.variants || [];
-                  const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-                  const prices = variants.map((v) => v.price).filter((pr) => !isNaN(pr));
-                  const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-                  const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+                    const variants = stockMap[product.id] || product.variants || [];
+                    const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+                    const prices = variants.map((v) => v.price).filter((pr) => !isNaN(pr));
+                    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+                    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
 
-                  const lowStockVarsCount = variants.filter((v) => v.stock > 0 && v.stock <= 10).length;
-                  const outOfStockVarsCount = variants.filter((v) => v.stock <= 0).length;
+                    const lowStockVarsCount = variants.filter((v) => v.stock > 0 && v.stock <= 10).length;
+                    const outOfStockVarsCount = variants.filter((v) => v.stock <= 0).length;
 
-                  return (
-                    <tr
-                      key={product.id}
-                      className="hover:bg-[#1D2025]/60 transition-colors"
-                    >
-                      {/* Product & Category */}
-                      <td className="p-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-12 h-14 bg-[#202329] rounded-xl overflow-hidden border border-[#30343A] flex-shrink-0 p-0.5">
-                            <Image
-                              src={primaryImage}
-                              alt={product.name}
-                              fill
-                              sizes="56px"
-                              className="object-contain object-center"
-                            />
+                    return (
+                      <tr
+                        key={product.id}
+                        className="hover:bg-[#1D2025]/60 transition-colors"
+                      >
+                        {/* Product & Category (Flexible largest column) */}
+                        <td className="p-4 min-w-[280px]">
+                          <div className="flex items-center gap-3.5">
+                            <div className="relative w-12 h-14 bg-[#202329] rounded-xl overflow-hidden border border-[#30343A] flex-shrink-0 p-0.5">
+                              <Image
+                                src={primaryImage}
+                                alt={product.name}
+                                fill
+                                sizes="56px"
+                                className="object-contain object-center"
+                              />
+                            </div>
+
+                            <div className="space-y-0.5">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#C9A96A] block whitespace-nowrap">
+                                {category?.name || 'Category'} {subcategory ? `• ${subcategory.name}` : ''}
+                              </span>
+                              <h3 className="font-bold text-sm text-[#F1F0EC] leading-snug">
+                                {product.name}
+                              </h3>
+                              <p className="text-[11px] text-[#85888E] line-clamp-1">{product.subtitle}</p>
+                            </div>
                           </div>
+                        </td>
 
-                          <div>
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#C9A96A] block">
-                              {category?.name || 'Category'} {subcategory ? `• ${subcategory.name}` : ''}
-                            </span>
-                            <h3 className="font-bold text-sm text-[#F1F0EC] leading-snug">
-                              {product.name}
-                            </h3>
-                            <p className="text-[11px] text-[#85888E] line-clamp-1">{product.subtitle}</p>
-                          </div>
-                        </div>
-                      </td>
+                        {/* Total In Stock */}
+                        <td className="p-4 w-32 text-center whitespace-nowrap">
+                          <span className="font-bold text-sm text-[#C9A96A]">
+                            {totalStock.toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-[#85888E] block">Pieces</span>
+                        </td>
 
-                      {/* Total In Stock */}
-                      <td className="p-3.5 text-center">
-                        <span className="font-bold text-sm text-[#C9A96A]">
-                          {totalStock.toLocaleString()}
-                        </span>
-                        <span className="text-[10px] text-[#85888E] block">Pieces</span>
-                      </td>
+                        {/* Variants Count (No awkward wrapping) */}
+                        <td className="p-4 w-36 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center justify-center font-bold text-xs bg-[#202329] border border-[#30343A] text-[#B4B5BA] px-3 py-1 rounded-lg whitespace-nowrap">
+                            {variants.length} Variants
+                          </span>
+                        </td>
 
-                      {/* Variants Count */}
-                      <td className="p-3.5 text-center">
-                        <span className="font-bold text-xs bg-[#202329] border border-[#30343A] text-[#B4B5BA] px-2 py-0.5 rounded-md">
-                          {variants.length} Variants
-                        </span>
-                      </td>
+                        {/* Price Range (Single line, no awkward breaking) */}
+                        <td className="p-4 w-44 whitespace-nowrap">
+                          <span className="font-bold text-xs text-[#F1F0EC] whitespace-nowrap">
+                            {minPrice === maxPrice ? `Rs. ${minPrice}` : `Rs. ${minPrice} – Rs. ${maxPrice}`}
+                          </span>
+                        </td>
 
-                      {/* Price Range */}
-                      <td className="p-3.5">
-                        <span className="font-bold text-xs text-[#F1F0EC]">
-                          {minPrice === maxPrice ? `Rs. ${minPrice}` : `Rs. ${minPrice} – Rs. ${maxPrice}`}
-                        </span>
-                      </td>
-
-                      {/* Stock Status */}
-                      <td className="p-3.5">
-                        <div className="space-y-1">
+                        {/* Stock Status (Compact inline-flex badge) */}
+                        <td className="p-4 w-36 whitespace-nowrap">
                           {totalStock <= 0 ? (
-                            <span className="inline-flex items-center gap-1 text-[#D96B6B] font-bold text-[10px] bg-[#D96B6B]/15 border border-[#D96B6B]/30 px-2 py-0.5 rounded-md">
-                              <XCircle className="w-3 h-3 text-[#D96B6B]" /> Out of Stock
+                            <span className="inline-flex items-center gap-1.5 text-[#D96B6B] font-bold text-xs bg-[#D96B6B]/15 border border-[#D96B6B]/30 px-2.5 py-1 rounded-lg whitespace-nowrap">
+                              <XCircle className="w-3.5 h-3.5 text-[#D96B6B]" /> Out of Stock
                             </span>
                           ) : lowStockVarsCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-[#D6A84F] font-bold text-[10px] bg-[#D6A84F]/15 border border-[#D6A84F]/30 px-2 py-0.5 rounded-md">
-                              <AlertTriangle className="w-3 h-3 text-[#D6A84F]" /> {lowStockVarsCount} Low
+                            <span className="inline-flex items-center gap-1.5 text-[#D6A84F] font-bold text-xs bg-[#D6A84F]/15 border border-[#D6A84F]/30 px-2.5 py-1 rounded-lg whitespace-nowrap">
+                              <AlertTriangle className="w-3.5 h-3.5 text-[#D6A84F]" /> {lowStockVarsCount} Low
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[#3FB982] font-semibold text-[10px] bg-[#3FB982]/15 border border-[#3FB982]/30 px-2 py-0.5 rounded-md">
-                              <Check className="w-3 h-3 text-[#3FB982]" /> In Stock
+                            <span className="inline-flex items-center gap-1.5 text-[#3FB982] font-semibold text-xs bg-[#3FB982]/15 border border-[#3FB982]/30 px-2.5 py-1 rounded-lg whitespace-nowrap">
+                              <Check className="w-3.5 h-3.5 text-[#3FB982]" /> In Stock
                             </span>
                           )}
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Actions */}
-                      <td className="p-3.5 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setActiveDetailProductId(product.id)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#202329] hover:bg-[#272A2F] text-[#F1F0EC] hover:text-[#C9A96A] border border-[#30343A] rounded-xl text-xs font-semibold transition-all"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-[#C9A96A]" />
-                          <span>View Matrix</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        {/* Actions (Compact View Matrix button) */}
+                        <td className="p-4 w-36 text-right whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => setActiveDetailProductId(product.id)}
+                            className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#202329] hover:bg-[#272A2F] text-[#F1F0EC] hover:text-[#C9A96A] border border-[#30343A] hover:border-[#C9A96A] rounded-xl text-xs font-semibold whitespace-nowrap transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-[#C9A96A]" />
+                            <span>View Matrix</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* ========================================================================= */}
+          {/* 2. MOBILE RESPONSIVE CARDS (md:hidden, avoids cramming 6 columns) */}
+          {/* ========================================================================= */}
+          <div className="md:hidden space-y-3.5">
+            {filteredProducts.map((product) => {
+              const category = categories.find((c) => c.id === product.categoryId);
+              const subcategory = subcategories.find((s) => s.id === product.subcategoryId);
+              const primaryImage =
+                product.media?.[0]?.url || '/images/products/sleevless high.jpeg';
+
+              const variants = stockMap[product.id] || product.variants || [];
+              const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+              const prices = variants.map((v) => v.price).filter((pr) => !isNaN(pr));
+              const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+              const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+
+              const lowStockVarsCount = variants.filter((v) => v.stock > 0 && v.stock <= 10).length;
+              const outOfStockVarsCount = variants.filter((v) => v.stock <= 0).length;
+
+              return (
+                <div
+                  key={product.id}
+                  className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card space-y-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="relative w-14 h-16 bg-[#202329] rounded-xl overflow-hidden border border-[#30343A] flex-shrink-0 p-0.5">
+                      <Image
+                        src={primaryImage}
+                        alt={product.name}
+                        fill
+                        sizes="60px"
+                        className="object-contain object-center"
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#C9A96A] block truncate">
+                        {category?.name || 'Category'} {subcategory ? `• ${subcategory.name}` : ''}
+                      </span>
+                      <h3 className="font-bold text-sm text-[#F1F0EC] leading-snug">
+                        {product.name}
+                      </h3>
+                      <span className="font-bold text-xs text-[#C9A96A] block mt-0.5 whitespace-nowrap">
+                        {minPrice === maxPrice ? `Rs. ${minPrice}` : `Rs. ${minPrice} – Rs. ${maxPrice}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2.5 border-t border-[#30343A]/60 flex-wrap gap-2 text-xs">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="inline-flex items-center font-bold text-xs bg-[#202329] border border-[#30343A] text-[#B4B5BA] px-2.5 py-1 rounded-lg whitespace-nowrap">
+                        {totalStock.toLocaleString()} Pcs ({variants.length} Vars)
+                      </span>
+
+                      {totalStock <= 0 ? (
+                        <span className="inline-flex items-center gap-1 text-[#D96B6B] font-bold text-[11px] bg-[#D96B6B]/15 border border-[#D96B6B]/30 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                          <XCircle className="w-3 h-3" /> Out
+                        </span>
+                      ) : lowStockVarsCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-[#D6A84F] font-bold text-[11px] bg-[#D6A84F]/15 border border-[#D6A84F]/30 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                          <AlertTriangle className="w-3 h-3" /> {lowStockVarsCount} Low
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[#3FB982] font-semibold text-[11px] bg-[#3FB982]/15 border border-[#3FB982]/30 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                          <Check className="w-3 h-3" /> In Stock
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveDetailProductId(product.id)}
+                      className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 bg-[#202329] hover:bg-[#272A2F] text-[#F1F0EC] hover:text-[#C9A96A] border border-[#30343A] rounded-xl text-xs font-semibold whitespace-nowrap"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#C9A96A]" />
+                      <span>View Matrix</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
-      {/* Variant Details Modal */}
+      {/* ========================================================================= */}
+      {/* 3. VARIANT DETAILS MODAL */}
+      {/* ========================================================================= */}
       {activeDetailProduct && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-[#101114]/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
           <div className="bg-[#17191D] rounded-2xl w-full max-w-5xl shadow-elevation border border-[#30343A] overflow-hidden flex flex-col max-h-[92vh]">
@@ -532,14 +618,14 @@ export default function AdminStockPage() {
                           >
                             <td className="p-3 text-[#F1F0EC] font-semibold">{variant.sleeve}</td>
                             <td className="p-3 text-center">
-                              <span className="font-bold bg-[#202329] text-[#C9A96A] border border-[#30343A] px-2 py-0.5 rounded-md text-xs">
+                              <span className="font-bold bg-[#202329] text-[#C9A96A] border border-[#30343A] px-2 py-0.5 rounded-md text-xs whitespace-nowrap">
                                 {variant.size}
                               </span>
                             </td>
                             <td className="p-3 text-[#85888E] font-mono text-[11px]">
                               {variant.sku || '—'}
                             </td>
-                            <td className="p-3 font-bold text-[#C9A96A]">Rs. {variant.price}</td>
+                            <td className="p-3 font-bold text-[#C9A96A] whitespace-nowrap">Rs. {variant.price}</td>
                             <td className="p-3">
                               <input
                                 type="number"
@@ -588,15 +674,15 @@ export default function AdminStockPage() {
                             </td>
                             <td className="p-3">
                               {isOut ? (
-                                <span className="inline-flex items-center gap-1 text-[#D96B6B] font-bold text-[10px] bg-[#D96B6B]/15 border border-[#D96B6B]/30 px-2 py-0.5 rounded-md">
+                                <span className="inline-flex items-center gap-1 text-[#D96B6B] font-bold text-[10px] bg-[#D96B6B]/15 border border-[#D96B6B]/30 px-2 py-0.5 rounded-md whitespace-nowrap">
                                   <XCircle className="w-3 h-3" /> Out
                                 </span>
                               ) : isLow ? (
-                                <span className="inline-flex items-center gap-1 text-[#D6A84F] font-bold text-[10px] bg-[#D6A84F]/15 border border-[#D6A84F]/30 px-2 py-0.5 rounded-md">
+                                <span className="inline-flex items-center gap-1 text-[#D6A84F] font-bold text-[10px] bg-[#D6A84F]/15 border border-[#D6A84F]/30 px-2 py-0.5 rounded-md whitespace-nowrap">
                                   <AlertTriangle className="w-3 h-3" /> Low ({variant.stock})
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-[#3FB982] font-semibold text-[10px] bg-[#3FB982]/15 border border-[#3FB982]/30 px-2 py-0.5 rounded-md">
+                                <span className="inline-flex items-center gap-1 text-[#3FB982] font-semibold text-[10px] bg-[#3FB982]/15 border border-[#3FB982]/30 px-2 py-0.5 rounded-md whitespace-nowrap">
                                   <Check className="w-3 h-3" /> Ready ({variant.stock})
                                 </span>
                               )}

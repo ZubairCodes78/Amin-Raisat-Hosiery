@@ -113,17 +113,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   };
 
   return (
-    <div className="group bg-dark-surface rounded-2xl border border-dark-border overflow-hidden flex flex-col justify-between shadow-card hover:border-dark-border-light hover:shadow-elevation transition-all duration-300 relative w-full h-full">
+    <div className="group bg-[#17191D] rounded-2xl border border-[#30343A] overflow-hidden flex flex-col justify-between shadow-card hover:border-[#3E434B] hover:shadow-elevation transition-all duration-300 relative w-full h-full text-[#F1F0EC]">
       <div>
         {/* 1. Medium, Balanced Product Image Area */}
-        <div className="relative w-full h-64 sm:h-72 bg-[#1D2025] p-4 flex items-center justify-center overflow-hidden border-b border-dark-border">
+        <div className="relative w-full h-64 sm:h-72 bg-[#1D2025] p-4 flex items-center justify-center overflow-hidden border-b border-[#30343A]">
           {/* Badges */}
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-            <span className="bg-[#17191D]/90 backdrop-blur-xs text-[#C9A96A] border border-dark-border text-[10px] font-semibold px-2.5 py-0.5 rounded-md shadow-2xs uppercase tracking-wider">
+            <span className="bg-[#17191D]/90 backdrop-blur-xs text-[#C9A96A] border border-[#30343A] text-[10px] font-semibold px-2.5 py-0.5 rounded-md shadow-2xs uppercase tracking-wider whitespace-nowrap">
               100% Combed Cotton
             </span>
             {stock <= 10 && stock > 0 && (
-              <span className="bg-rose-950/80 text-rose-300 border border-rose-800/60 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+              <span className="bg-[#D96B6B]/20 text-[#D96B6B] border border-[#D96B6B]/40 text-[10px] font-semibold px-2.5 py-0.5 rounded-md whitespace-nowrap">
                 Only {stock} left
               </span>
             )}
@@ -147,13 +147,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* 2. Balanced Product Details Area */}
         <div className="p-4 sm:p-5 space-y-3">
           <div>
-            <span className="text-[10px] font-bold text-gold-500/80 uppercase tracking-widest">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#C9A96A] block whitespace-nowrap">
               {categoryLabel}
             </span>
-            <h3 className="text-base font-bold text-gray-100 mt-1 group-hover:text-gold-400 transition-colors leading-snug line-clamp-2">
+            <h3 className="text-base font-bold text-[#F1F0EC] mt-1 group-hover:text-[#C9A96A] transition-colors leading-snug line-clamp-2">
               <Link href={`/product/${product.slug}`}>{product.name}</Link>
             </h3>
-            <p className="text-xs text-gray-400 line-clamp-2 mt-1 font-normal leading-relaxed">
+            <p className="text-xs text-[#85888E] line-clamp-2 mt-1 font-normal leading-relaxed">
               {product.subtitle}
             </p>
           </div>
@@ -162,8 +162,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {availableSleeves.length > 1 && (
             <div className="space-y-1">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-gray-400">Style:</span>
-                <span className="text-gray-300 font-medium">{selectedSleeve}</span>
+                <span className="font-semibold text-[#85888E]">Style:</span>
+                <span className="text-[#B4B5BA] font-medium whitespace-nowrap">{selectedSleeve}</span>
               </div>
               <div className="flex gap-1.5 flex-wrap">
                 {availableSleeves.map((sl) => (
@@ -171,10 +171,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     key={sl}
                     type="button"
                     onClick={() => setSelectedSleeve(sl as SleeveType)}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap ${
                       selectedSleeve === sl
-                        ? 'border-gold-500 bg-gold-500/10 text-gold-400 shadow-xs'
-                        : 'border-dark-border text-gray-400 hover:border-gray-500 bg-dark-card'
+                        ? 'border-[#C9A96A] bg-[#C9A96A]/10 text-[#C9A96A] shadow-xs'
+                        : 'border-[#30343A] text-[#85888E] hover:border-[#3E434B] bg-[#1D2025]'
                     }`}
                   >
                     {sl}
@@ -187,8 +187,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {/* Size Pills */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="font-semibold text-gray-400">Size:</span>
-              <span className="text-gray-300 font-medium">Fit {selectedSize}</span>
+              <span className="font-semibold text-[#85888E]">Size:</span>
+              <span className="text-[#B4B5BA] font-medium whitespace-nowrap">Fit {selectedSize}</span>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {AVAILABLE_SIZES.map((sz) => (
@@ -198,8 +198,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   onClick={() => setSelectedSize(sz)}
                   className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
                     selectedSize === sz
-                      ? 'bg-gold-500 text-black font-extrabold shadow-glow-gold scale-105'
-                      : 'bg-dark-card text-gray-300 hover:bg-dark-hover border border-dark-border'
+                      ? 'bg-[#C9A96A] text-[#101114] font-extrabold shadow-xs scale-105'
+                      : 'bg-[#1D2025] text-[#B4B5BA] hover:bg-[#202329] border border-[#30343A]'
                   }`}
                 >
                   {sz}
@@ -212,32 +212,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
       {/* 3. Card Footer: Price & Primary BUY NOW Action */}
       <div className="p-4 sm:p-5 pt-0 mt-auto">
-        <div className="flex items-center justify-between gap-3 pt-3 border-t border-dark-border">
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#30343A]">
           <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-gold-400">Rs. {price}</span>
+            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+              <span className="text-xl font-bold text-[#C9A96A]">Rs. {price}</span>
               {comparePrice && (
-                <span className="text-xs text-gray-500 line-through font-normal">
+                <span className="text-xs text-[#85888E] line-through font-normal">
                   Rs. {comparePrice}
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded inline-block mt-0.5">
+            <span className="text-[10px] font-bold text-[#3FB982] bg-[#3FB982]/15 border border-[#3FB982]/30 px-2 py-0.5 rounded inline-block mt-0.5 whitespace-nowrap">
               Free Delivery on 3+ pcs
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {/* Secondary Add to Cart */}
             <button
               type="button"
               onClick={handleQuickAdd}
               disabled={!isAvailable}
-              className="p-2.5 bg-dark-card hover:bg-dark-hover text-gray-200 hover:text-white rounded-lg border border-dark-border transition-colors shadow-xs"
+              className="p-2.5 bg-[#1D2025] hover:bg-[#202329] text-[#F1F0EC] rounded-xl border border-[#30343A] transition-colors shadow-xs"
               title="Add to Cart"
               aria-label="Add to cart"
             >
-              {justAdded ? <Check className="w-4 h-4 text-emerald-400" /> : <ShoppingBag className="w-4 h-4" />}
+              {justAdded ? <Check className="w-4 h-4 text-[#3FB982]" /> : <ShoppingBag className="w-4 h-4" />}
             </button>
 
             {/* Primary BUY NOW Button */}
@@ -245,10 +245,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               type="button"
               onClick={handleBuyNow}
               disabled={!isAvailable}
-              className={`py-2.5 px-3.5 sm:px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 ${
+              className={`py-2.5 px-3.5 sm:px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 whitespace-nowrap ${
                 !isAvailable
-                  ? 'bg-dark-card text-gray-500 border border-dark-border cursor-not-allowed'
-                  : 'bg-gold-500 hover:bg-gold-400 text-black shadow-glow-gold'
+                  ? 'bg-[#1D2025] text-[#85888E] border border-[#30343A] cursor-not-allowed'
+                  : 'bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114]'
               }`}
             >
               <Zap className="w-3.5 h-3.5 fill-current" />

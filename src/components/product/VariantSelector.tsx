@@ -138,35 +138,35 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   );
 
   return (
-    <div className="space-y-6 select-none">
+    <div className="space-y-6 select-none text-[#F1F0EC]">
       {/* Price & Stock Display Header */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-dark-surface border border-dark-border flex items-center justify-between shadow-card">
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#17191D] border border-[#30343A] flex items-center justify-between shadow-card">
         <div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-extrabold text-gold-400 tracking-tight">
+          <div className="flex items-baseline gap-2 whitespace-nowrap">
+            <span className="text-2xl sm:text-3xl font-extrabold text-[#C9A96A] tracking-tight">
               Rs. {price}
             </span>
             {comparePrice && (
-              <span className="text-xs text-gray-500 line-through font-normal">
+              <span className="text-xs text-[#85888E] line-through font-normal">
                 Rs. {comparePrice}
               </span>
             )}
-            <span className="text-xs text-gray-400 font-normal">/ piece</span>
+            <span className="text-xs text-[#85888E] font-normal">/ piece</span>
           </div>
-          <p className="text-xs text-gray-300 mt-1 font-medium">
-            Total for {quantity} pcs: <strong className="text-gold-400 font-bold">Rs. {totalPrice}</strong>
+          <p className="text-xs text-[#B4B5BA] mt-1 font-medium whitespace-nowrap">
+            Total for {quantity} pcs: <strong className="text-[#C9A96A] font-bold">Rs. {totalPrice}</strong>
           </p>
         </div>
 
         {/* Stock & SKU alert */}
         <div className="text-right">
           {stock <= 0 ? (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-rose-950/60 text-rose-300 px-2.5 py-1 rounded-lg border border-rose-800/60">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#D96B6B]/20 text-[#D96B6B] px-3 py-1 rounded-xl border border-[#D96B6B]/40 whitespace-nowrap">
               <ShieldAlert className="w-3.5 h-3.5" /> Out of Stock
             </span>
           ) : (
-            <p className="text-xs font-medium text-gray-400">
-              SKU: <span className="font-mono text-gray-200 font-semibold">{currentVariant?.sku || 'ARH-SKU'}</span>
+            <p className="text-xs font-medium text-[#85888E] whitespace-nowrap">
+              SKU: <span className="font-mono text-[#F1F0EC] font-semibold">{currentVariant?.sku || 'ARH-SKU'}</span>
             </p>
           )}
         </div>
@@ -175,9 +175,9 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
       {/* STEP 1: Dynamic Sleeve / Style Selector (If multiple exist) */}
       {availableSleeves.length > 1 && (
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-wider text-[#B4B5BA] flex items-center justify-between">
             <span>1. Select Sleeve Style</span>
-            <span className="text-gold-400 font-semibold text-[11px]">
+            <span className="text-[#C9A96A] font-semibold text-[11px] whitespace-nowrap">
               {selectedSleeve}
             </span>
           </label>
@@ -189,10 +189,10 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                   key={sl}
                   type="button"
                   onClick={() => setSelectedSleeve(sl)}
-                  className={`p-3 rounded-xl border-2 text-center font-bold text-xs transition-all ${
+                  className={`p-3 rounded-xl border text-center font-bold text-xs transition-all whitespace-nowrap ${
                     isSelected
-                      ? 'border-gold-500 bg-gold-500/10 text-gold-400 shadow-glow-gold'
-                      : 'border-dark-border bg-dark-card text-gray-300 hover:border-gray-500'
+                      ? 'border-[#C9A96A] bg-[#C9A96A]/10 text-[#C9A96A] shadow-xs'
+                      : 'border-[#30343A] bg-[#1D2025] text-[#B4B5BA] hover:border-[#3E434B]'
                   }`}
                 >
                   {sl}
@@ -207,13 +207,13 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
       {availableSizes.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-gray-300">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#B4B5BA]">
               {availableSleeves.length > 1 ? '2.' : '1.'} Select Size (Fit)
             </label>
             <button
               type="button"
               onClick={() => setIsSizeGuideOpen(true)}
-              className="text-xs font-medium text-gold-400 hover:underline flex items-center gap-1"
+              className="text-xs font-medium text-[#C9A96A] hover:underline flex items-center gap-1"
             >
               <HelpCircle className="w-3.5 h-3.5" /> Size Guide
             </button>
@@ -233,12 +233,12 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                   key={s}
                   type="button"
                   onClick={() => setSelectedSize(s)}
-                  className={`py-2.5 px-4 rounded-xl border-2 font-bold text-xs transition-all flex flex-col items-center justify-center min-w-[54px] ${
+                  className={`py-2.5 px-4 rounded-xl border font-bold text-xs transition-all flex flex-col items-center justify-center min-w-[54px] ${
                     isSelected
-                      ? 'border-gold-500 bg-gold-500 text-black font-extrabold shadow-glow-gold'
+                      ? 'border-[#C9A96A] bg-[#C9A96A] text-[#101114] font-extrabold shadow-xs scale-105'
                       : isOutOfStock
-                      ? 'border-dark-border bg-dark-surface text-gray-600 line-through opacity-60 cursor-not-allowed'
-                      : 'border-dark-border bg-dark-card text-gray-200 hover:border-dark-border-light'
+                      ? 'border-[#30343A] bg-[#17191D] text-[#85888E] line-through opacity-60 cursor-not-allowed'
+                      : 'border-[#30343A] bg-[#1D2025] text-[#F1F0EC] hover:border-[#3E434B]'
                   }`}
                 >
                   <span>{s}</span>
@@ -250,35 +250,35 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
       )}
 
       {/* STEP 3: Quantity Counter & Delivery Rules */}
-      <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-dark-surface border border-dark-border shadow-card">
+      <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-[#17191D] border border-[#30343A] shadow-card">
         <div className="flex items-center justify-between">
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-gray-200 block">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#F1F0EC] block">
               Quantity (Pieces)
             </label>
-            <span className="text-[11px] text-gray-400 font-normal">
+            <span className="text-[11px] text-[#85888E] font-normal">
               Minimum order: {minOrder} pieces
             </span>
           </div>
 
-          <div className="flex items-center border border-dark-border rounded-xl bg-dark-card overflow-hidden shadow-sm">
+          <div className="flex items-center border border-[#30343A] rounded-xl bg-[#1D2025] overflow-hidden shadow-xs">
             <button
               type="button"
               disabled={quantity <= minOrder}
               onClick={() => setQuantity((prev) => Math.max(minOrder, prev - 1))}
-              className="px-3.5 py-2 text-gray-300 hover:bg-dark-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-sm"
+              className="px-3.5 py-2 text-[#F1F0EC] hover:bg-[#202329] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-sm"
               aria-label="Decrease quantity"
             >
               -
             </button>
-            <span className="w-12 text-center text-xs font-extrabold text-gold-400">
+            <span className="w-12 text-center text-xs font-extrabold text-[#C9A96A]">
               {quantity}
             </span>
             <button
               type="button"
               disabled={quantity >= maxOrder}
               onClick={() => setQuantity((prev) => Math.min(maxOrder, prev + 1))}
-              className="px-3.5 py-2 text-gray-300 hover:bg-dark-hover disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-sm"
+              className="px-3.5 py-2 text-[#F1F0EC] hover:bg-[#202329] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-sm"
               aria-label="Increase quantity"
             >
               +
@@ -290,14 +290,14 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
         <div
           className={`p-3 rounded-xl text-xs flex items-center gap-2.5 ${
             isFreeDeliveryForThis
-              ? 'bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 font-medium'
-              : 'bg-amber-950/50 border border-amber-800/50 text-amber-300 font-normal'
+              ? 'bg-[#3FB982]/15 border border-[#3FB982]/30 text-[#3FB982] font-medium'
+              : 'bg-[#D6A84F]/15 border border-[#D6A84F]/30 text-[#D6A84F] font-normal'
           }`}
         >
-          <Truck className="w-4 h-4 flex-shrink-0 text-gold-400" />
+          <Truck className="w-4 h-4 flex-shrink-0 text-[#C9A96A]" />
           {isFreeDeliveryForThis ? (
             <span>
-              <strong className="text-emerald-400">Free Delivery Unlocked</strong> on this {quantity}-piece order across Pakistan!
+              <strong className="text-[#3FB982]">Free Delivery Unlocked</strong> on this {quantity}-piece order across Pakistan!
             </span>
           ) : (
             <span>
@@ -316,8 +316,8 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
           onClick={handleBuyNow}
           className={`w-full py-4 px-6 rounded-xl font-extrabold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-elevation ${
             isAvailable
-              ? 'bg-gold-500 hover:bg-gold-400 text-black shadow-glow-gold active:scale-[0.99]'
-              : 'bg-dark-card text-gray-500 border border-dark-border cursor-not-allowed'
+              ? 'bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] active:scale-[0.99]'
+              : 'bg-[#1D2025] text-[#85888E] border border-[#30343A] cursor-not-allowed'
           }`}
         >
           <Zap className="w-4 h-4 fill-current stroke-[2.5]" />
@@ -331,9 +331,9 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
             type="button"
             disabled={!isAvailable}
             onClick={handleAddToCart}
-            className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-dark-surface hover:bg-dark-hover text-gray-200 border border-dark-border transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-[#17191D] hover:bg-[#1D2025] text-[#F1F0EC] border border-[#30343A] transition-colors flex items-center justify-center gap-2"
           >
-            <ShoppingBag className="w-4 h-4 text-gold-400" />
+            <ShoppingBag className="w-4 h-4 text-[#C9A96A]" />
             <span>Add to Cart</span>
           </button>
 
@@ -342,7 +342,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-[#25D366] hover:bg-[#1EBE5D] hover:shadow-glow-whatsapp text-white shadow-xs transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-[#25D366] hover:bg-[#1EBE5D] text-white shadow-xs transition-all flex items-center justify-center gap-2"
           >
             <WhatsAppIcon size={16} className="text-white fill-current" />
             <span>Order on WhatsApp</span>
@@ -352,23 +352,23 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
       {/* Toast Notification */}
       {isAddedToast && (
-        <div className="p-3.5 bg-dark-card border border-gold-500/40 text-gray-100 text-xs font-semibold rounded-xl shadow-elevation flex items-center gap-2 animate-in fade-in">
-          <Check className="w-4 h-4 text-emerald-400" />
+        <div className="p-3.5 bg-[#17191D] border border-[#C9A96A]/40 text-[#F1F0EC] text-xs font-semibold rounded-xl shadow-elevation flex items-center gap-2 animate-in fade-in">
+          <Check className="w-4 h-4 text-[#3FB982]" />
           <span>Added {quantity} x {product.name} ({selectedSize}) to cart!</span>
         </div>
       )}
 
       {/* Size Guide Modal */}
       {isSizeGuideOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-dark-surface rounded-2xl p-6 max-w-lg w-full shadow-elevation border border-dark-border">
-            <div className="flex items-center justify-between pb-3 border-b border-dark-border">
-              <h4 className="font-bold text-gray-100 text-base">
+        <div className="fixed inset-0 z-50 bg-[#101114]/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#17191D] rounded-2xl p-6 max-w-lg w-full shadow-elevation border border-[#30343A]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#30343A]">
+              <h4 className="font-bold text-[#F1F0EC] text-base">
                 Men&apos;s Vest Size Guide (Chest in Inches)
               </h4>
               <button
                 onClick={() => setIsSizeGuideOpen(false)}
-                className="p-1 text-gray-400 hover:text-gray-100 rounded"
+                className="p-1 text-[#85888E] hover:text-[#F1F0EC] rounded"
                 aria-label="Close size guide"
               >
                 <X className="w-5 h-5" />
@@ -377,7 +377,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
             <div className="py-4">
               <table className="w-full text-xs text-left">
-                <thead className="bg-dark-card text-gold-400 uppercase font-bold border-b border-dark-border">
+                <thead className="bg-[#1D2025] text-[#C9A96A] uppercase font-bold border-b border-[#30343A]">
                   <tr>
                     <th className="p-2.5 rounded-l">Size</th>
                     <th className="p-2.5">Chest (Inches)</th>
@@ -385,36 +385,36 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                     <th className="p-2.5 rounded-r">Fit</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-dark-border text-gray-300">
+                <tbody className="divide-y divide-[#30343A] text-[#B4B5BA]">
                   <tr>
-                    <td className="p-2.5 font-bold text-white">S</td>
+                    <td className="p-2.5 font-bold text-[#F1F0EC]">S</td>
                     <td className="p-2.5">34 - 36&quot;</td>
                     <td className="p-2.5">27&quot;</td>
-                    <td className="p-2.5 text-gray-400">Slim Fit</td>
+                    <td className="p-2.5 text-[#85888E]">Slim Fit</td>
                   </tr>
                   <tr>
-                    <td className="p-2.5 font-bold text-white">M</td>
+                    <td className="p-2.5 font-bold text-[#F1F0EC]">M</td>
                     <td className="p-2.5">38 - 40&quot;</td>
                     <td className="p-2.5">28&quot;</td>
-                    <td className="p-2.5 text-gray-400">Regular Fit</td>
+                    <td className="p-2.5 text-[#85888E]">Regular Fit</td>
                   </tr>
-                  <tr className="bg-dark-card/50">
-                    <td className="p-2.5 font-bold text-gold-400">L</td>
-                    <td className="p-2.5 font-semibold text-gold-400">42 - 44&quot;</td>
-                    <td className="p-2.5 text-gold-400">29&quot;</td>
-                    <td className="p-2.5 font-semibold text-gold-400">Most Popular</td>
+                  <tr className="bg-[#1D2025]/50">
+                    <td className="p-2.5 font-bold text-[#C9A96A]">L</td>
+                    <td className="p-2.5 font-semibold text-[#C9A96A]">42 - 44&quot;</td>
+                    <td className="p-2.5 text-[#C9A96A]">29&quot;</td>
+                    <td className="p-2.5 font-semibold text-[#C9A96A]">Most Popular</td>
                   </tr>
                   <tr>
-                    <td className="p-2.5 font-bold text-white">XL</td>
+                    <td className="p-2.5 font-bold text-[#F1F0EC]">XL</td>
                     <td className="p-2.5">46 - 48&quot;</td>
                     <td className="p-2.5">30&quot;</td>
-                    <td className="p-2.5 text-gray-400">Relaxed Fit</td>
+                    <td className="p-2.5 text-[#85888E]">Relaxed Fit</td>
                   </tr>
                   <tr>
-                    <td className="p-2.5 font-bold text-white">XXL</td>
+                    <td className="p-2.5 font-bold text-[#F1F0EC]">XXL</td>
                     <td className="p-2.5">50 - 52&quot;</td>
                     <td className="p-2.5">31&quot;</td>
-                    <td className="p-2.5 text-gray-400">Comfort Fit</td>
+                    <td className="p-2.5 text-[#85888E]">Comfort Fit</td>
                   </tr>
                 </tbody>
               </table>
@@ -422,7 +422,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
             <button
               onClick={() => setIsSizeGuideOpen(false)}
-              className="w-full py-3 bg-gold-500 text-black font-bold text-xs rounded-xl hover:bg-gold-400 transition-colors shadow-glow-gold"
+              className="w-full py-3 bg-[#C9A96A] text-[#101114] font-bold text-xs rounded-xl hover:bg-[#D8BD88] transition-colors"
             >
               Close Size Guide
             </button>
