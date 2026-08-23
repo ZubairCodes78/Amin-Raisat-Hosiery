@@ -980,7 +980,20 @@ export class DataStore {
     let addresses: CustomerAddress[] = [];
     const orders = await this.getOrders();
 
-    if (isSupabaseConfigured()) {
+    if (this.isClient()) {
+      try {
+        const res = await fetch('/api/admin/customers');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.profiles) profiles = json.profiles;
+          if (json.addresses) addresses = json.addresses;
+        }
+      } catch (err) {
+        console.warn('API /api/admin/customers fetch warning:', err);
+      }
+    }
+
+    if (profiles.length === 0 && isSupabaseConfigured()) {
       try {
         const { data: profData, error: profErr } = await supabase
           .from('customer_profiles')
@@ -1010,14 +1023,6 @@ export class DataStore {
         const { data: addrData, error: addrErr } = await supabase
           .from('customer_addresses')
           .select('*');
-
-        if (addrErr) {
-          console.error('[DataStore.getCustomers] Supabase customer_addresses error:', {
-            message: addrErr.message,
-            code: addrErr.code,
-            details: addrErr.details,
-          });
-        }
 
         if (!addrErr && addrData) {
           addresses = addrData.map((a: any) => ({

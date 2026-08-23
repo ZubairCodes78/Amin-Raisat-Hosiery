@@ -207,9 +207,13 @@ CREATE TABLE IF NOT EXISTS public.customer_addresses (
 
 CREATE INDEX IF NOT EXISTS idx_customer_addresses_user_id ON public.customer_addresses(user_id);
 
--- Trigger to automatically create customer profile on auth.users signup
+-- Trigger to automatically create customer profile on auth.users signup (Hardened)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+LANGUAGE plpgsql
+AS $$
 BEGIN
   INSERT INTO public.customer_profiles (id, full_name, email, phone, created_at, updated_at)
   VALUES (
@@ -230,7 +234,10 @@ BEGIN
     updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+-- Secure execution privileges on handle_new_user
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -260,7 +267,7 @@ CREATE POLICY "Public can update/delete product media" ON storage.objects
 FOR ALL USING (bucket_id IN ('product-media', 'hero-slides'));
 
 -- ==============================================================================
--- 4. ROW LEVEL SECURITY (RLS) POLICIES
+-- 4. ROW LEVEL SECURITY (RLS) POLICIES (HARDENED)
 -- ==============================================================================
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subcategories ENABLE ROW LEVEL SECURITY;
@@ -276,30 +283,113 @@ ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customer_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customer_addresses ENABLE ROW LEVEL SECURITY;
 
--- Customer Profiles Policies (Allows Admin & Customer Access)
+-- 4.1 Customer Profiles: Strict Ownership Isolation
 DROP POLICY IF EXISTS "Allow select customer_profiles" ON public.customer_profiles;
-CREATE POLICY "Allow select customer_profiles" ON public.customer_profiles FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Allow update customer_profiles" ON public.customer_profiles;
-CREATE POLICY "Allow update customer_profiles" ON public.customer_profiles FOR UPDATE USING (true);
-
 DROP POLICY IF EXISTS "Allow insert customer_profiles" ON public.customer_profiles;
-CREATE POLICY "Allow insert customer_profiles" ON public.customer_profiles FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Users can view own profile" ON public.customer_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.customer_profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.customer_profiles;
 
--- Customer Addresses Policies (Allows Store & Customer Management)
+CREATE POLICY "Users can view own profile" ON public.customer_profiles
+FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON public.customer_profiles
+FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can insert own profile" ON public.customer_profiles
+FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- 4.2 Customer Addresses: Strict Ownership Isolation
 DROP POLICY IF EXISTS "Allow select customer_addresses" ON public.customer_addresses;
-CREATE POLICY "Allow select customer_addresses" ON public.customer_addresses FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Allow insert customer_addresses" ON public.customer_addresses;
-CREATE POLICY "Allow insert customer_addresses" ON public.customer_addresses FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Allow update customer_addresses" ON public.customer_addresses;
-CREATE POLICY "Allow update customer_addresses" ON public.customer_addresses FOR UPDATE USING (true);
-
 DROP POLICY IF EXISTS "Allow delete customer_addresses" ON public.customer_addresses;
-CREATE POLICY "Allow delete customer_addresses" ON public.customer_addresses FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Users can view own addresses" ON public.customer_addresses;
+DROP POLICY IF EXISTS "Users can insert own addresses" ON public.customer_addresses;
+DROP POLICY IF EXISTS "Users can update own addresses" ON public.customer_addresses;
+DROP POLICY IF EXISTS "Users can delete own addresses" ON public.customer_addresses;
 
--- Grants for Customer Tables
+CREATE POLICY "Users can view own addresses" ON public.customer_addresses
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own addresses" ON public.customer_addresses
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own addresses" ON public.customer_addresses
+FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own addresses" ON public.customer_addresses
+FOR DELETE USING (auth.uid() = user_id);
+
+-- 4.3 Public Catalog Read Policies (NO Public Write)
+DROP POLICY IF EXISTS "Allow full operations categories" ON public.categories;
+DROP POLICY IF EXISTS "Allow public read categories" ON public.categories;
+CREATE POLICY "Allow public read categories" ON public.categories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow full operations subcategories" ON public.subcategories;
+DROP POLICY IF EXISTS "Allow public read subcategories" ON public.subcategories;
+CREATE POLICY "Allow public read subcategories" ON public.subcategories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow full operations products" ON public.products;
+DROP POLICY IF EXISTS "Allow public read products" ON public.products;
+CREATE POLICY "Allow public read products" ON public.products FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow full operations product_variants" ON public.product_variants;
+DROP POLICY IF EXISTS "Allow public read variants" ON public.product_variants;
+CREATE POLICY "Allow public read variants" ON public.product_variants FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow full operations product_media" ON public.product_media;
+DROP POLICY IF EXISTS "Allow public read product media" ON public.product_media;
+CREATE POLICY "Allow public read product media" ON public.product_media FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow full operations hero_slides" ON public.hero_slides;
+DROP POLICY IF EXISTS "Allow public read hero slides" ON public.hero_slides;
+CREATE POLICY "Allow public read hero slides" ON public.hero_slides FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow full operations shipping_settings" ON public.shipping_settings;
+DROP POLICY IF EXISTS "Allow public read shipping settings" ON public.shipping_settings;
+CREATE POLICY "Allow public read shipping settings" ON public.shipping_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow full operations site_settings" ON public.site_settings;
+DROP POLICY IF EXISTS "Allow public read site settings" ON public.site_settings;
+CREATE POLICY "Allow public read site settings" ON public.site_settings FOR SELECT USING (true);
+
+-- 4.4 Orders: Checkout Insert & Tracking Select (NO Public Update/Delete)
+DROP POLICY IF EXISTS "Allow public insert orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow public select orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow public update orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow public delete orders" ON public.orders;
+
+CREATE POLICY "Allow public insert orders" ON public.orders
+FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public select orders" ON public.orders
+FOR SELECT USING (true);
+
+-- 4.5 Order Items: Checkout Insert & Tracking Select (NO Public Update/Delete)
+DROP POLICY IF EXISTS "Allow public insert order_items" ON public.order_items;
+DROP POLICY IF EXISTS "Allow public select order_items" ON public.order_items;
+DROP POLICY IF EXISTS "Allow public delete order_items" ON public.order_items;
+
+CREATE POLICY "Allow public insert order_items" ON public.order_items
+FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public select order_items" ON public.order_items
+FOR SELECT USING (true);
+
+-- 4.6 Reviews: Approved Read & Submission Insert (NO Public Update/Delete)
+DROP POLICY IF EXISTS "Allow full operations reviews" ON public.reviews;
+DROP POLICY IF EXISTS "Allow public read approved reviews" ON public.reviews;
+DROP POLICY IF EXISTS "Allow public insert reviews" ON public.reviews;
+
+CREATE POLICY "Allow public read approved reviews" ON public.reviews
+FOR SELECT USING (is_approved = true);
+
+CREATE POLICY "Allow public insert reviews" ON public.reviews
+FOR INSERT WITH CHECK (true);
+
+-- 4.7 Grants for Public and Authenticated Roles
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON TABLE public.customer_profiles TO anon, authenticated;
 GRANT ALL ON TABLE public.customer_addresses TO anon, authenticated;
