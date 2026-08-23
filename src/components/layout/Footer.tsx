@@ -10,18 +10,19 @@ export const Footer: React.FC = () => {
   const { settings, categories } = useStore();
 
   return (
-    <footer className="bg-gray-950 text-gray-400 border-t border-gold-600/20">
+    <footer className="bg-dark-surface text-gray-400 border-t border-dark-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* 1. Brand Column */}
           <div className="space-y-3">
-            <Link href="/" className="inline-flex items-center group">
-              <div className="relative w-20 h-20 sm:w-24 sm:h-24 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+            <Link href="/" className="inline-flex items-center group py-1">
+              <div className="relative w-48 h-14 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                 <Image
-                  src="/images/Logo.png"
+                  src="/images/header logo.png"
                   alt={settings.brandName}
                   fill
-                  className="object-contain transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+                  sizes="200px"
+                  className="object-contain"
                 />
               </div>
             </Link>
@@ -29,7 +30,7 @@ export const Footer: React.FC = () => {
               Specialized in 100% pure combed cotton hosiery essentials and innerwear engineered for daily breathability and long-lasting durability across Pakistan.
             </p>
             <div className="pt-1">
-              <Link href="/about" className="text-xs font-semibold text-white hover:underline">
+              <Link href="/about" className="text-xs font-semibold text-gold-400 hover:text-gold-300 transition-colors">
                 Read Our Story →
               </Link>
             </div>
@@ -43,14 +44,14 @@ export const Footer: React.FC = () => {
                 <li key={cat.id}>
                   <Link
                     href={`/category/${cat.slug}`}
-                    className="hover:text-white transition-colors"
+                    className="hover:text-gold-400 transition-colors"
                   >
                     {cat.name}&apos;s Collection
                   </Link>
                 </li>
               ))}
               <li>
-                <Link href="/shop" className="hover:text-white transition-colors font-medium">
+                <Link href="/shop" className="hover:text-gold-400 transition-colors font-medium">
                   All Products
                 </Link>
               </li>
@@ -73,17 +74,17 @@ export const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <a href={`tel:${settings.phone}`} className="hover:text-white transition-colors">
+                <a href={`tel:${settings.phone}`} className="hover:text-gray-200 transition-colors">
                   Phone: {settings.phone}
                 </a>
               </li>
               <li>
-                <a href={`mailto:${settings.email}`} className="hover:text-white transition-colors">
+                <a href={`mailto:${settings.email}`} className="hover:text-gray-200 transition-colors">
                   Email: {settings.email}
                 </a>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-white transition-colors">
+                <Link href="/contact" className="hover:text-gray-200 transition-colors">
                   Contact Us Form
                 </Link>
               </li>
@@ -95,22 +96,22 @@ export const Footer: React.FC = () => {
             <h4 className="text-xs font-bold text-gold-500 uppercase tracking-wider">Information</h4>
             <ul className="space-y-2 text-xs text-gray-400">
               <li>
-                <Link href="/shipping-policy" className="hover:text-white transition-colors">
-                  Shipping Policy
+                <Link href="/shipping-policy" className="hover:text-gray-200 transition-colors">
+                  Shipping Policy (3+ Free Delivery)
                 </Link>
               </li>
               <li>
-                <Link href="/exchange-returns" className="hover:text-white transition-colors">
-                  Exchange &amp; Returns
+                <Link href="/exchange-returns" className="hover:text-gray-200 transition-colors">
+                  Exchange &amp; Returns (7 Days)
                 </Link>
               </li>
               <li>
-                <Link href="/privacy-policy" className="hover:text-white transition-colors">
+                <Link href="/privacy-policy" className="hover:text-gray-200 transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms-conditions" className="hover:text-white transition-colors">
+                <Link href="/terms-conditions" className="hover:text-gray-200 transition-colors">
                   Terms &amp; Conditions
                 </Link>
               </li>
@@ -118,8 +119,8 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Line (NO customer account, NO admin links) */}
-        <div className="mt-12 pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
+        {/* Bottom Line */}
+        <div className="mt-12 pt-6 border-t border-dark-border flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
           <p>© {new Date().getFullYear()} {settings.brandName}. All rights reserved.</p>
           <p className="font-normal">100% Combed Cotton • Market: Pakistan (PKR / Rs.)</p>
         </div>

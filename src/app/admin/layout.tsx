@@ -51,15 +51,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   if (pathname === '/admin/login') {
-    return <div className="min-h-screen bg-gray-950">{children}</div>;
+    return <div className="min-h-screen bg-dark-bg">{children}</div>;
   }
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
         <div className="text-center space-y-2">
-          <div className="w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs text-gray-600 font-semibold">Loading Admin Dashboard...</p>
+          <div className="w-8 h-8 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-gray-400 font-semibold">Loading Admin Dashboard...</p>
         </div>
       </div>
     );
@@ -77,23 +77,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row">
-      {/* Dedicated Admin Sidebar for Desktop (No website header/footer) */}
-      <aside className="hidden md:flex flex-col w-64 bg-gray-950 text-gray-300 border-r border-gold-600/20 p-5 justify-between flex-shrink-0 min-h-screen sticky top-0">
+    <div className="min-h-screen bg-dark-bg text-gray-100 flex flex-col md:flex-row">
+      {/* Dedicated Admin Sidebar for Desktop */}
+      <aside className="hidden md:flex flex-col w-64 bg-dark-surface text-gray-300 border-r border-dark-border p-5 justify-between flex-shrink-0 min-h-screen sticky top-0">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center gap-3 pb-4 border-b border-gold-600/20">
-            <div className="relative w-10 h-10 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out hover:scale-[1.02]">
+          <div className="flex items-center gap-3 pb-4 border-b border-dark-border">
+            <div className="relative w-10 h-10 overflow-hidden flex-shrink-0">
               <Image
-                src="/images/Logo.png"
+                src="/images/Favicon Logo.jpeg"
                 alt="Amin Raisat Hosiery"
                 fill
-                className="object-contain"
+                className="object-contain rounded-lg"
               />
             </div>
             <div>
-              <h2 className="font-semibold text-sm text-white tracking-wider uppercase leading-none">Admin Portal</h2>
-              <p className="font-serif italic text-[11px] text-gray-400 font-medium tracking-wide mt-1">Amin Raisat Hosiery</p>
+              <h2 className="font-bold text-sm text-gold-400 tracking-wider uppercase leading-none">Admin Portal</h2>
+              <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1">Amin Raisat Hosiery</p>
             </div>
           </div>
 
@@ -106,10 +106,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
                     isActive
-                      ? 'bg-gray-800 text-white'
-                      : 'hover:bg-gray-900 text-gray-400 hover:text-white'
+                      ? 'bg-gold-500 text-black shadow-glow-gold'
+                      : 'hover:bg-dark-card text-gray-400 hover:text-gray-100'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -121,11 +121,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Bottom Actions */}
-        <div className="space-y-2 pt-4 border-t border-gold-600/20">
+        <div className="space-y-2 pt-4 border-t border-dark-border">
           <a
             href="/"
             target="_blank"
-            className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-gray-900 transition-colors"
+            className="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-gold-400 hover:bg-dark-card transition-colors"
           >
             <span className="flex items-center gap-2">
               <Store className="w-4 h-4" /> Live Storefront
@@ -136,7 +136,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-950/30 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-950/30 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span>Log Out</span>
@@ -145,18 +145,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Mobile Top Header Bar for Admin */}
-      <div className="md:hidden bg-gray-950 text-white p-4 flex items-center justify-between sticky top-0 z-40 border-b border-gold-600/20">
+      <div className="md:hidden bg-dark-surface text-white p-4 flex items-center justify-between sticky top-0 z-40 border-b border-dark-border">
         <div className="flex items-center gap-2.5">
-          <div className="relative w-9 h-9 overflow-hidden flex-shrink-0">
+          <div className="relative w-8 h-8 overflow-hidden flex-shrink-0">
             <Image
-              src="/images/Logo.png"
+              src="/images/Favicon Logo.jpeg"
               alt="Amin Raisat Hosiery"
               fill
-              className="object-contain"
+              className="object-contain rounded"
             />
           </div>
           <div>
-            <h2 className="font-bold text-sm leading-none">Admin Portal</h2>
+            <h2 className="font-bold text-sm leading-none text-gold-400">Admin Portal</h2>
             <span className="text-[10px] text-gray-400">Amin Raisat Hosiery</span>
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile Drawer */}
       {mobileNavOpen && (
-        <div className="md:hidden bg-gray-900 text-white p-4 space-y-1.5 border-b border-gold-600/20 shadow-xl">
+        <div className="md:hidden bg-dark-surface text-white p-4 space-y-1.5 border-b border-dark-border shadow-elevation">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -182,7 +182,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={link.href}
                 onClick={() => setMobileNavOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold ${
-                  isActive ? 'bg-gray-800 text-white' : 'text-gray-300'
+                  isActive ? 'bg-gold-500 text-black font-bold' : 'text-gray-300 hover:bg-dark-card'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -190,7 +190,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </a>
             );
           })}
-          <div className="pt-2 border-t border-gold-600/20 flex justify-between">
+          <div className="pt-2 border-t border-dark-border flex justify-between">
             <a href="/" target="_blank" className="text-xs text-gray-400 flex items-center gap-1">
               Live Store ↗
             </a>
@@ -201,7 +201,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       )}
 
-      {/* Main Admin Page Content (Dedicated view, zero customer footer) */}
+      {/* Main Admin Page Content */}
       <main className="flex-1 p-4 sm:p-8 lg:p-10 overflow-y-auto max-w-7xl">
         {children}
       </main>

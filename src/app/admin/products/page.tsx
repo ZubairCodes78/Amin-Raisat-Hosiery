@@ -128,7 +128,7 @@ export default function AdminProductsPage() {
     setProdIsPublished(true);
     setProdFeaturesText('100% Pure Combed Cotton\nAnti-Sag Neck Seams\nBreathable Rib Knit\nPreshrunk Fabric');
     setProdCareText('Machine wash cold\nDo not bleach\nTumble dry low\nWarm iron if needed');
-    setProdShippingText('Nationwide Cash on Delivery (COD) across Pakistan. Free delivery on 4+ pieces.');
+    setProdShippingText('Nationwide Cash on Delivery (COD) across Pakistan. Free delivery on 3+ pieces.');
 
     const initialQualities = ['High Quality', 'Standard Quality'];
     const initialStyles = ['Sleeveless', 'Full Sleeve'];

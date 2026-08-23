@@ -9,55 +9,55 @@ export default function TermsConditionsPage() {
   const { settings } = useStore();
 
   return (
-    <div className="min-h-[75vh] py-10 bg-white">
+    <div className="min-h-[85vh] py-12 bg-dark-bg text-gray-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-6">
-          <Link href="/" className="hover:text-gray-900">
+        <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
+          <Link href="/" className="hover:text-gold-400 transition-colors">
             Home
           </Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="font-semibold text-gray-900">Terms &amp; Conditions</span>
+          <ChevronRight className="w-3 h-3 text-gray-600" />
+          <span className="font-semibold text-gray-200">Terms &amp; Conditions</span>
         </div>
 
         {/* Header */}
-        <div className="border-b border-gray-200 pb-6 mb-8">
-          <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest block">
+        <div className="border-b border-dark-border pb-6 mb-8">
+          <span className="text-[10px] font-bold text-gold-500 uppercase tracking-widest block">
             Customer Agreement
           </span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-950 mt-1">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-100 mt-1 tracking-tight">
             Terms &amp; Conditions
           </h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
+          <p className="text-xs sm:text-sm text-gray-400 mt-2 leading-relaxed">
             Standard store terms and order conditions for {settings.brandName}.
           </p>
         </div>
 
         {/* Content */}
-        <div className="space-y-6 text-xs sm:text-sm text-gray-700 leading-relaxed">
+        <div className="space-y-6 text-xs sm:text-sm text-gray-300 leading-relaxed">
           <section className="space-y-2">
-            <h2 className="text-base font-bold text-gray-950">1. Ordering &amp; Quantities</h2>
+            <h2 className="text-base font-bold text-gray-100">1. Ordering &amp; Quantities</h2>
             <p>
-              By placing an order on our website, you agree to our minimum order requirement of 2 pieces and maximum single web retail order of 12 pieces. Orders containing 3 or more pieces are entitled to 100% Free Delivery across Pakistan.
+              By placing an order on our website, you agree to our minimum order requirement of 3 pieces and maximum single web retail order of 12 pieces. Orders containing 3 or more pieces are entitled to <strong className="text-emerald-400">100% Free Delivery</strong> across Pakistan.
             </p>
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-base font-bold text-gray-950">2. Pricing &amp; Currency</h2>
+            <h2 className="text-base font-bold text-gray-100">2. Pricing &amp; Currency</h2>
             <p>
-              All prices displayed on {settings.brandName} are in Pakistani Rupees (PKR / Rs.). Prices for High Quality and Standard Quality construction options are clearly indicated on product cards and the product detail page.
+              All prices displayed on {settings.brandName} are in Pakistani Rupees (PKR / Rs.). High Quality and Standard Quality garments are listed as separate product offerings with their own distinct specifications.
             </p>
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-base font-bold text-gray-950">3. Payment &amp; Verification</h2>
+            <h2 className="text-base font-bold text-gray-100">3. Payment &amp; Verification</h2>
             <p>
-              Orders placed via Cash on Delivery (COD) will be verified via SMS or WhatsApp confirmation prior to courier booking. For Direct Bank Transfer orders, payment verification occurs once proof of transfer is provided to our official WhatsApp ({settings.whatsapp}).
+              Orders placed via Cash on Delivery (COD) will be verified via SMS or WhatsApp confirmation prior to courier booking. For Direct Bank Transfer orders, payment verification occurs once proof of transfer is provided to our official WhatsApp (<strong className="text-gold-400">{settings.whatsapp}</strong>).
             </p>
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-base font-bold text-gray-950">4. Modifications &amp; Store Updates</h2>
+            <h2 className="text-base font-bold text-gray-100">4. Modifications &amp; Store Updates</h2>
             <p>
               {settings.brandName} reserves the right to update product stock, variant pricing, and shipping policies as needed without prior notice.
             </p>

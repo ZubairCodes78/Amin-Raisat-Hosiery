@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
 import { HeroSlide } from '@/types';
 import { INITIAL_HERO_SLIDES } from '@/data/initialData';
 
-const BANNER_WIDTH = 1920;
-const BANNER_HEIGHT = 800;
+const DESKTOP_BANNER_WIDTH = 1920;
+const DESKTOP_BANNER_HEIGHT = 800;
+const MOBILE_BANNER_WIDTH = 1080;
+const MOBILE_BANNER_HEIGHT = 1350;
 
 export const BrandHeroSlider: React.FC = () => {
   const { heroSlides } = useStore();
@@ -16,39 +19,49 @@ export const BrandHeroSlider: React.FC = () => {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  // Active slides list (fallback to the 2 exact initial slider images)
-  const slides: HeroSlide[] = React.useMemo(() => {
-    const list = (heroSlides && heroSlides.length > 0 ? heroSlides : INITIAL_HERO_SLIDES).filter(
-      (s) => s.isActive !== false
+  // Separate Desktop and Mobile slides
+  const allSlides = heroSlides && heroSlides.length > 0 ? heroSlides : INITIAL_HERO_SLIDES;
+
+  const desktopSlides: HeroSlide[] = useMemo(() => {
+    const list = allSlides.filter(
+      (s) => s.isActive !== false && (s.deviceType === 'desktop' || (!s.deviceType && !s.mobileImage?.includes('mobile')))
     );
-    return list.length > 0 ? list : INITIAL_HERO_SLIDES;
-  }, [heroSlides]);
+    return list.length > 0
+      ? list
+      : INITIAL_HERO_SLIDES.filter((s) => s.deviceType === 'desktop');
+  }, [allSlides]);
 
-  const totalSlides = slides.length;
+  const mobileSlides: HeroSlide[] = useMemo(() => {
+    const list = allSlides.filter(
+      (s) => s.isActive !== false && (s.deviceType === 'mobile' || s.desktopImage?.includes('mobile') || s.mobileImage?.includes('mobile'))
+    );
+    return list.length > 0
+      ? list
+      : INITIAL_HERO_SLIDES.filter((s) => s.deviceType === 'mobile');
+  }, [allSlides]);
 
-  const getSlideImageSrc = (slide: HeroSlide, idx: number) =>
-    slide.desktopImage || slide.mobileImage || `/images/slider ${idx + 1}.png`;
+  const maxSlidesCount = Math.max(desktopSlides.length, mobileSlides.length, 1);
 
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev >= totalSlides - 1 ? 0 : prev + 1));
-  }, [totalSlides]);
+    setCurrentSlide((prev) => (prev >= maxSlidesCount - 1 ? 0 : prev + 1));
+  }, [maxSlidesCount]);
 
   const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
-  }, [totalSlides]);
+    setCurrentSlide((prev) => (prev === 0 ? maxSlidesCount - 1 : prev - 1));
+  }, [maxSlidesCount]);
 
-  // Auto-advance timer (2 seconds, pauses when hovered or touched)
+  // Premium slow auto-advance timer (5.5 seconds per slide)
   useEffect(() => {
-    if (totalSlides <= 1 || isPaused) return;
+    if (maxSlidesCount <= 1 || isPaused) return;
 
     const timer = setInterval(() => {
       nextSlide();
-    }, 2000);
+    }, 5500);
 
     return () => clearInterval(timer);
-  }, [totalSlides, isPaused, nextSlide]);
+  }, [maxSlidesCount, isPaused, nextSlide]);
 
-  // Handle mobile swipe gestures
+  // Touch Swipe Handlers for Mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsPaused(true);
     touchStartX.current = e.targetTouches[0].clientX;
@@ -74,70 +87,116 @@ export const BrandHeroSlider: React.FC = () => {
     touchEndX.current = null;
   };
 
-  const sizerSrc = getSlideImageSrc(slides[currentSlide], currentSlide);
+  const activeDesktopSlide = desktopSlides[currentSlide % desktopSlides.length] || desktopSlides[0];
+  const activeMobileSlide = mobileSlides[currentSlide % mobileSlides.length] || mobileSlides[0];
 
   return (
     <section
-      aria-label="Amin Raisat Hosiery Campaign Banner Slider"
+      aria-label="Amin Raisat Hosiery Campaign Banner"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative w-full overflow-hidden select-none"
+      className="relative w-full overflow-hidden select-none bg-dark-bg"
     >
-      <div className="relative w-full max-w-[1920px] mx-auto">
-        {/* Invisible sizer: container height follows the active banner's natural aspect ratio */}
+      {/* 1. DESKTOP HERO VIEWPORT (Hidden on mobile < md) */}
+      <div className="hidden md:block relative w-full max-w-[1920px] mx-auto">
+        {/* Invisible natural aspect sizer to completely eliminate Cumulative Layout Shift (CLS) */}
         <Image
-          src={sizerSrc}
+          src={activeDesktopSlide.desktopImage || '/slider 1.png'}
           alt=""
           aria-hidden
-          width={BANNER_WIDTH}
-          height={BANNER_HEIGHT}
+          width={DESKTOP_BANNER_WIDTH}
+          height={DESKTOP_BANNER_HEIGHT}
           sizes="100vw"
           className="block w-full h-auto invisible pointer-events-none"
           priority
         />
 
-        {slides.map((slide, idx) => {
-          const isCurrent = currentSlide === idx;
-          const imageSrc = getSlideImageSrc(slide, idx);
+        {desktopSlides.map((slide, idx) => {
+          const isCurrent = (currentSlide % desktopSlides.length) === idx;
+          const imageSrc = slide.desktopImage || `/slider ${idx + 1}.png`;
 
           return (
             <div
-              key={slide.id || idx}
+              key={slide.id || `desktop-${idx}`}
               aria-hidden={!isCurrent}
-              className={`absolute inset-x-0 top-0 w-full transition-opacity duration-700 ease-in-out ${
+              className={`absolute inset-x-0 top-0 w-full transition-opacity duration-1000 ease-in-out ${
                 isCurrent ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
               }`}
             >
-              <Image
-                src={imageSrc}
-                alt={slide.title || `Amin Raisat Hosiery Campaign Banner ${idx + 1}`}
-                width={BANNER_WIDTH}
-                height={BANNER_HEIGHT}
-                priority={idx === 0}
-                sizes="100vw"
-                className="block w-full h-auto"
-              />
+              <Link href={slide.link || slide.buttonLink || '/shop'} className="block cursor-pointer">
+                <Image
+                  src={imageSrc}
+                  alt={slide.title || `Amin Raisat Hosiery Campaign ${idx + 1}`}
+                  width={DESKTOP_BANNER_WIDTH}
+                  height={DESKTOP_BANNER_HEIGHT}
+                  priority={idx === 0}
+                  sizes="100vw"
+                  className="block w-full h-auto"
+                />
+              </Link>
             </div>
           );
         })}
       </div>
 
-      {/* Pill Indicator Dots */}
-      {totalSlides > 1 && (
-        <div className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/40 backdrop-blur-xs px-3 py-1.5 rounded-full border border-white/15">
-          {slides.map((_, idx) => (
+      {/* 2. MOBILE HERO VIEWPORT (Visible on mobile < md) */}
+      <div className="block md:hidden relative w-full mx-auto">
+        {/* Invisible natural mobile aspect sizer to preserve original mobile proportions */}
+        <Image
+          src={activeMobileSlide.mobileImage || activeMobileSlide.desktopImage || '/mobile slider 1.png'}
+          alt=""
+          aria-hidden
+          width={MOBILE_BANNER_WIDTH}
+          height={MOBILE_BANNER_HEIGHT}
+          sizes="100vw"
+          className="block w-full h-auto invisible pointer-events-none"
+          priority
+        />
+
+        {mobileSlides.map((slide, idx) => {
+          const isCurrent = (currentSlide % mobileSlides.length) === idx;
+          const imageSrc = slide.mobileImage || slide.desktopImage || `/mobile slider ${idx + 1}.png`;
+
+          return (
+            <div
+              key={slide.id || `mobile-${idx}`}
+              aria-hidden={!isCurrent}
+              className={`absolute inset-x-0 top-0 w-full transition-opacity duration-1000 ease-in-out ${
+                isCurrent ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+              }`}
+            >
+              <Link href={slide.link || slide.buttonLink || '/shop'} className="block cursor-pointer">
+                <Image
+                  src={imageSrc}
+                  alt={slide.title || `Amin Raisat Hosiery Mobile Banner ${idx + 1}`}
+                  width={MOBILE_BANNER_WIDTH}
+                  height={MOBILE_BANNER_HEIGHT}
+                  priority={idx === 0}
+                  sizes="100vw"
+                  className="block w-full h-auto"
+                />
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Indicator Pill Dots */}
+      {maxSlidesCount > 1 && (
+        <div className="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-dark-border">
+          {Array.from({ length: maxSlidesCount }).map((_, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => setCurrentSlide(idx)}
               aria-label={`Go to slide ${idx + 1}`}
-              className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
+              className={`h-1.5 sm:h-2 rounded-full transition-all duration-500 ${
                 currentSlide === idx
-                  ? 'w-7 sm:w-9 bg-white shadow-xs'
-                  : 'w-1.5 sm:w-2 bg-white/40 hover:bg-white/70'
+                  ? 'w-7 sm:w-9 bg-gold-500 shadow-glow-gold'
+                  : 'w-1.5 sm:w-2 bg-white/30 hover:bg-white/60'
               }`}
             />
           ))}

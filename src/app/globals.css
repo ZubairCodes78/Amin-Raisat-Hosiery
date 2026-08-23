@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: #FFFFFF;
-    --foreground: #111827;
+    --background: #09090c;
+    --foreground: #f5f5f7;
   }
 
   * {
@@ -14,42 +14,46 @@
   }
 
   body {
-    background-color: #FFFFFF;
-    color: #111827;
+    background-color: #09090c;
+    color: #f5f5f7;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     overflow-x: hidden;
     scroll-behavior: smooth;
   }
 }
 
-/* Subtle clean scrollbar */
+/* Refined Dark Theme Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F9FAFB;
+  background: #0d0d12;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D1D5DB;
+  background: #282836;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
+  background: #3e3e52;
 }
 
-/* Standard refined button styles with subtle hover transitions */
+/* Premium Buttons */
 .btn-primary {
-  @apply bg-gray-950 text-white hover:bg-black font-semibold text-xs py-3 px-6 rounded-lg transition-all duration-200 shadow-xs hover:shadow-glow-primary active:scale-[0.99];
+  @apply bg-gold-500 text-black hover:bg-gold-400 font-bold text-xs py-3 px-6 rounded-lg transition-all duration-200 shadow-xs hover:shadow-glow-gold active:scale-[0.99];
 }
 
 .btn-secondary {
-  @apply bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 font-semibold text-xs py-3 px-6 rounded-lg transition-all duration-200 shadow-xs;
+  @apply bg-dark-surface text-gray-200 border border-dark-border hover:bg-dark-hover hover:border-dark-border-light font-semibold text-xs py-3 px-6 rounded-lg transition-all duration-200 shadow-xs;
+}
+
+.btn-dark {
+  @apply bg-white text-black hover:bg-gray-100 font-bold text-xs py-3 px-6 rounded-lg transition-all duration-200 shadow-xs active:scale-[0.99];
 }
 
 /* Interactive Card & Container Smooth Hover */
 .card-hover-lift {
-  @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-elevation hover:border-gray-300;
+  @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-elevation hover:border-dark-border-light;
 }
 
 /* Image Smooth Zoom inside group container */

@@ -11,47 +11,39 @@ import {
   Eye,
   EyeOff,
   Upload,
-  ArrowUp,
-  ArrowDown,
-  Sparkles,
-  Layers,
   Check,
   X,
-  ExternalLink,
+  Monitor,
+  Smartphone,
   Image as ImageIcon,
 } from 'lucide-react';
 
 export default function AdminHeroPage() {
   const { heroSlides, saveHeroSlide, deleteHeroSlide, uploadMediaFile } = useStore();
+  const [activeTab, setActiveTab] = useState<'desktop' | 'mobile'>('desktop');
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isUploadingDesktop, setIsUploadingDesktop] = useState(false);
-  const [isUploadingMobile, setIsUploadingMobile] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Form State
   const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [badge, setBadge] = useState('');
-  const [desktopImage, setDesktopImage] = useState('/images/slider 1.png');
-  const [mobileImage, setMobileImage] = useState('');
-  const [buttonText, setButtonText] = useState('Explore Collection');
+  const [image, setImage] = useState('');
   const [buttonLink, setButtonLink] = useState('/shop');
-  const [textColor, setTextColor] = useState<'light' | 'dark'>('light');
   const [displayOrder, setDisplayOrder] = useState<number>(1);
   const [isActive, setIsActive] = useState<boolean>(true);
+
+  // Filter slides by active tab
+  const filteredSlides = heroSlides.filter(
+    (s) => (s.deviceType || 'desktop') === activeTab
+  );
 
   const handleOpenAddModal = () => {
     setEditingSlide(null);
     setTitle('');
-    setSubtitle('');
-    setBadge('NEW COLLECTION');
-    setDesktopImage('/images/slider 1.png');
-    setMobileImage('');
-    setButtonText('Explore Collection');
+    setImage(activeTab === 'desktop' ? '/slider 1.png' : '/mobile slider 1.png');
     setButtonLink('/shop');
-    setTextColor('light');
-    setDisplayOrder(heroSlides.length + 1);
+    setDisplayOrder(filteredSlides.length + 1);
     setIsActive(true);
     setIsModalOpen(true);
   };
@@ -59,63 +51,42 @@ export default function AdminHeroPage() {
   const handleOpenEditModal = (slide: HeroSlide) => {
     setEditingSlide(slide);
     setTitle(slide.title || '');
-    setSubtitle(slide.subtitle || '');
-    setBadge(slide.badge || '');
-    setDesktopImage(slide.desktopImage || '/images/slider 1.png');
-    setMobileImage(slide.mobileImage || '');
-    setButtonText(slide.buttonText || '');
-    setButtonLink(slide.buttonLink || '/shop');
-    setTextColor(slide.textColor || 'light');
+    setImage(slide.desktopImage || slide.mobileImage || '');
+    setButtonLink(slide.link || slide.buttonLink || '/shop');
     setDisplayOrder(slide.displayOrder || 1);
     setIsActive(slide.isActive !== false);
     setIsModalOpen(true);
   };
 
-  const handleDesktopFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setIsUploadingDesktop(true);
+    setIsUploading(true);
     try {
-      const url = await uploadMediaFile(file, 'hero-banners');
-      setDesktopImage(url);
+      const url = await uploadMediaFile(file, activeTab === 'desktop' ? 'desktop-hero' : 'mobile-hero');
+      setImage(url);
     } catch (err) {
       alert('Failed to upload image. Please try again.');
     } finally {
-      setIsUploadingDesktop(false);
-    }
-  };
-
-  const handleMobileFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploadingMobile(true);
-    try {
-      const url = await uploadMediaFile(file, 'hero-banners');
-      setMobileImage(url);
-    } catch (err) {
-      alert('Failed to upload mobile image. Please try again.');
-    } finally {
-      setIsUploadingMobile(false);
+      setIsUploading(false);
     }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!desktopImage) {
-      alert('Please upload or select a desktop banner image.');
+    if (!image) {
+      alert(`Please upload or specify a ${activeTab} banner image.`);
       return;
     }
 
     const slideToSave: HeroSlide = {
-      id: editingSlide ? editingSlide.id : `hero-slide-${Date.now()}`,
-      title: title.trim() || undefined,
-      subtitle: subtitle.trim() || undefined,
-      badge: badge.trim() || undefined,
-      desktopImage,
-      mobileImage: mobileImage.trim() || undefined,
-      buttonText: buttonText.trim() || undefined,
-      buttonLink: buttonLink.trim() || undefined,
-      textColor,
+      id: editingSlide ? editingSlide.id : `hero-${activeTab}-${Date.now()}`,
+      title: title.trim() || `${activeTab.toUpperCase()} Hero Slide ${displayOrder}`,
+      desktopImage: activeTab === 'desktop' ? image : image,
+      mobileImage: activeTab === 'mobile' ? image : undefined,
+      deviceType: activeTab,
+      link: buttonLink.trim() || '/shop',
+      buttonLink: buttonLink.trim() || '/shop',
       displayOrder: Number(displayOrder) || 1,
       isActive,
     };
@@ -127,7 +98,7 @@ export default function AdminHeroPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this hero banner slide?')) {
+    if (confirm('Are you sure you want to delete this banner slide?')) {
       await deleteHeroSlide(id);
     }
   };
@@ -140,96 +111,114 @@ export default function AdminHeroPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 max-w-6xl text-gray-100">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-dark-surface p-6 rounded-2xl border border-dark-border shadow-card">
         <div>
-          <h1 className="text-xl font-bold text-gray-950">Homepage Hero Banners &amp; Slider</h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Manage full-width promotional campaign banners shown on your store homepage. Upload separate desktop and mobile images.
+          <h1 className="text-xl font-extrabold text-gray-100">
+            Hero Banners &amp; Slider Architecture
+          </h1>
+          <p className="text-xs text-gray-400 mt-1">
+            Completely separate systems for Desktop (1920&times;800) and Mobile (1080&times;1350) banners.
           </p>
         </div>
         <button
           type="button"
           onClick={handleOpenAddModal}
-          className="inline-flex items-center justify-center gap-2 bg-gray-950 hover:bg-black text-white text-xs font-semibold h-10 px-4 rounded-lg shadow-xs transition-all active:scale-[0.99] self-start sm:self-auto flex-shrink-0"
+          className="inline-flex items-center justify-center gap-2 bg-gold-500 hover:bg-gold-400 text-black text-xs font-bold h-10 px-4 rounded-xl shadow-glow-gold transition-all active:scale-[0.99] self-start sm:self-auto flex-shrink-0"
         >
-          <Plus className="w-4 h-4" />
-          <span>Add Hero Slide</span>
+          <Plus className="w-4 h-4 stroke-[2.5]" />
+          <span>Add {activeTab === 'desktop' ? 'Desktop' : 'Mobile'} Slide</span>
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-dark-border pb-1">
+        <button
+          onClick={() => setActiveTab('desktop')}
+          className={`py-3 px-5 text-xs font-bold rounded-xl flex items-center gap-2 transition-all ${
+            activeTab === 'desktop'
+              ? 'bg-gold-500 text-black shadow-glow-gold'
+              : 'text-gray-400 hover:text-gray-100 hover:bg-dark-surface'
+          }`}
+        >
+          <Monitor className="w-4 h-4" />
+          <span>DESKTOP HERO SLIDES ({heroSlides.filter((s) => (s.deviceType || 'desktop') === 'desktop').length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('mobile')}
+          className={`py-3 px-5 text-xs font-bold rounded-xl flex items-center gap-2 transition-all ${
+            activeTab === 'mobile'
+              ? 'bg-gold-500 text-black shadow-glow-gold'
+              : 'text-gray-400 hover:text-gray-100 hover:bg-dark-surface'
+          }`}
+        >
+          <Smartphone className="w-4 h-4" />
+          <span>MOBILE HERO SLIDES ({heroSlides.filter((s) => s.deviceType === 'mobile').length})</span>
         </button>
       </div>
 
       {saveSuccess && (
-        <div className="p-4 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-semibold flex items-center gap-2">
-          <Check className="w-4 h-4 text-emerald-600" />
+        <div className="p-4 bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 rounded-2xl text-xs font-semibold flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-400" />
           <span>Hero Banner slide saved successfully!</span>
         </div>
       )}
 
-      {/* Hero Slides List */}
+      {/* Slides List */}
       <div className="space-y-4">
-        {heroSlides.length === 0 ? (
-          <div className="bg-white p-12 text-center rounded-xl border border-gray-200 space-y-3">
-            <ImageIcon className="w-10 h-10 text-gray-400 mx-auto" />
-            <p className="text-sm font-semibold text-gray-700">No Hero Slides Yet</p>
-            <p className="text-xs text-gray-500">Click &quot;Add New Hero Slide&quot; above to create your first promotional banner.</p>
+        {filteredSlides.length === 0 ? (
+          <div className="bg-dark-surface p-12 text-center rounded-2xl border border-dark-border space-y-3 shadow-card">
+            <ImageIcon className="w-10 h-10 text-gray-500 mx-auto" />
+            <p className="text-sm font-bold text-gray-300">No {activeTab} Slides Configured</p>
+            <p className="text-xs text-gray-400">Click &quot;Add {activeTab === 'desktop' ? 'Desktop' : 'Mobile'} Slide&quot; above to upload your first banner.</p>
           </div>
         ) : (
-          heroSlides.map((slide, index) => (
+          filteredSlides.map((slide, index) => (
             <div
               key={slide.id || index}
-              className={`bg-white rounded-xl border transition-all p-4 sm:p-5 flex flex-col md:flex-row gap-5 items-start md:items-center justify-between ${
-                slide.isActive ? 'border-gray-200 shadow-sm' : 'border-gray-200 bg-gray-50/70 opacity-75'
+              className={`bg-dark-surface rounded-2xl border transition-all p-4 sm:p-5 flex flex-col md:flex-row gap-5 items-start md:items-center justify-between ${
+                slide.isActive ? 'border-dark-border shadow-card' : 'border-dark-border bg-dark-bg/60 opacity-60'
               }`}
             >
               {/* Preview Thumbnail */}
               <div className="flex items-center gap-4 w-full md:w-auto">
-                <div className="relative w-28 h-18 sm:w-36 sm:h-20 bg-gray-950 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 shadow-xs">
+                <div
+                  className={`relative rounded-xl overflow-hidden flex-shrink-0 border border-dark-border bg-black ${
+                    activeTab === 'desktop' ? 'w-36 h-20' : 'w-20 h-24'
+                  }`}
+                >
                   <Image
-                    src={slide.desktopImage || '/images/hero/hero-banner-1.svg'}
+                    src={slide.desktopImage || slide.mobileImage || (activeTab === 'desktop' ? '/slider 1.png' : '/mobile slider 1.png')}
                     alt={slide.title || 'Hero preview'}
                     fill
-                    className="object-cover"
+                    className="object-contain"
                   />
-                  {slide.mobileImage && (
-                    <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">
-                      +Mobile
-                    </span>
-                  )}
                 </div>
 
                 {/* Details */}
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-800">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-dark-card border border-dark-border text-gray-300">
                       Order #{slide.displayOrder}
                     </span>
                     {slide.isActive ? (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                        Active on Homepage
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
+                        Live on {activeTab}
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-200 text-gray-600">
-                        Hidden (Disabled)
-                      </span>
-                    )}
-                    {slide.badge && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900">
-                        {slide.badge}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-dark-card text-gray-500">
+                        Hidden
                       </span>
                     )}
                   </div>
-                  <h3 className="font-bold text-sm text-gray-950 line-clamp-1">
-                    {slide.title || '(Image Only Banner)'}
+                  <h3 className="font-bold text-sm text-gray-100 line-clamp-1">
+                    {slide.title || `Campaign Slide #${index + 1}`}
                   </h3>
-                  {slide.subtitle && (
-                    <p className="text-xs text-gray-500 line-clamp-1">{slide.subtitle}</p>
-                  )}
-                  {slide.buttonText && (
-                    <p className="text-[11px] text-gray-600 font-medium">
-                      Button: &quot;{slide.buttonText}&quot; &rarr; {slide.buttonLink || '/shop'}
-                    </p>
-                  )}
+                  <p className="text-xs text-gray-400 font-mono truncate">
+                    Target Link: {slide.link || slide.buttonLink || '/shop'}
+                  </p>
                 </div>
               </div>
 
@@ -238,12 +227,12 @@ export default function AdminHeroPage() {
                 <button
                   type="button"
                   onClick={() => handleToggleActive(slide)}
-                  className={`p-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                  className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                     slide.isActive
-                      ? 'border-gray-300 text-gray-700 hover:bg-gray-100'
-                      : 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                      ? 'border-dark-border text-gray-300 hover:bg-dark-hover'
+                      : 'border-emerald-800/60 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-950/60'
                   }`}
-                  title={slide.isActive ? 'Hide from homepage' : 'Show on homepage'}
+                  title={slide.isActive ? 'Hide from store' : 'Show on store'}
                 >
                   {slide.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   <span className="hidden sm:inline">{slide.isActive ? 'Disable' : 'Enable'}</span>
@@ -252,7 +241,7 @@ export default function AdminHeroPage() {
                 <button
                   type="button"
                   onClick={() => handleOpenEditModal(slide)}
-                  className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  className="p-2 bg-dark-card hover:bg-dark-hover text-gray-200 border border-dark-border rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <Edit2 className="w-4 h-4" />
                   <span>Edit</span>
@@ -261,7 +250,7 @@ export default function AdminHeroPage() {
                 <button
                   type="button"
                   onClick={() => handleDelete(slide.id)}
-                  className="p-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  className="p-2 bg-rose-950/40 hover:bg-rose-950/60 text-rose-400 border border-rose-800/60 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                   <span>Delete</span>
@@ -274,224 +263,131 @@ export default function AdminHeroPage() {
 
       {/* Add / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-200 my-8">
-            {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-dark-surface rounded-2xl shadow-elevation w-full max-w-xl overflow-hidden border border-dark-border my-8">
+            <div className="p-4 sm:p-5 border-b border-dark-border flex items-center justify-between bg-dark-card">
               <div>
-                <h3 className="font-bold text-base text-gray-950">
-                  {editingSlide ? 'Edit Hero Banner Slide' : 'Add New Hero Banner Slide'}
+                <h3 className="font-bold text-base text-gray-100">
+                  {editingSlide ? `Edit ${activeTab.toUpperCase()} Slide` : `Add New ${activeTab.toUpperCase()} Slide`}
                 </h3>
-                <p className="text-xs text-gray-500">
-                  Fill in slide imagery and optional text headlines.
+                <p className="text-xs text-gray-400">
+                  {activeTab === 'desktop' ? 'Optimal dimensions: 1920x800 px landscape' : 'Optimal dimensions: 1080x1350 px portrait'}
                 </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-gray-400 hover:text-gray-700 rounded"
+                className="p-1 text-gray-400 hover:text-gray-100 rounded"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              {/* 1. Desktop Image Upload (Required) */}
+            <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+              {/* Image Upload Area */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-900">
-                  1. Desktop Banner Image <span className="text-red-500">*</span>
+                <label className="block font-bold text-gray-200">
+                  Banner Image <span className="text-rose-400">*</span>
                 </label>
-                <p className="text-[11px] text-gray-500">
-                  Recommended size: 1920 &times; 700 px (or wide landscape format).
-                </p>
                 <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                  <div className="relative w-36 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-300 flex-shrink-0 flex items-center justify-center">
-                    {desktopImage ? (
-                      <Image src={desktopImage} alt="Desktop Preview" fill className="object-cover" />
+                  <div
+                    className={`relative rounded-xl overflow-hidden border border-dark-border bg-black flex items-center justify-center ${
+                      activeTab === 'desktop' ? 'w-36 h-20' : 'w-20 h-24'
+                    }`}
+                  >
+                    {image ? (
+                      <Image src={image} alt="Preview" fill className="object-contain" />
                     ) : (
-                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                      <ImageIcon className="w-6 h-6 text-gray-500" />
                     )}
                   </div>
+
                   <div className="space-y-1.5 flex-1">
-                    <label className="inline-flex items-center gap-2 px-3 py-2 bg-gray-900 hover:bg-black text-white text-xs font-semibold rounded-lg cursor-pointer transition-colors">
+                    <label className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-dark-card hover:bg-dark-hover text-gray-200 border border-dark-border text-xs font-semibold rounded-xl cursor-pointer transition-colors">
                       <Upload className="w-3.5 h-3.5" />
-                      <span>{isUploadingDesktop ? 'Uploading Image...' : 'Choose Image File from Computer'}</span>
+                      <span>{isUploading ? 'Uploading Image to Supabase...' : 'Choose File from Computer'}</span>
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={handleDesktopFileChange}
-                        disabled={isUploadingDesktop}
+                        onChange={handleFileUpload}
+                        disabled={isUploading}
                         className="hidden"
                       />
                     </label>
-                    <p className="text-[10px] text-gray-500">Accepts PNG, JPG, WEBP, SVG.</p>
+                    <p className="text-[10px] text-gray-400">Or enter image URL below:</p>
+                    <input
+                      type="text"
+                      value={image}
+                      onChange={(e) => setImage(e.target.value)}
+                      placeholder="/slider 1.png or https://..."
+                      className="w-full px-3 py-1.5 bg-dark-card border border-dark-border text-gray-100 rounded-lg font-mono text-[11px]"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* 2. Mobile Image Upload (Optional) */}
-              <div className="space-y-2 pt-2 border-t border-gray-100">
-                <label className="block text-xs font-bold text-gray-900">
-                  2. Mobile Banner Image (Optional)
-                </label>
-                <p className="text-[11px] text-gray-500">
-                  Optimized vertical/square crop for phone screens (e.g. 800 &times; 800 px). If omitted, desktop banner will scale naturally.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                  <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-300 flex-shrink-0 flex items-center justify-center">
-                    {mobileImage ? (
-                      <Image src={mobileImage} alt="Mobile Preview" fill className="object-cover" />
-                    ) : (
-                      <span className="text-[10px] text-gray-400 font-medium text-center px-1">Same as Desktop</span>
-                    )}
-                  </div>
-                  <div className="space-y-1.5 flex-1">
-                    <label className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold rounded-lg cursor-pointer transition-colors border border-gray-300">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>{isUploadingMobile ? 'Uploading Mobile...' : 'Choose Mobile Image File'}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleMobileFileChange}
-                        disabled={isUploadingMobile}
-                        className="hidden"
-                      />
-                    </label>
-                    {mobileImage && (
-                      <button
-                        type="button"
-                        onClick={() => setMobileImage('')}
-                        className="block text-[11px] text-red-600 hover:underline"
-                      >
-                        Remove separate mobile image
-                      </button>
-                    )}
-                  </div>
-                </div>
+              {/* Title & Link */}
+              <div>
+                <label className="block font-semibold text-gray-300 mb-1">Slide Label / Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Pure Combed Cotton Vest Campaign"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-dark-card border border-dark-border text-gray-100 rounded-xl"
+                />
               </div>
 
-              {/* 3. Optional Overlay Text */}
-              <div className="pt-2 border-t border-gray-100 space-y-3">
-                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  3. Promotional Text Overlay (Optional)
-                </h4>
-                <p className="text-[11px] text-gray-500">
-                  Leave blank if your banner image already contains all text graphics.
-                </p>
+              <div>
+                <label className="block font-semibold text-gray-300 mb-1">Click Link / Destination</label>
+                <input
+                  type="text"
+                  placeholder="/shop or /product/mens-vest-high-quality"
+                  value={buttonLink}
+                  onChange={(e) => setButtonLink(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-dark-card border border-dark-border text-gray-100 rounded-xl"
+                />
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Badge Tagline</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. NEW ARRIVALS, 100% COMBED COTTON"
-                      value={badge}
-                      onChange={(e) => setBadge(e.target.value)}
-                      className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Main Heading</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Pure Combed Cotton Essentials"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs"
-                    />
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Supporting Text / Benefit Highlights</label>
-                  <textarea
-                    rows={2}
-                    placeholder="e.g. Experience unmatched breathability with anti-sag seams across Pakistan."
-                    value={subtitle}
-                    onChange={(e) => setSubtitle(e.target.value)}
-                    className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs"
+                  <label className="block font-semibold text-gray-300 mb-1">Display Order</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={displayOrder}
+                    onChange={(e) => setDisplayOrder(Number(e.target.value))}
+                    className="w-full px-3.5 py-2.5 bg-dark-card border border-dark-border text-gray-100 rounded-xl"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Button Text</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Explore Collection, Shop Now"
-                      value={buttonText}
-                      onChange={(e) => setButtonText(e.target.value)}
-                      className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Button Link</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. /shop, /category/men"
-                      value={buttonLink}
-                      onChange={(e) => setButtonLink(e.target.value)}
-                      className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Text Color Mode</label>
-                    <select
-                      value={textColor}
-                      onChange={(e) => setTextColor(e.target.value as 'light' | 'dark')}
-                      className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs"
-                    >
-                      <option value="light">Light (White text on dark banner)</option>
-                      <option value="dark">Dark (Black text on light banner)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Display Order</label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={displayOrder}
-                      onChange={(e) => setDisplayOrder(Number(e.target.value))}
-                      className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-6">
-                    <input
-                      type="checkbox"
-                      id="slideActiveToggle"
-                      checked={isActive}
-                      onChange={(e) => setIsActive(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-gray-900"
-                    />
-                    <label htmlFor="slideActiveToggle" className="text-xs font-bold text-gray-800 cursor-pointer">
-                      Active (Show on Site)
-                    </label>
-                  </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <input
+                    type="checkbox"
+                    id="slideActiveToggle"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    className="w-4 h-4 rounded accent-gold-500"
+                  />
+                  <label htmlFor="slideActiveToggle" className="font-bold text-gray-200 cursor-pointer">
+                    Active on Store
+                  </label>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="pt-4 border-t border-gray-200 flex justify-end gap-3">
+              <div className="pt-4 border-t border-dark-border flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="btn-secondary"
+                  className="py-2.5 px-4 bg-dark-card text-gray-300 hover:bg-dark-hover rounded-xl font-semibold border border-dark-border"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isUploadingDesktop || isUploadingMobile}
-                  className="btn-primary"
+                  disabled={isUploading}
+                  className="py-2.5 px-5 bg-gold-500 hover:bg-gold-400 text-black font-bold rounded-xl shadow-glow-gold"
                 >
-                  {editingSlide ? 'Save Changes' : 'Create Hero Slide'}
+                  {editingSlide ? 'Save Changes' : 'Create Slide'}
                 </button>
               </div>
             </form>

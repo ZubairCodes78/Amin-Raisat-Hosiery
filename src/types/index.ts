@@ -78,9 +78,9 @@ export interface Product {
   subtitle: string;
   description: string;
   features: string[];
-  qualityComparison: {
-    highQuality: QualityBreakdown;
-    standardQuality: QualityBreakdown;
+  qualityComparison?: {
+    highQuality?: QualityBreakdown;
+    standardQuality?: QualityBreakdown;
   };
   careInstructions: string[];
   shippingInfo: string;
@@ -190,6 +190,7 @@ export interface SiteSettings {
 
 export interface HeroSlide {
   id: string;
+  deviceType?: 'desktop' | 'mobile';
   title?: string;
   subtitle?: string;
   badge?: string;
@@ -201,4 +202,31 @@ export interface HeroSlide {
   textColor?: 'light' | 'dark';
   displayOrder: number;
   isActive: boolean;
+}
+
+export interface CustomerProfile {
+  id: string;
+  fullName: string;
+  phone?: string;
+  whatsappNumber?: string;
+  email?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CustomerAddress {
+  id: string;
+  userId: string;
+  addressType: 'shipping' | 'billing';
+  fullName?: string;
+  phone?: string;
+  address?: string;
+  streetAddress?: string;
+  city: string;
+  province: string;
+  postalCode?: string;
+  country?: string;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }

@@ -3,10 +3,11 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Product, ProductSize, QualityType, SleeveType } from '@/types';
+import { useRouter } from 'next/navigation';
+import { Product, ProductSize, SleeveType } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
-import { ShoppingBag, Check } from 'lucide-react';
+import { ShoppingBag, Zap, Check } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -15,10 +16,13 @@ interface ProductCardProps {
 const AVAILABLE_SIZES: ProductSize[] = ['S', 'M', 'L', 'XL', 'XXL'];
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { addItem } = useCart();
+  const router = useRouter();
+  const { addItem, openDrawer } = useCart();
   const { categories } = useStore();
-  const [selectedQuality, setSelectedQuality] = useState<QualityType>('High Quality');
-  const [selectedSleeve, setSelectedSleeve] = useState<SleeveType>('Sleeveless');
+
+  const [selectedSleeve, setSelectedSleeve] = useState<SleeveType>(() => {
+    return product.variants?.[0]?.sleeve || 'Sleeveless';
+  });
   const [selectedSize, setSelectedSize] = useState<ProductSize>('L');
   const [justAdded, setJustAdded] = useState(false);
 
@@ -28,9 +32,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       (c) =>
         c.id === product.categoryId ||
         c.slug === product.categoryId ||
-        (c.slug === 'men' && (!product.categoryId || product.categoryId === 'cat-men')) ||
-        (c.slug === 'women' && product.categoryId === 'cat-women') ||
-        (c.slug === 'kids' && product.categoryId === 'cat-kids')
+        (c.slug === 'men' && (!product.categoryId || product.categoryId === 'cat-men'))
     );
   }, [categories, product.categoryId]);
 
@@ -38,26 +40,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     ? `${productCategory.name}'s Collection`
     : 'Cotton Essentials';
 
-  // Compute available qualities & sleeves for this product
-  const availableQualities = useMemo(() => {
-    return Array.from(new Set(product.variants.map((v) => v.quality).filter(Boolean)));
-  }, [product.variants]);
-
+  // Compute available sleeves for this specific product listing
   const availableSleeves = useMemo(() => {
-    const matching = product.variants.filter((v) => v.quality === selectedQuality);
-    const sleeves = Array.from(new Set(matching.map((v) => v.sleeve).filter(Boolean)));
+    const sleeves = Array.from(new Set(product.variants.map((v) => v.sleeve).filter(Boolean)));
     return sleeves.length > 0 ? sleeves : ['Sleeveless'];
-  }, [product.variants, selectedQuality]);
+  }, [product.variants]);
 
   // Compute matched variant
   const currentVariant =
     product.variants.find(
-      (v) =>
-        v.quality === selectedQuality &&
-        v.sleeve === selectedSleeve &&
-        v.size === selectedSize
+      (v) => v.sleeve === selectedSleeve && v.size === selectedSize
     ) ||
-    product.variants.find((v) => v.quality === selectedQuality) ||
+    product.variants.find((v) => v.sleeve === selectedSleeve) ||
     product.variants[0];
 
   const price = currentVariant ? currentVariant.price : 480;
@@ -68,24 +62,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   // Media photos list
   const photoMedia = product.media.filter((m) => m.type === 'photo');
 
-  // Dynamically resolve exact matching photo for chosen Quality + Sleeve
+  // Resolve matching photo for chosen sleeve
   const currentPhoto = useMemo(() => {
     const match = product.media.find(
-      (m) =>
-        (!m.variantQuality || m.variantQuality === 'All' || m.variantQuality === selectedQuality) &&
-        (!m.variantSleeve || m.variantSleeve === 'All' || m.variantSleeve === selectedSleeve)
+      (m) => !m.variantSleeve || m.variantSleeve === 'All' || m.variantSleeve === selectedSleeve
     );
     return match?.url || photoMedia[0]?.url || '/images/products/sleevless high.jpeg';
-  }, [product.media, photoMedia, selectedQuality, selectedSleeve]);
+  }, [product.media, photoMedia, selectedSleeve]);
 
-  const handleQualityChange = (q: QualityType) => {
-    setSelectedQuality(q);
-    if (q === 'Low Quality' && selectedSleeve !== 'Sleeveless') {
-      setSelectedSleeve('Sleeveless');
-    }
-  };
-
-  const handleQuickAdd = (e: React.MouseEvent) => {
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!isAvailable) return;
 
@@ -93,29 +79,51 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       productId: product.id,
       productName: product.name,
       productSlug: product.slug,
-      quality: selectedQuality,
+      quality: currentVariant?.quality || 'High Quality',
       sleeve: selectedSleeve,
       size: selectedSize,
       unitPrice: price,
-      quantity: 2, // minimum order pieces default
+      quantity: 3, // Minimum 3 pieces
+      image: currentPhoto,
+    });
+    router.push('/checkout');
+  };
+
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAvailable) return;
+
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
+      quality: currentVariant?.quality || 'High Quality',
+      sleeve: selectedSleeve,
+      size: selectedSize,
+      unitPrice: price,
+      quantity: 3, // Minimum 3 pieces
       image: currentPhoto,
     });
     setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 2000);
+    setTimeout(() => {
+      setJustAdded(false);
+      openDrawer();
+    }, 600);
   };
 
   return (
-    <div className="group bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200 relative w-full h-full">
+    <div className="group bg-dark-surface rounded-2xl border border-dark-border overflow-hidden flex flex-col justify-between shadow-card hover:border-dark-border-light hover:shadow-elevation transition-all duration-300 relative w-full h-full">
       <div>
         {/* 1. Medium, Balanced Product Image Area */}
-        <div className="relative w-full h-60 sm:h-64 bg-gray-50/80 p-4 flex items-center justify-center overflow-hidden border-b border-gray-100">
+        <div className="relative w-full h-64 sm:h-72 bg-[#0c0c10] p-4 flex items-center justify-center overflow-hidden border-b border-dark-border">
           {/* Badges */}
-          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
-            <span className="bg-gray-950/85 backdrop-blur-xs text-white text-[11px] font-medium px-2.5 py-0.5 rounded shadow-xs">
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+            <span className="bg-black/80 backdrop-blur-xs text-gold-400 border border-gold-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded shadow-xs uppercase tracking-wider">
               100% Combed Cotton
             </span>
             {stock <= 10 && stock > 0 && (
-              <span className="bg-amber-100 text-amber-900 text-[11px] font-medium px-2.5 py-0.5 rounded border border-amber-300">
+              <span className="bg-rose-950/80 text-rose-300 border border-rose-800/60 text-[10px] font-semibold px-2 py-0.5 rounded">
                 Only {stock} left
               </span>
             )}
@@ -123,65 +131,39 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           <Link
             href={`/product/${product.slug}`}
-            className="relative w-full h-full flex items-center justify-center cursor-pointer"
+            className="relative w-full h-full flex items-center justify-center cursor-pointer group"
           >
             <Image
               src={currentPhoto}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              className="object-contain object-center w-full h-full transition-opacity duration-200"
+              className="object-contain object-center w-full h-full transition-transform duration-500 ease-out group-hover:scale-105"
               priority={false}
             />
           </Link>
         </div>
 
         {/* 2. Balanced Product Details Area */}
-        <div className="p-4 sm:p-5 space-y-3.5">
+        <div className="p-4 sm:p-5 space-y-3">
           <div>
-            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-gold-500/80 uppercase tracking-widest">
               {categoryLabel}
             </span>
-            <h3 className="text-base sm:text-lg font-bold text-gray-950 mt-0.5 group-hover:text-black transition-colors leading-snug">
+            <h3 className="text-base font-bold text-gray-100 mt-1 group-hover:text-gold-400 transition-colors leading-snug line-clamp-2">
               <Link href={`/product/${product.slug}`}>{product.name}</Link>
             </h3>
-            <p className="text-xs text-gray-600 line-clamp-2 mt-1 font-normal leading-relaxed">
+            <p className="text-xs text-gray-400 line-clamp-2 mt-1 font-normal leading-relaxed">
               {product.subtitle}
             </p>
           </div>
 
-          {/* Quality Selector */}
-          {availableQualities.length > 1 && (
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-gray-700">Quality:</span>
-                <span className="text-gray-500">{selectedQuality}</span>
-              </div>
-              <div className="flex gap-1.5 p-1 bg-gray-100 rounded-lg">
-                {availableQualities.map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => handleQualityChange(q as QualityType)}
-                    className={`flex-1 py-1.5 px-2 rounded-md text-xs font-semibold transition-all text-center ${
-                      selectedQuality === q
-                        ? 'bg-gray-950 text-white shadow-xs'
-                        : 'text-gray-700 hover:text-black hover:bg-gray-200/60'
-                    }`}
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sleeve Style Selector */}
+          {/* Sleeve Style Selector (Only shown if product has more than 1 sleeve option) */}
           {availableSleeves.length > 1 && (
             <div className="space-y-1">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-gray-700">Sleeve:</span>
-                <span className="text-gray-500">{selectedSleeve}</span>
+                <span className="font-semibold text-gray-400">Style:</span>
+                <span className="text-gray-300 font-medium">{selectedSleeve}</span>
               </div>
               <div className="flex gap-1.5 flex-wrap">
                 {availableSleeves.map((sl) => (
@@ -189,10 +171,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                     key={sl}
                     type="button"
                     onClick={() => setSelectedSleeve(sl as SleeveType)}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
                       selectedSleeve === sl
-                        ? 'border-gray-950 bg-gray-950 text-white shadow-xs'
-                        : 'border-gray-200 text-gray-700 hover:border-gray-400 bg-white'
+                        ? 'border-gold-500 bg-gold-500/10 text-gold-400 shadow-xs'
+                        : 'border-dark-border text-gray-400 hover:border-gray-500 bg-dark-card'
                     }`}
                   >
                     {sl}
@@ -205,8 +187,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {/* Size Pills */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="font-semibold text-gray-700">Size:</span>
-              <span className="text-gray-500">Size {selectedSize}</span>
+              <span className="font-semibold text-gray-400">Size:</span>
+              <span className="text-gray-300 font-medium">Fit {selectedSize}</span>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {AVAILABLE_SIZES.map((sz) => (
@@ -214,10 +196,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   key={sz}
                   type="button"
                   onClick={() => setSelectedSize(sz)}
-                  className={`w-8 h-8 rounded-md text-xs font-bold flex items-center justify-center transition-all ${
+                  className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
                     selectedSize === sz
-                      ? 'bg-gray-950 text-white shadow-xs scale-105'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-gold-500 text-black font-extrabold shadow-glow-gold scale-105'
+                      : 'bg-dark-card text-gray-300 hover:bg-dark-hover border border-dark-border'
                   }`}
                 >
                   {sz}
@@ -228,47 +210,51 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
       </div>
 
-      {/* 3. Card Footer: Price & Add to Cart Action */}
+      {/* 3. Card Footer: Price & Primary BUY NOW Action */}
       <div className="p-4 sm:p-5 pt-0 mt-auto">
-        <div className="flex items-center justify-between gap-3 pt-3.5 border-t border-gray-100">
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-dark-border">
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xl sm:text-2xl font-bold text-gray-950">Rs. {price}</span>
+              <span className="text-xl font-bold text-gold-400">Rs. {price}</span>
               {comparePrice && (
-                <span className="text-xs text-gray-400 line-through font-normal">
+                <span className="text-xs text-gray-500 line-through font-normal">
                   Rs. {comparePrice}
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded inline-block">
-              Min 2 pcs
+            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded inline-block mt-0.5">
+              Free Delivery on 3+ pcs
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleQuickAdd}
-            disabled={!isAvailable}
-            className={`py-2.5 px-4 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 ${
-              justAdded
-                ? 'bg-emerald-600 text-white'
-                : !isAvailable
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-950 hover:bg-black text-white'
-            }`}
-          >
-            {justAdded ? (
-              <>
-                <Check className="w-3.5 h-3.5" /> Added
-              </>
-            ) : !isAvailable ? (
-              'Sold Out'
-            ) : (
-              <>
-                <ShoppingBag className="w-3.5 h-3.5" /> Add to Cart
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Secondary Add to Cart */}
+            <button
+              type="button"
+              onClick={handleQuickAdd}
+              disabled={!isAvailable}
+              className="p-2.5 bg-dark-card hover:bg-dark-hover text-gray-200 hover:text-white rounded-lg border border-dark-border transition-colors shadow-xs"
+              title="Add to Cart"
+              aria-label="Add to cart"
+            >
+              {justAdded ? <Check className="w-4 h-4 text-emerald-400" /> : <ShoppingBag className="w-4 h-4" />}
+            </button>
+
+            {/* Primary BUY NOW Button */}
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              disabled={!isAvailable}
+              className={`py-2.5 px-3.5 sm:px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 ${
+                !isAvailable
+                  ? 'bg-dark-card text-gray-500 border border-dark-border cursor-not-allowed'
+                  : 'bg-gold-500 hover:bg-gold-400 text-black shadow-glow-gold'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>{isAvailable ? 'BUY NOW' : 'Sold Out'}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

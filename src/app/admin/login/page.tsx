@@ -29,22 +29,22 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-8 sm:p-10 shadow-sm space-y-6">
+    <div className="min-h-screen bg-dark-bg text-gray-100 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-dark-surface border border-dark-border rounded-3xl p-8 sm:p-10 shadow-elevation space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-3">
           <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto overflow-hidden flex items-center justify-center">
             <Image
-              src="/images/Logo.png"
+              src="/images/Favicon Logo.jpeg"
               alt="Amin Raisat Hosiery"
               fill
-              className="object-contain"
+              className="object-contain rounded-2xl"
               priority
             />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-950">Owner Admin Login</h1>
-            <p className="font-serif italic text-xs sm:text-sm text-gray-500 mt-0.5">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-100">Owner Admin Login</h1>
+            <p className="font-serif italic text-xs sm:text-sm text-gold-400 mt-0.5">
               Amin Raisat Hosiery
             </p>
           </div>
@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold text-center animate-in fade-in">
+          <div className="p-3.5 bg-rose-950/60 border border-rose-800/60 text-rose-300 rounded-xl text-xs font-semibold text-center animate-in fade-in">
             {error}
           </div>
         )}
@@ -60,7 +60,7 @@ export default function AdminLoginPage() {
         {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-gray-800">
+            <label className="block text-xs font-bold text-gray-300">
               Admin Password
             </label>
             <div className="relative">
@@ -72,26 +72,26 @@ export default function AdminLoginPage() {
                   setPassword(e.target.value);
                   if (error) setError('');
                 }}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all placeholder:text-gray-400"
+                className="w-full pl-10 pr-4 py-3 bg-dark-card border border-dark-border rounded-xl text-sm text-gray-100 focus:outline-none focus:border-gold-500 transition-all placeholder:text-gray-500"
                 autoFocus
                 required
               />
-              <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+              <Lock className="w-4 h-4 text-gold-400 absolute left-3.5 top-3.5" />
             </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-6 rounded-lg bg-gray-950 hover:bg-black text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50 hover:shadow-glow-gold"
+            className="w-full py-3.5 px-6 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-bold text-xs shadow-glow-gold transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
           >
             <span>{isLoading ? 'Verifying...' : 'Login to Dashboard'}</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
           </button>
         </form>
 
         <div className="pt-2 text-center">
-          <p className="text-[11px] text-gray-400">
+          <p className="text-[11px] text-gray-500">
             Protected Store Owner Management Portal
           </p>
         </div>

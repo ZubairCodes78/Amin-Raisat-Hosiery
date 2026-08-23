@@ -22,25 +22,25 @@ export const CategoryGrid: React.FC = () => {
   };
 
   return (
-    <section className="py-14 bg-white border-b border-gray-200">
+    <section className="py-14 bg-dark-bg border-b border-dark-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8">
           <div>
-            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest">
+            <span className="text-[10px] font-bold text-gold-500 uppercase tracking-widest">
               Store Collections
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-950 mt-1">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-100 mt-1">
               Shop by Category
             </h2>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1 font-normal">
-              Select a category to browse vests, innerwear, and upcoming cotton essentials.
+            <p className="text-xs sm:text-sm text-gray-400 mt-1 font-normal">
+              Select a category to browse pure cotton vests, innerwear, and essentials.
             </p>
           </div>
           <Link
             href="/shop"
-            className="mt-4 sm:mt-0 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-900 hover:text-black transition-colors"
+            className="mt-4 sm:mt-0 inline-flex items-center gap-1.5 text-xs font-bold text-gold-400 hover:text-gold-300 transition-colors"
           >
-            <span>Browse All Collections</span>
+            <span>Browse Full Catalog</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -50,7 +50,7 @@ export const CategoryGrid: React.FC = () => {
             const Icon = getCategoryIcon(category.slug);
             const subcats = category.subcategories || [];
 
-            // Dynamically calculate active published products in this category
+            // Calculate active published products in this category
             const activeCategoryProducts = products.filter((p) => {
               if (!p.isPublished) return false;
               return (
@@ -67,37 +67,37 @@ export const CategoryGrid: React.FC = () => {
             return (
               <div
                 key={category.id}
-                className="rounded-xl border border-gray-200 bg-gray-50/70 p-6 flex flex-col justify-between card-hover-lift min-h-[300px]"
+                className="rounded-2xl border border-dark-border bg-dark-surface p-6 flex flex-col justify-between card-hover-lift min-h-[300px]"
               >
                 <div>
                   <div className="flex items-start justify-between">
-                    <div className="w-10 h-10 rounded-lg bg-gray-950 text-white flex items-center justify-center">
+                    <div className="w-11 h-11 rounded-xl bg-dark-card border border-dark-border text-gold-400 flex items-center justify-center shadow-xs">
                       <Icon className="w-5 h-5" />
                     </div>
                     {hasActiveProducts ? (
-                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
                         {activeCategoryProducts.length} Product{activeCategoryProducts.length > 1 ? 's' : ''} Live
                       </span>
                     ) : (
-                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-950/50 text-amber-300 border border-amber-800/40">
                         Coming Soon
                       </span>
                     )}
                   </div>
 
                   <div className="mt-4">
-                    <h3 className="text-lg font-bold text-gray-950 hover:text-gray-700 transition-colors">
+                    <h3 className="text-lg font-bold text-gray-100 hover:text-gold-400 transition-colors">
                       <Link href={`/category/${category.slug}`}>{category.name}&apos;s Collection</Link>
                     </h3>
-                    <p className="text-xs text-gray-600 mt-1 leading-relaxed line-clamp-2 font-normal">
+                    <p className="text-xs text-gray-400 mt-1 leading-relaxed line-clamp-2 font-normal">
                       {category.description}
                     </p>
                   </div>
 
                   {/* Subcategories Pills */}
                   {subcats.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-gray-200">
-                      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-2">
+                    <div className="mt-4 pt-3 border-t border-dark-border">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-2">
                         Subcategories:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
@@ -112,7 +112,7 @@ export const CategoryGrid: React.FC = () => {
                             <Link
                               key={sub.id}
                               href={`/category/${category.slug}/${sub.slug}`}
-                              className="text-[11px] font-medium bg-white hover:bg-gray-950 hover:text-white text-gray-800 border border-gray-200 px-2.5 py-1 rounded-md transition-colors shadow-2xs inline-flex items-center gap-1.5"
+                              className="text-[11px] font-medium bg-dark-card hover:bg-dark-hover hover:text-gold-400 text-gray-300 border border-dark-border px-2.5 py-1 rounded-md transition-colors shadow-2xs inline-flex items-center gap-1.5"
                             >
                               <span>{sub.name}</span>
                               {subHasProducts && (
@@ -130,15 +130,15 @@ export const CategoryGrid: React.FC = () => {
                   {hasActiveProducts ? (
                     <Link
                       href={`/category/${category.slug}`}
-                      className="w-full py-2.5 px-4 bg-white hover:bg-gray-950 hover:text-white text-gray-900 border border-gray-300 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors shadow-2xs"
+                      className="w-full py-2.5 px-4 bg-dark-card hover:bg-gold-500 hover:text-black text-gray-200 border border-dark-border hover:border-gold-500 rounded-lg text-xs font-bold flex items-center justify-between transition-all duration-200 shadow-2xs"
                     >
                       <span>View Collection</span>
                       <ChevronRight className="w-4 h-4" />
                     </Link>
                   ) : (
-                    <div className="w-full py-2.5 px-4 bg-gray-100/90 text-gray-500 border border-gray-200 rounded-lg text-xs font-semibold flex items-center justify-between">
+                    <div className="w-full py-2.5 px-4 bg-dark-card/60 text-gray-500 border border-dark-border rounded-lg text-xs font-semibold flex items-center justify-between">
                       <span>Coming Soon</span>
-                      <span className="text-[10px] text-gray-400 font-normal">In Production</span>
+                      <span className="text-[10px] text-gray-500 font-normal">In Production</span>
                     </div>
                   )}
                 </div>

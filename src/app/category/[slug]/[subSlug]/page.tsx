@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { ProductCard } from '@/components/product/ProductCard';
-import { ChevronRight, ArrowLeft, Package, ShoppingBag } from 'lucide-react';
+import { ChevronRight, Package, ShoppingBag } from 'lucide-react';
 
 export default function SubcategoryPage() {
   const params = useParams();
@@ -18,6 +18,8 @@ export default function SubcategoryPage() {
 
   const matchedProducts = products.filter((p) => {
     if (!currentCategory) return false;
+    if (!p.isPublished) return false;
+
     const matchesCat =
       p.categoryId === currentCategory.id ||
       p.categoryId === currentCategory.slug ||
@@ -36,30 +38,30 @@ export default function SubcategoryPage() {
   const subcategoryName = currentSubcategory?.name || subSlug.replace(/-/g, ' ');
 
   return (
-    <div className="min-h-[75vh] py-10 bg-gray-50/40">
+    <div className="min-h-[85vh] py-10 bg-dark-bg text-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-6">
-          <Link href="/" className="hover:text-gray-900">
+        <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
+          <Link href="/" className="hover:text-gold-400 transition-colors">
             Home
           </Link>
-          <ChevronRight className="w-3 h-3" />
-          <Link href={`/category/${slug}`} className="hover:text-gray-900 capitalize">
+          <ChevronRight className="w-3 h-3 text-gray-600" />
+          <Link href={`/category/${slug}`} className="hover:text-gold-400 capitalize transition-colors">
             {categoryName}&apos;s Collection
           </Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="font-bold text-gray-950 capitalize">{subcategoryName}</span>
+          <ChevronRight className="w-3 h-3 text-gray-600" />
+          <span className="font-bold text-gray-200 capitalize">{subcategoryName}</span>
         </div>
 
         {/* Subcategory Header */}
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 shadow-xs mb-8">
-          <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200 inline-block mb-2">
+        <div className="bg-dark-surface rounded-2xl p-6 sm:p-10 border border-dark-border shadow-card mb-8">
+          <span className="text-[10px] font-bold text-gold-400 uppercase tracking-widest bg-dark-card px-3 py-1 rounded-full border border-dark-border inline-block mb-2">
             {categoryName} &gt; {subcategoryName}
           </span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-950 capitalize">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-100 capitalize tracking-tight">
             {categoryName}&apos;s {subcategoryName}
           </h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed font-normal">
+          <p className="text-xs sm:text-sm text-gray-300 mt-2 leading-relaxed font-normal">
             {currentSubcategory?.description ||
               `Explore high quality cotton ${subcategoryName.toLowerCase()} crafted for daily comfort.`}
           </p>
@@ -67,30 +69,30 @@ export default function SubcategoryPage() {
 
         {/* Products Grid or Clean Coming Soon */}
         {matchedProducts.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-gray-200 max-w-lg mx-auto shadow-xs space-y-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto text-gray-700 border border-gray-200">
+          <div className="bg-dark-surface rounded-2xl p-12 text-center border border-dark-border max-w-lg mx-auto shadow-card space-y-4">
+            <div className="w-16 h-16 bg-dark-card rounded-2xl flex items-center justify-center mx-auto text-gold-400 border border-dark-border">
               <Package className="w-7 h-7" />
             </div>
-            <h3 className="text-xl font-bold text-brand-950 capitalize">
+            <h3 className="text-xl font-bold text-gray-100 capitalize">
               {subcategoryName} Collection Coming Soon
             </h3>
-            <p className="text-xs text-brand-500 leading-relaxed">
+            <p className="text-xs text-gray-400 leading-relaxed">
               We are manufacturing authentic cotton essentials for {subcategoryName.toLowerCase()}. The store owner will add products to this section soon.
             </p>
             <div className="pt-2">
               <Link
                 href="/shop"
-                className="inline-flex items-center gap-2 bg-brand-950 hover:bg-brand-900 text-white font-bold text-xs py-3 px-6 rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-black font-bold text-xs py-3 px-6 rounded-xl shadow-glow-gold transition-colors"
               >
-                <ShoppingBag className="w-4 h-4" />
-                <span>Explore All Available Products</span>
+                <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
+                <span>Explore Available Garments</span>
               </Link>
             </div>
           </div>
         ) : (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <p className="text-xs font-semibold text-brand-600">
+              <p className="text-xs font-semibold text-gray-400">
                 Showing {matchedProducts.length} Product{matchedProducts.length > 1 ? 's' : ''}
               </p>
             </div>

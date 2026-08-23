@@ -20,13 +20,13 @@ import {
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const LOCAL_STORAGE_KEYS = {
-  PRODUCTS: 'arh_products_v5',
-  CATEGORIES: 'arh_categories_v2',
-  SUBCATEGORIES: 'arh_subcategories_v2',
-  SETTINGS: 'arh_settings_v2',
-  ORDERS: 'arh_orders_v2',
-  REVIEWS: 'arh_reviews_v2',
-  HERO_SLIDES: 'arh_hero_slides_v3',
+  PRODUCTS: 'arh_products_v6',
+  CATEGORIES: 'arh_categories_v3',
+  SUBCATEGORIES: 'arh_subcategories_v3',
+  SETTINGS: 'arh_settings_v3',
+  ORDERS: 'arh_orders_v3',
+  REVIEWS: 'arh_reviews_v3',
+  HERO_SLIDES: 'arh_hero_slides_v4',
 };
 
 export class DataStore {
@@ -178,6 +178,7 @@ export class DataStore {
   static async getCategories(): Promise<Category[]> {
     let categories: Category[] = INITIAL_CATEGORIES;
     const subcategories = await this.getSubcategories();
+    const products = await this.getProducts();
 
     if (isSupabaseConfigured()) {
       try {
@@ -211,10 +212,19 @@ export class DataStore {
       }
     }
 
-    return categories.map((cat) => ({
-      ...cat,
-      subcategories: subcategories.filter((sub) => sub.categoryId === cat.id),
-    }));
+    return categories.map((cat) => {
+      const catProducts = products.filter((p) => (p.categoryId === cat.id || p.categoryId === cat.slug) && p.isPublished);
+      return {
+        ...cat,
+        productCount: catProducts.length,
+        subcategories: subcategories
+          .filter((sub) => sub.categoryId === cat.id)
+          .map((sub) => ({
+            ...sub,
+            productCount: catProducts.filter((p) => p.subcategoryId === sub.id || p.subcategoryId === sub.slug).length,
+          })),
+      };
+    });
   }
 
   static async saveCategory(category: Category): Promise<void> {
@@ -291,7 +301,7 @@ export class DataStore {
             subtitle: p.subtitle || '',
             description: p.description || '',
             features: Array.isArray(p.features) ? p.features : [],
-            qualityComparison: p.quality_comparison || INITIAL_PRODUCTS[0].qualityComparison,
+            qualityComparison: p.quality_comparison || {},
             careInstructions: Array.isArray(p.care_instructions) ? p.care_instructions : INITIAL_PRODUCTS[0].careInstructions,
             shippingInfo: p.shipping_info || INITIAL_PRODUCTS[0].shippingInfo,
             returnPolicy: 'We offer hassle-free exchange within 7 days of delivery in case of sizing or defect issues. Product must be unwashed and in original condition.',
@@ -337,16 +347,7 @@ export class DataStore {
         try {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            products = parsed.map((p: Product) => {
-              const hasSvg = p.media?.some((m) => m.url?.includes('.svg'));
-              if (hasSvg) {
-                const initMatch = INITIAL_PRODUCTS.find((ip) => ip.id === p.id);
-                if (initMatch) {
-                  return { ...p, media: initMatch.media, variants: initMatch.variants };
-                }
-              }
-              return p;
-            });
+            products = parsed;
           }
         } catch {}
       } else {
@@ -448,12 +449,6 @@ export class DataStore {
     }
   }
 
-  static async saveProducts(products: Product[]): Promise<void> {
-    if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
-    }
-  }
-
   static async deleteProduct(id: string): Promise<void> {
     if (isSupabaseConfigured()) {
       try {
@@ -467,24 +462,6 @@ export class DataStore {
     const filtered = products.filter((p) => p.id !== id);
     if (this.isClient()) {
       localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
-    }
-  }
-
-  static async updateProductVariants(productId: string, variants: ProductVariant[]): Promise<void> {
-    const products = await this.getProducts();
-    const prod = products.find((p) => p.id === productId);
-    if (prod) {
-      prod.variants = variants;
-      await this.saveProduct(prod);
-    }
-  }
-
-  static async updateProductMedia(productId: string, media: ProductMedia[]): Promise<void> {
-    const products = await this.getProducts();
-    const prod = products.find((p) => p.id === productId);
-    if (prod) {
-      prod.media = media;
-      await this.saveProduct(prod);
     }
   }
 
@@ -649,19 +626,21 @@ export class DataStore {
   }
 
   // ============================================================================
-  // 5. HERO SLIDES CRUD
+  // 5. HERO SLIDES CRUD (SEPARATE DESKTOP & MOBILE SLIDES)
   // ============================================================================
-  static async getHeroSlides(): Promise<HeroSlide[]> {
+  static async getHeroSlides(deviceType?: 'desktop' | 'mobile'): Promise<HeroSlide[]> {
     if (isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase
-          .from('hero_slides')
-          .select('*')
-          .order('display_order', { ascending: true });
+        let query = supabase.from('hero_slides').select('*').order('display_order', { ascending: true });
+        if (deviceType) {
+          query = query.eq('device_type', deviceType);
+        }
+        const { data, error } = await query;
 
         if (!error && data && data.length > 0) {
           return data.map((s: any) => ({
             id: s.id,
+            deviceType: s.device_type || 'desktop',
             desktopImage: s.desktop_image,
             mobileImage: s.mobile_image || s.desktop_image,
             title: s.title || undefined,
@@ -683,11 +662,19 @@ export class DataStore {
         try {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.sort((a: HeroSlide, b: HeroSlide) => a.displayOrder - b.displayOrder);
+            const sorted = parsed.sort((a: HeroSlide, b: HeroSlide) => a.displayOrder - b.displayOrder);
+            if (deviceType) {
+              return sorted.filter((s: HeroSlide) => (s.deviceType || 'desktop') === deviceType);
+            }
+            return sorted;
           }
         } catch {}
       }
       localStorage.setItem(LOCAL_STORAGE_KEYS.HERO_SLIDES, JSON.stringify(INITIAL_HERO_SLIDES));
+    }
+
+    if (deviceType) {
+      return INITIAL_HERO_SLIDES.filter((s) => (s.deviceType || 'desktop') === deviceType);
     }
     return INITIAL_HERO_SLIDES;
   }
@@ -697,6 +684,7 @@ export class DataStore {
       try {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slide.id);
         const payload: any = {
+          device_type: slide.deviceType || 'desktop',
           desktop_image: slide.desktopImage,
           mobile_image: slide.mobileImage || slide.desktopImage,
           title: slide.title || null,
@@ -800,30 +788,36 @@ export class DataStore {
   static async updateSettings(settings: SiteSettings): Promise<void> {
     if (isSupabaseConfigured()) {
       try {
-        await supabase.from('site_settings').upsert({
-          brand_name: settings.brandName,
-          owner_name: settings.ownerName,
-          phone: settings.phone,
-          whatsapp: settings.whatsapp,
-          email: settings.email,
-          market: settings.market,
-          currency: settings.currency,
-          bank_name: settings.bankDetails?.bankName,
-          account_title: settings.bankDetails?.accountTitle,
-          account_number: settings.bankDetails?.accountNumber,
-          iban: settings.bankDetails?.iban,
-          is_store_open: settings.isStoreOpen,
-          announcement_text: settings.announcementText,
-          updated_at: new Date().toISOString(),
-        });
+        await supabase
+          .from('site_settings')
+          .update({
+            brand_name: settings.brandName,
+            owner_name: settings.ownerName,
+            phone: settings.phone,
+            whatsapp: settings.whatsapp,
+            email: settings.email,
+            market: settings.market,
+            currency: settings.currency,
+            bank_name: settings.bankDetails.bankName,
+            account_title: settings.bankDetails.accountTitle,
+            account_number: settings.bankDetails.accountNumber,
+            iban: settings.bankDetails.iban,
+            is_store_open: settings.isStoreOpen,
+            announcement_text: settings.announcementText,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', 'b0000000-0000-0000-0000-000000000001');
 
-        await supabase.from('shipping_settings').upsert({
-          min_order_qty: settings.shipping.minOrderQty,
-          max_order_qty: settings.shipping.maxOrderQty,
-          base_delivery_charge: settings.shipping.baseDeliveryCharge,
-          free_delivery_threshold: settings.shipping.freeDeliveryThreshold,
-          updated_at: new Date().toISOString(),
-        });
+        await supabase
+          .from('shipping_settings')
+          .update({
+            min_order_qty: settings.shipping.minOrderQty,
+            max_order_qty: settings.shipping.maxOrderQty,
+            base_delivery_charge: settings.shipping.baseDeliveryCharge,
+            free_delivery_threshold: settings.shipping.freeDeliveryThreshold,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', 'a0000000-0000-0000-0000-000000000001');
       } catch (err) {
         console.warn('Supabase updateSettings error', err);
       }
@@ -837,21 +831,21 @@ export class DataStore {
   // ============================================================================
   // 7. CUSTOMER REVIEWS CRUD
   // ============================================================================
-  static async getReviews(productId?: string): Promise<ProductReview[]> {
+  static async getReviews(): Promise<ProductReview[]> {
     if (isSupabaseConfigured()) {
       try {
-        let query = supabase.from('reviews').select('*').order('created_at', { ascending: false });
-        if (productId) {
-          query = query.eq('product_id', productId);
-        }
-        const { data, error } = await query;
+        const { data, error } = await supabase
+          .from('reviews')
+          .select('*')
+          .order('created_at', { ascending: false });
+
         if (!error && data) {
           return data.map((r: any) => ({
             id: r.id,
             productId: r.product_id,
             customerName: r.customer_name,
-            customerCity: r.customer_city || undefined,
-            rating: Number(r.rating) || 5,
+            customerCity: r.customer_city || '',
+            rating: r.rating,
             comment: r.comment,
             createdAt: r.created_at,
             isApproved: r.is_approved ?? true,
@@ -866,20 +860,16 @@ export class DataStore {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.REVIEWS);
       if (stored) {
         try {
-          const parsed = JSON.parse(stored);
-          if (productId) {
-            return parsed.filter((r: ProductReview) => r.productId === productId);
-          }
-          return parsed;
+          return JSON.parse(stored);
         } catch {}
       }
     }
     return [];
   }
 
-  static async createReview(reviewData: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>): Promise<ProductReview> {
+  static async submitReview(review: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>): Promise<ProductReview> {
     const newReview: ProductReview = {
-      ...reviewData,
+      ...review,
       id: `rev-${Date.now()}`,
       createdAt: new Date().toISOString(),
       isApproved: true,
@@ -890,11 +880,13 @@ export class DataStore {
         const { data, error } = await supabase
           .from('reviews')
           .insert({
-            product_id: reviewData.productId,
-            customer_name: reviewData.customerName,
-            customer_city: reviewData.customerCity || null,
-            rating: reviewData.rating,
-            comment: reviewData.comment,
+            product_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(review.productId)
+              ? review.productId
+              : null,
+            customer_name: review.customerName,
+            customer_city: review.customerCity || null,
+            rating: review.rating,
+            comment: review.comment,
             is_approved: true,
           })
           .select()
@@ -904,55 +896,76 @@ export class DataStore {
           newReview.id = data.id;
         }
       } catch (err) {
-        console.warn('Supabase createReview error', err);
+        console.warn('Supabase submitReview error', err);
       }
     }
 
     if (this.isClient()) {
-      const all = await this.getReviews();
-      const updated = [newReview, ...all];
+      const existing = await this.getReviews();
+      const updated = [newReview, ...existing];
       localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(updated));
     }
 
     return newReview;
   }
 
-  static async submitReview(reviewData: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>): Promise<ProductReview> {
-    return this.createReview(reviewData);
-  }
-
-  static async deleteReview(id: string): Promise<void> {
+  static async updateReviewApproval(reviewId: string, isApproved: boolean): Promise<void> {
     if (isSupabaseConfigured()) {
       try {
-        await supabase.from('reviews').delete().eq('id', id);
+        await supabase
+          .from('reviews')
+          .update({ is_approved: isApproved })
+          .eq('id', reviewId);
+      } catch (err) {
+        console.warn('Supabase updateReviewApproval error', err);
+      }
+    }
+
+    if (this.isClient()) {
+      const reviews = await this.getReviews();
+      const index = reviews.findIndex((r) => r.id === reviewId);
+      if (index !== -1) {
+        reviews[index].isApproved = isApproved;
+        localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
+      }
+    }
+  }
+
+  static async approveReview(reviewId: string, isApproved: boolean): Promise<void> {
+    return this.updateReviewApproval(reviewId, isApproved);
+  }
+
+  static async updateProductVariants(productId: string, variants: ProductVariant[]): Promise<void> {
+    const products = await this.getProducts();
+    const product = products.find((p) => p.id === productId);
+    if (product) {
+      product.variants = variants;
+      await this.saveProduct(product);
+    }
+  }
+
+  static async updateProductMedia(productId: string, media: ProductMedia[]): Promise<void> {
+    const products = await this.getProducts();
+    const product = products.find((p) => p.id === productId);
+    if (product) {
+      product.media = media;
+      await this.saveProduct(product);
+    }
+  }
+
+  static async deleteReview(reviewId: string): Promise<void> {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('reviews').delete().eq('id', reviewId);
       } catch (err) {
         console.warn('Supabase deleteReview error', err);
       }
     }
 
     if (this.isClient()) {
-      const all = await this.getReviews();
-      const filtered = all.filter((r) => r.id !== id);
+      const reviews = await this.getReviews();
+      const filtered = reviews.filter((r) => r.id !== reviewId);
       localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(filtered));
-    }
-  }
-
-  static async approveReview(id: string, isApproved: boolean): Promise<void> {
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('reviews').update({ is_approved: isApproved }).eq('id', id);
-      } catch (err) {
-        console.warn('Supabase approveReview error', err);
-      }
-    }
-
-    if (this.isClient()) {
-      const all = await this.getReviews();
-      const idx = all.findIndex((r) => r.id === id);
-      if (idx !== -1) {
-        all[idx].isApproved = isApproved;
-        localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(all));
-      }
     }
   }
 }

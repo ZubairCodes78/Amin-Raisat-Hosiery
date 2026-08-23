@@ -4,17 +4,12 @@ import React, { useState } from 'react';
 import { useStore } from '@/context/StoreContext';
 import { SiteSettings } from '@/types';
 import {
-  Settings,
   Save,
   Truck,
   Building2,
-  Store,
   Check,
-  Phone,
-  Mail,
   Megaphone,
   CreditCard,
-  RotateCcw,
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 
@@ -35,19 +30,19 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-5xl text-gray-100">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-dark-surface p-6 rounded-2xl border border-dark-border shadow-card">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-950">Store &amp; Delivery Settings</h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            Centralized store management: change delivery thresholds, charges, announcement text, and payment rules without touching any code.
+          <h1 className="text-xl font-extrabold text-gray-100">Store &amp; Delivery Settings</h1>
+          <p className="text-xs text-gray-400 mt-1">
+            Centralized store management: change delivery thresholds, charges, announcement text, and payment rules.
           </p>
         </div>
 
         <button
           onClick={handleSave}
-          className="inline-flex items-center gap-2 bg-gray-950 hover:bg-black text-white text-xs font-semibold h-10 px-5 rounded-lg shadow-sm transition-all"
+          className="inline-flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-black text-xs font-bold h-10 px-5 rounded-xl shadow-glow-gold transition-all"
         >
           <Save className="w-4 h-4" />
           <span>Save Changes</span>
@@ -55,22 +50,22 @@ export default function AdminSettingsPage() {
       </div>
 
       {saveSuccess && (
-        <div className="p-3.5 bg-gray-900 text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm animate-in fade-in">
+        <div className="p-3.5 bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm animate-in fade-in">
           <Check className="w-4 h-4 text-emerald-400" />
           <span>All store settings saved and updated live on the website!</span>
         </div>
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* 1. Delivery & Order Rules (DYNAMIC) */}
-        <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200 shadow-xs space-y-4">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
-            <div className="p-2 bg-gray-100 text-gray-900 rounded-lg">
+        {/* 1. Delivery & Order Rules */}
+        <div className="bg-dark-surface rounded-2xl p-5 sm:p-6 border border-dark-border shadow-card space-y-4">
+          <div className="flex items-center gap-3 border-b border-dark-border pb-3">
+            <div className="p-2 bg-dark-card text-gold-400 rounded-xl border border-dark-border">
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-gray-950">1. Delivery Rules &amp; Shipping Charges</h2>
-              <p className="text-xs text-gray-500">
+              <h2 className="text-sm font-bold text-gray-100">1. Delivery Rules &amp; Shipping Charges</h2>
+              <p className="text-xs text-gray-400">
                 These numbers automatically control free delivery messages, product pages, cart calculation, and checkout.
               </p>
             </div>
@@ -78,7 +73,7 @@ export default function AdminSettingsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-800 mb-1">
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
                 Free Delivery After (Pieces) *
               </label>
               <input
@@ -86,7 +81,7 @@ export default function AdminSettingsPage() {
                 min={1}
                 max={20}
                 required
-                value={formState.shipping.freeDeliveryThreshold}
+                value={formState.shipping?.freeDeliveryThreshold ?? 3}
                 onChange={(e) =>
                   setFormState({
                     ...formState,
@@ -96,22 +91,22 @@ export default function AdminSettingsPage() {
                     },
                   })
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold text-gray-950"
+                className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gold-400"
               />
-              <span className="text-[10px] text-gray-500 mt-1 block">
-                E.g. 3 or 4 pieces for free delivery
+              <span className="text-[10px] text-gray-400 mt-1 block">
+                Standard default: 3 pieces
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-800 mb-1">
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
                 Standard Delivery Charge (Rs.) *
               </label>
               <input
                 type="number"
                 min={0}
                 required
-                value={formState.shipping.baseDeliveryCharge}
+                value={formState.shipping?.baseDeliveryCharge ?? 200}
                 onChange={(e) =>
                   setFormState({
                     ...formState,
@@ -121,22 +116,22 @@ export default function AdminSettingsPage() {
                     },
                   })
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold text-gray-950"
+                className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gold-400"
               />
-              <span className="text-[10px] text-gray-500 mt-1 block">
+              <span className="text-[10px] text-gray-400 mt-1 block">
                 Charged when below free threshold (Default: Rs. 200)
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-800 mb-1">
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
                 Minimum Order Quantity (Pieces)
               </label>
               <input
                 type="number"
                 min={1}
                 required
-                value={formState.shipping.minOrderQty}
+                value={formState.shipping?.minOrderQty ?? 3}
                 onChange={(e) =>
                   setFormState({
                     ...formState,
@@ -146,20 +141,20 @@ export default function AdminSettingsPage() {
                     },
                   })
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold"
+                className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gray-100"
               />
-              <span className="text-[10px] text-gray-500 mt-1 block">Default: 2 pieces</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">Default: 3 pieces</span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-800 mb-1">
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
                 Maximum Order Quantity (Pieces)
               </label>
               <input
                 type="number"
                 min={1}
                 required
-                value={formState.shipping.maxOrderQty}
+                value={formState.shipping?.maxOrderQty ?? 12}
                 onChange={(e) =>
                   setFormState({
                     ...formState,
@@ -169,15 +164,15 @@ export default function AdminSettingsPage() {
                     },
                   })
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold"
+                className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gray-100"
               />
-              <span className="text-[10px] text-gray-500 mt-1 block">Default: 12 pieces</span>
+              <span className="text-[10px] text-gray-400 mt-1 block">Default: 12 pieces</span>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="pt-2 border-t border-dark-border grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-800 mb-1">
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
                 Exchange / Return Period (Days)
               </label>
               <input
@@ -191,9 +186,9 @@ export default function AdminSettingsPage() {
                     exchangeReturnDays: Number(e.target.value),
                   })
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold"
+                className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gray-100"
               />
-              <span className="text-[10px] text-gray-500 mt-1 block">
+              <span className="text-[10px] text-gray-400 mt-1 block">
                 Shown on exchange &amp; returns page (Default: 7 days)
               </span>
             </div>
@@ -201,15 +196,15 @@ export default function AdminSettingsPage() {
         </div>
 
         {/* 2. Announcement Bar Settings */}
-        <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200 shadow-xs space-y-4">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
-            <div className="p-2 bg-amber-50 text-amber-800 rounded-lg">
+        <div className="bg-dark-surface rounded-2xl p-5 sm:p-6 border border-dark-border shadow-card space-y-4">
+          <div className="flex items-center gap-3 border-b border-dark-border pb-3">
+            <div className="p-2 bg-dark-card text-gold-400 rounded-xl border border-dark-border">
               <Megaphone className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-gray-950">2. Website Announcement Bar</h2>
-              <p className="text-xs text-gray-500">
-                Top ticker displayed at the very top of the public website.
+              <h2 className="text-sm font-bold text-gray-100">2. Website Announcement Bar</h2>
+              <p className="text-xs text-gray-400">
+                Top ticker displayed at the very top of the website.
               </p>
             </div>
           </div>
@@ -226,145 +221,142 @@ export default function AdminSettingsPage() {
                     isAnnouncementEnabled: e.target.checked,
                   })
                 }
-                className="rounded border-gray-300 text-gray-950 focus:ring-black"
+                className="rounded accent-gold-500 w-4 h-4"
               />
-              <label htmlFor="announcement-toggle" className="text-xs font-bold text-gray-800 cursor-pointer">
+              <label htmlFor="announcement-toggle" className="text-xs font-bold text-gray-200 cursor-pointer">
                 Enable Top Announcement Bar on Website
               </label>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
                 Custom Announcement Message (Optional)
               </label>
               <input
                 type="text"
-                placeholder="Leave blank to use dynamic free delivery message, or enter custom promo text"
+                placeholder="Leave blank to use default 3+ Free Delivery messaging"
                 value={formState.announcementText || ''}
                 onChange={(e) => setFormState({ ...formState, announcementText: e.target.value })}
-                className="w-full px-3.5 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg"
+                className="w-full px-3.5 py-2.5 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100"
               />
-              <span className="text-[10px] text-gray-400 mt-1 block">
-                If left empty, automatically displays: &quot;FREE DELIVERY on {formState.shipping.freeDeliveryThreshold}+ pieces (Rs. {formState.shipping.baseDeliveryCharge} below {formState.shipping.freeDeliveryThreshold} pcs)&quot;
-              </span>
             </div>
           </div>
         </div>
 
-        {/* 3. Payment Methods (ON/OFF) */}
-        <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200 shadow-xs space-y-4">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-900 rounded-lg">
+        {/* 3. Payment Methods */}
+        <div className="bg-dark-surface rounded-2xl p-5 sm:p-6 border border-dark-border shadow-card space-y-4">
+          <div className="flex items-center gap-3 border-b border-dark-border pb-3">
+            <div className="p-2 bg-dark-card text-gold-400 rounded-xl border border-dark-border">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-gray-950">3. Payment Methods &amp; Bank Details</h2>
-              <p className="text-xs text-gray-500">
+              <h2 className="text-sm font-bold text-gray-100">3. Payment Methods &amp; Bank Details</h2>
+              <p className="text-xs text-gray-400">
                 Enable or disable Cash on Delivery and Direct Bank Transfer at checkout.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-2">
-            <div className="p-3.5 border rounded-lg bg-gray-50 flex items-center justify-between">
+            <div className="p-3.5 border border-dark-border rounded-xl bg-dark-card flex items-center justify-between">
               <div>
-                <span className="font-bold text-xs text-gray-900 block">Cash on Delivery (COD)</span>
-                <span className="text-[11px] text-gray-500">Pay cash upon delivery</span>
+                <span className="font-bold text-xs text-gray-200 block">Cash on Delivery (COD)</span>
+                <span className="text-[11px] text-gray-400">Pay cash upon delivery</span>
               </div>
               <input
                 type="checkbox"
                 checked={formState.isCodEnabled ?? true}
                 onChange={(e) => setFormState({ ...formState, isCodEnabled: e.target.checked })}
-                className="rounded border-gray-300 text-gray-950 focus:ring-black w-4 h-4"
+                className="rounded accent-gold-500 w-4 h-4"
               />
             </div>
 
-            <div className="p-3.5 border rounded-lg bg-gray-50 flex items-center justify-between">
+            <div className="p-3.5 border border-dark-border rounded-xl bg-dark-card flex items-center justify-between">
               <div>
-                <span className="font-bold text-xs text-gray-900 block">Direct Bank Transfer</span>
-                <span className="text-[11px] text-gray-500">Bank deposit / online transfer</span>
+                <span className="font-bold text-xs text-gray-200 block">Direct Bank Transfer</span>
+                <span className="text-[11px] text-gray-400">Bank deposit / online transfer</span>
               </div>
               <input
                 type="checkbox"
                 checked={formState.isBankTransferEnabled ?? true}
                 onChange={(e) => setFormState({ ...formState, isBankTransferEnabled: e.target.checked })}
-                className="rounded border-gray-300 text-gray-950 focus:ring-black w-4 h-4"
+                className="rounded accent-gold-500 w-4 h-4"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-dark-border">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Bank Name</label>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">Bank Name</label>
               <input
                 type="text"
-                value={formState.bankDetails.bankName}
+                value={formState.bankDetails?.bankName || ''}
                 onChange={(e) =>
                   setFormState({
                     ...formState,
                     bankDetails: { ...formState.bankDetails, bankName: e.target.value },
                   })
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold"
+                className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gray-100"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Account Title</label>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">Account Title</label>
               <input
                 type="text"
-                value={formState.bankDetails.accountTitle}
+                value={formState.bankDetails?.accountTitle || ''}
                 onChange={(e) =>
                   setFormState({
                     ...formState,
                     bankDetails: { ...formState.bankDetails, accountTitle: e.target.value },
                   })
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold"
+                className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gray-100"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">Account Number</label>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">Account Number</label>
               <input
                 type="text"
-                value={formState.bankDetails.accountNumber}
+                value={formState.bankDetails?.accountNumber || ''}
                 onChange={(e) =>
                   setFormState({
                     ...formState,
                     bankDetails: { ...formState.bankDetails, accountNumber: e.target.value },
                   })
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-mono font-bold"
+                className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-mono font-bold text-gold-400"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">IBAN / Raast ID</label>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">IBAN / Raast ID</label>
               <input
                 type="text"
-                value={formState.bankDetails.iban}
+                value={formState.bankDetails?.iban || ''}
                 onChange={(e) =>
                   setFormState({
                     ...formState,
                     bankDetails: { ...formState.bankDetails, iban: e.target.value },
                   })
                 }
-                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-mono font-bold"
+                className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-mono font-bold text-gold-400"
               />
             </div>
           </div>
         </div>
 
-        {/* 4. Business & Contact Information */}
-        <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200 shadow-xs space-y-4">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
-            <div className="p-2 bg-emerald-50 text-[#25D366] rounded-lg">
+        {/* 4. Business & Contact Info */}
+        <div className="bg-dark-surface rounded-2xl p-5 sm:p-6 border border-dark-border shadow-card space-y-4">
+          <div className="flex items-center gap-3 border-b border-dark-border pb-3">
+            <div className="p-2 bg-dark-card text-[#25D366] rounded-xl border border-dark-border">
               <WhatsAppIcon size={20} className="fill-current" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-gray-950">4. Store Info, Contact &amp; WhatsApp</h2>
-              <p className="text-xs text-gray-500">Official contact info displayed across the storefront.</p>
+              <h2 className="text-sm font-bold text-gray-100">4. Store Info, Contact &amp; WhatsApp</h2>
+              <p className="text-xs text-gray-400">Official contact info displayed across the storefront.</p>
             </div>
           </div>
 
@@ -380,36 +372,36 @@ export default function AdminSettingsPage() {
                     isWhatsAppFloatingEnabled: e.target.checked,
                   })
                 }
-                className="rounded border-gray-300 text-gray-950 focus:ring-black"
+                className="rounded accent-gold-500 w-4 h-4"
               />
-              <label htmlFor="whatsapp-floating-toggle" className="text-xs font-bold text-gray-800 cursor-pointer">
+              <label htmlFor="whatsapp-floating-toggle" className="text-xs font-bold text-gray-200 cursor-pointer">
                 Enable Floating WhatsApp Button on Website
               </label>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Brand Name</label>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">Brand Name</label>
                 <input
                   type="text"
                   value={formState.brandName}
                   onChange={(e) => setFormState({ ...formState, brandName: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold"
+                  className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gray-100"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Owner Name</label>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">Owner Name</label>
                 <input
                   type="text"
                   value={formState.ownerName}
                   onChange={(e) => setFormState({ ...formState, ownerName: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold"
+                  className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gray-100"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
                   WhatsApp Order Number *
                 </label>
                 <input
@@ -417,42 +409,19 @@ export default function AdminSettingsPage() {
                   required
                   value={formState.whatsapp}
                   onChange={(e) => setFormState({ ...formState, whatsapp: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold"
+                  className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gold-400"
                 />
-                <span className="text-[10px] text-gray-400 mt-1 block">
-                  Direct receiver of 1-click WhatsApp orders (e.g. 03018666075)
-                </span>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
                   Official Support Email
                 </label>
                 <input
                   type="email"
                   value={formState.email}
                   onChange={(e) => setFormState({ ...formState, email: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg font-bold"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Physical Address / Factory Location</label>
-                <input
-                  type="text"
-                  value={formState.address || ''}
-                  onChange={(e) => setFormState({ ...formState, address: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Business Hours</label>
-                <input
-                  type="text"
-                  value={formState.businessHours || ''}
-                  onChange={(e) => setFormState({ ...formState, businessHours: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-xs bg-dark-card border border-dark-border rounded-xl font-bold text-gray-100"
                 />
               </div>
             </div>
@@ -463,7 +432,7 @@ export default function AdminSettingsPage() {
         <div className="flex justify-end pt-2">
           <button
             type="submit"
-            className="h-10 px-6 bg-gray-950 hover:bg-black text-white font-semibold text-xs rounded-lg shadow-sm flex items-center gap-2 transition-colors"
+            className="h-11 px-7 bg-gold-500 hover:bg-gold-400 text-black font-bold text-xs rounded-xl shadow-glow-gold flex items-center gap-2 transition-all"
           >
             <Save className="w-4 h-4" />
             <span>Save All Settings</span>
