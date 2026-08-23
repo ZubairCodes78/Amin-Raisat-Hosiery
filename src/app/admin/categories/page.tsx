@@ -305,19 +305,19 @@ export default function AdminCategoriesPage() {
           <button
             type="button"
             onClick={handleOpenAddCategory}
-            className="inline-flex items-center justify-center gap-2 bg-[#202329] border border-[#30343A] hover:bg-[#272A2F] text-[#F1F0EC] text-xs font-bold h-10 px-4 rounded-xl shadow-xs transition-colors"
+            className="inline-flex items-center justify-center gap-2 bg-[#202329] border border-[#30343A] hover:bg-[#272A2F] text-[#F1F0EC] text-xs font-semibold h-10 px-4 rounded-xl shadow-xs transition-colors"
           >
             <Plus className="w-4 h-4 text-[#C9A96A]" />
-            <span>+ Add Main Category</span>
+            <span>Add Main Category</span>
           </button>
 
           <button
             type="button"
             onClick={handleOpenAddSubcategory}
-            className="inline-flex items-center justify-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold h-10 px-4 rounded-xl shadow-xs transition-colors"
+            className="inline-flex items-center justify-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-semibold h-10 px-4 rounded-xl shadow-xs transition-colors"
           >
             <FolderPlus className="w-4 h-4" />
-            <span>+ Add Subcategory</span>
+            <span>Add Subcategory</span>
           </button>
         </div>
       </div>
@@ -427,16 +427,16 @@ export default function AdminCategoriesPage() {
             <button
               type="button"
               onClick={handleOpenAddSubcategory}
-              className="text-xs font-bold bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] h-8 px-3 rounded-xl shadow-xs transition-colors"
+              className="text-xs font-semibold bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] h-8 px-3 rounded-xl shadow-xs transition-colors"
             >
-              + Add Subcategory
+              Add Subcategory
             </button>
           </div>
 
           {activeSubcategories.length === 0 ? (
             <div className="text-center py-12 space-y-2 bg-[#1D2025] rounded-xl border border-[#30343A]">
               <p className="text-xs font-bold text-[#F1F0EC]">No subcategories in {selectedCategory?.name}.</p>
-              <p className="text-[11px] text-[#85888E]">Click &quot;+ Add Subcategory&quot; above to create one.</p>
+              <p className="text-[11px] text-[#85888E]">Click &quot;Add Subcategory&quot; above to create one.</p>
             </div>
           ) : (
             <div className="border border-[#30343A] rounded-xl divide-y divide-[#30343A] overflow-hidden">
@@ -589,9 +589,9 @@ export default function AdminCategoriesPage() {
               <button
                 type="button"
                 onClick={handleOpenAddSubcategory}
-                className="text-xs font-bold bg-[#C9A96A] text-[#101114] px-3 py-1.5 rounded-xl shadow-xs"
+                className="text-xs font-semibold bg-[#C9A96A] text-[#101114] px-3 py-1.5 rounded-xl shadow-xs"
               >
-                + Add Sub
+                Add Sub
               </button>
             </div>
 

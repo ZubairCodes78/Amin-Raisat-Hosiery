@@ -604,10 +604,10 @@ export default function AdminProductsPage() {
             <button
               type="button"
               onClick={handleStartCreate}
-              className="inline-flex items-center justify-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold h-10 px-4 rounded-xl shadow-xs transition-all active:scale-[0.99] self-start sm:self-auto flex-shrink-0"
+              className="inline-flex items-center justify-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-semibold min-h-[48px] px-5 sm:px-6 rounded-xl shadow-xs transition-all active:scale-[0.99] w-full sm:w-auto flex-shrink-0"
             >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>+ Add Garment Listing</span>
+              <Plus className="w-4.5 h-4.5 stroke-[2.2]" />
+              <span>Add Garment Listing</span>
             </button>
           </div>
 
@@ -1178,7 +1178,7 @@ export default function AdminProductsPage() {
                       className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#23262B] hover:bg-[#2A2E35] border border-[#30343A] text-[#F1F0EC] text-xs font-semibold rounded-xl transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5 text-[#C9A96A]" />
-                      <span>+ Custom Combination</span>
+                      <span>Custom Combination</span>
                     </button>
 
                     <button
@@ -1528,7 +1528,7 @@ export default function AdminProductsPage() {
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#23262B] hover:bg-[#2A2E35] text-[#F1F0EC] text-xs font-semibold rounded-xl border border-[#30343A] transition-colors"
                   >
                     <Film className="w-4 h-4 text-[#D96B6B]" />
-                    <span>+ Add Video URL</span>
+                    <span>Add Video URL</span>
                   </button>
 
                   {uploadProgress === 'uploaded' && (
