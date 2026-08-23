@@ -50,8 +50,8 @@ export const Navbar: React.FC = () => {
           isScrolled ? 'border-dark-border shadow-elevation py-0.5' : 'border-dark-border/80 py-1'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20 md:h-24">
+        <div className="mx-auto w-full md:w-[calc(100%-48px)] max-w-[1240px] px-3 sm:px-6 md:px-0">
+          <div className="flex items-center justify-between h-16 md:h-18">
             
             {/* === MOBILE NAVBAR ROW (md:hidden) === */}
             <div className="flex items-center justify-between w-full md:hidden">
@@ -130,13 +130,13 @@ export const Navbar: React.FC = () => {
             <div className="hidden md:flex items-center justify-between w-full">
               {/* Desktop Header Logo */}
               <div className="flex items-center">
-                <Link href="/" className="flex items-center group py-1">
-                  <div className="relative w-52 sm:w-60 lg:w-64 h-16 sm:h-20 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                <Link href="/" className="flex items-center group py-0.5">
+                  <div className="relative w-48 lg:w-52 h-12 lg:h-13 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
                       src="/images/header logo.png"
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="300px"
+                      sizes="240px"
                       className="object-contain"
                       priority
                     />
@@ -145,10 +145,10 @@ export const Navbar: React.FC = () => {
               </div>
 
               {/* Desktop Navigation Links */}
-              <div className="flex items-center space-x-1 lg:space-x-2">
+              <div className="flex items-center space-x-1 lg:space-x-1.5">
                 <Link
                   href="/"
-                  className={`px-3 py-2 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
+                  className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/'
                       ? 'text-gold-400 bg-dark-surface border border-dark-border'
                       : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
@@ -162,7 +162,6 @@ export const Navbar: React.FC = () => {
                   const subcats = category.subcategories || [];
                   const isHovered = activeCategoryMenu === category.id;
                   const isActive = pathname.startsWith(`/category/${category.slug}`);
-                  const isComingSoon = !category.productCount || category.productCount === 0;
 
                   return (
                     <div
@@ -173,7 +172,7 @@ export const Navbar: React.FC = () => {
                     >
                       <Link
                         href={`/category/${category.slug}`}
-                        className={`px-3 py-2 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg flex items-center gap-1 ${
+                        className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg flex items-center gap-1 ${
                           isActive
                             ? 'text-gold-400 bg-dark-surface border border-dark-border'
                             : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
@@ -223,7 +222,7 @@ export const Navbar: React.FC = () => {
 
                 <Link
                   href="/shop"
-                  className={`px-3 py-2 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
+                  className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/shop'
                       ? 'text-gold-400 bg-dark-surface border border-dark-border'
                       : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
@@ -234,7 +233,7 @@ export const Navbar: React.FC = () => {
 
                 <Link
                   href="/about"
-                  className={`px-3 py-2 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
+                  className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/about'
                       ? 'text-gold-400 bg-dark-surface border border-dark-border'
                       : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
@@ -245,7 +244,7 @@ export const Navbar: React.FC = () => {
 
                 <Link
                   href="/contact"
-                  className={`px-3 py-2 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
+                  className={`px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/contact'
                       ? 'text-gold-400 bg-dark-surface border border-dark-border'
                       : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
@@ -256,46 +255,45 @@ export const Navbar: React.FC = () => {
               </div>
 
               {/* Desktop Right Actions: Search, Customer Account, Cart */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 lg:gap-2">
                 {/* Search Trigger */}
                 <button
                   type="button"
                   onClick={() => setSearchOpen(!searchOpen)}
-                  className={`p-2.5 rounded-xl transition-colors ${
+                  className={`w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-xl transition-colors ${
                     searchOpen
                       ? 'bg-dark-surface text-gold-400 border border-dark-border'
                       : 'text-gray-300 hover:text-gold-400 hover:bg-dark-surface'
                   }`}
                   aria-label="Search products"
                 >
-                  <Search className="w-4.5 h-4.5" />
+                  <Search className="w-4 h-4" />
                 </button>
 
                 {/* Customer Account Button */}
                 <Link
                   href={user ? '/account' : '/login'}
-                  className="p-2.5 text-gray-300 hover:text-gold-400 hover:bg-dark-surface rounded-xl transition-colors flex items-center gap-1.5"
+                  className="h-9 lg:h-10 px-3 text-gray-300 hover:text-gold-400 hover:bg-dark-surface rounded-xl transition-colors flex items-center gap-1.5 border border-transparent hover:border-dark-border"
                   aria-label="Customer Account"
                   title={user ? 'My Account' : 'Sign In'}
                 >
-                  <User className="w-4.5 h-4.5" />
-                  {user && (
-                    <span className="hidden lg:inline text-[11px] font-semibold text-gold-400 max-w-[80px] truncate">
-                      Account
-                    </span>
-                  )}
+                  <User className="w-4 h-4" />
+                  <span className="text-[11px] font-semibold text-gray-200">
+                    {user ? 'Account' : 'Sign In'}
+                  </span>
                 </Link>
 
                 {/* Shopping Cart Drawer Trigger */}
                 <button
                   type="button"
                   onClick={openDrawer}
-                  className="relative p-2.5 bg-gold-500 hover:bg-gold-400 text-black rounded-xl transition-all duration-200 flex items-center justify-center shadow-xs hover:shadow-glow-gold active:scale-[0.98]"
+                  className="relative h-9 lg:h-10 px-3.5 bg-gold-500 hover:bg-gold-400 text-black rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 shadow-xs hover:shadow-glow-gold active:scale-[0.98]"
                   aria-label="Shopping Cart"
                 >
-                  <ShoppingBag className="w-4.5 h-4.5 text-black stroke-[2.2]" />
+                  <ShoppingBag className="w-4 h-4 text-black stroke-[2.2]" />
+                  <span className="text-xs font-extrabold text-black">Cart</span>
                   {totalQuantity > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-black shadow-xs">
+                    <span className="bg-black text-gold-400 text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center ml-0.5">
                       {totalQuantity}
                     </span>
                   )}
