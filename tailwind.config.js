@@ -10,12 +10,14 @@ module.exports = {
     extend: {
       colors: {
         dark: {
-          bg: '#09090c',
-          surface: '#121217',
-          card: '#181820',
-          hover: '#20202b',
-          border: '#252530',
-          'border-light': '#353545',
+          bg: '#0B0B0F',
+          header: '#0D0D12',
+          surface: '#15151B',
+          card: '#1B1B22',
+          hover: '#22222B',
+          border: '#2A2A32',
+          'border-subtle': '#26262D',
+          'border-light': '#3A3A46',
         },
         brand: {
           50: '#F8FAFC',

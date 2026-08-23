@@ -13,19 +13,19 @@ export const BenefitsStrip: React.FC = () => {
     {
       id: 'free-delivery',
       icon: Truck,
-      title: `FREE Delivery On ${freeThreshold}+ Pieces`,
+      title: `FREE DELIVERY ON ${freeThreshold}+ PIECES`,
       subtitle: 'Nationwide dispatch across Pakistan',
     },
     {
       id: 'branded-packaging',
       icon: PackageCheck,
-      title: 'Deliver In Branded Flyers',
+      title: 'DELIVER IN BRANDED FLYERS',
       subtitle: 'Secure & premium sealed packaging',
     },
     {
       id: 'easy-returns',
       icon: RotateCcw,
-      title: 'Easy Returns & Exchange',
+      title: 'EASY RETURNS & EXCHANGE',
       subtitle: `${returnDays}-day hassle-free sizing guarantee`,
     },
   ];
@@ -33,16 +33,17 @@ export const BenefitsStrip: React.FC = () => {
   return (
     <section
       aria-label="Store Benefits"
-      className="relative z-10 w-full bg-dark-surface border-y border-dark-border shadow-card"
+      className="relative z-10 w-full bg-[#15151B] border-y border-[#26262D]"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-dark-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+        {/* Mobile: Compact Clean Stacked List with subtle divider lines / Desktop: 3 Equal Columns with vertical dividers */}
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#26262D]">
           {benefits.map((item, index) => {
             const Icon = item.icon;
             return (
               <div
                 key={item.id}
-                className={`flex items-center gap-3.5 sm:gap-4 py-3 sm:py-2 ${
+                className={`flex items-center gap-3 sm:gap-3.5 py-2.5 md:py-1 ${
                   index === 0
                     ? 'md:pr-6'
                     : index === 1
@@ -50,14 +51,17 @@ export const BenefitsStrip: React.FC = () => {
                     : 'md:pl-6'
                 }`}
               >
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-dark-card border border-dark-border flex items-center justify-center flex-shrink-0 text-gold-400 shadow-xs">
-                  <Icon className="w-5 h-5 stroke-[2.2]" />
+                {/* Compact icon container with restrained gold tone */}
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#1B1B22] border border-[#2A2A32] flex items-center justify-center flex-shrink-0 text-gold-400">
+                  <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
                 </div>
+                
+                {/* Text Block */}
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-xs sm:text-sm font-bold text-gray-100 uppercase tracking-wide truncate">
+                  <h3 className="text-[11.5px] sm:text-xs font-bold text-[#F5F5F0] uppercase tracking-wide truncate">
                     {item.title}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-gray-400 font-normal truncate mt-0.5">
+                  <p className="text-[10.5px] sm:text-[11px] text-[#A7A7AE] font-normal truncate mt-0.5">
                     {item.subtitle}
                   </p>
                 </div>
