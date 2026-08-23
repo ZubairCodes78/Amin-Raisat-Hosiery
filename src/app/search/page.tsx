@@ -30,7 +30,7 @@ function SearchContent() {
       const subcat = subcategories.find((s) => s.id === prod.subcategoryId);
       const subcatMatch = subcat ? subcat.name.toLowerCase().includes(q) : false;
 
-      const skuMatch = prod.variants.some((v) => v.sku.toLowerCase().includes(q));
+      const skuMatch = prod.variants.some((v) => v.sku?.toLowerCase().includes(q));
 
       return nameMatch || subtitleMatch || descMatch || catMatch || subcatMatch || skuMatch;
     });

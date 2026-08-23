@@ -466,6 +466,7 @@ export default function CheckoutPage() {
       setIsSubmitting(true);
 
       const orderPayload = {
+        userId: user?.id || undefined,
         customerName: formData.fullName.trim(),
         customerPhone: formData.phone.trim(),
         customerEmail: user?.email || formData.email.trim() || undefined,

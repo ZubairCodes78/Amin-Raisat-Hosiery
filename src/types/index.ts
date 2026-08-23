@@ -1,48 +1,12 @@
-export type QualityType = 'High Quality' | 'Low Quality' | 'Standard Quality' | string;
-export type SleeveType = 'Sleeveless' | 'Full Sleeve' | 'Half Sleeves' | string;
-export type ProductSize = 'S' | 'M' | 'L' | 'XL' | 'XXL' | string;
-
-export interface ProductVariant {
-  id: string;
-  productId: string;
-  quality: QualityType;
-  sleeve: SleeveType;
-  size: ProductSize;
-  price: number;
-  salePrice?: number;
-  stock: number;
-  sku: string;
-  isAvailable: boolean;
-}
-
-export interface ProductMedia {
-  id: string;
-  productId: string;
-  type: 'photo' | 'video';
-  url: string;
-  alt: string;
-  title?: string;
-  displayOrder: number;
-  variantQuality?: string;
-  variantSleeve?: string;
-}
+export type QualityType = string;
+export type SleeveType = string;
+export type ProductSize = string;
 
 export interface QualityBreakdown {
   neck: string;
   shoulders: string;
   stitching: string;
   feel: string;
-}
-
-export interface ProductReview {
-  id: string;
-  productId: string;
-  customerName: string;
-  customerCity?: string;
-  rating: number; // 1 to 5
-  comment: string;
-  createdAt: string;
-  isApproved: boolean;
 }
 
 export interface Subcategory {
@@ -61,12 +25,48 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  description: string;
+  description?: string;
   image?: string;
   isActive: boolean;
   displayOrder: number;
-  productCount?: number;
   subcategories?: Subcategory[];
+  productCount?: number;
+}
+
+export interface ProductVariant {
+  id: string;
+  productId?: string;
+  quality: QualityType;
+  sleeve: SleeveType;
+  size: ProductSize;
+  price: number;
+  salePrice?: number;
+  stock: number;
+  sku?: string;
+  isAvailable: boolean;
+}
+
+export interface ProductMedia {
+  id: string;
+  productId?: string;
+  type: 'photo' | 'video';
+  url: string;
+  alt?: string;
+  title?: string;
+  displayOrder?: number;
+  variantQuality?: QualityType;
+  variantSleeve?: SleeveType;
+}
+
+export interface ProductReview {
+  id: string;
+  productId: string;
+  customerName: string;
+  customerCity?: string;
+  rating: number;
+  comment: string;
+  isApproved: boolean;
+  createdAt: string;
 }
 
 export interface Product {
@@ -135,10 +135,12 @@ export interface OrderItem {
 export interface Order {
   id: string;
   orderNumber: string;
+  userId?: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   address: string;
+  billingAddress?: string;
   city: string;
   province: string;
   orderNotes?: string;
@@ -229,4 +231,17 @@ export interface CustomerAddress {
   isDefault: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface CustomerRecord {
+  id: string; // Auth User UUID
+  fullName: string;
+  email?: string;
+  phone?: string;
+  createdAt: string;
+  updatedAt?: string;
+  addresses: CustomerAddress[];
+  orders: Order[];
+  totalSpent: number;
+  totalOrders: number;
 }

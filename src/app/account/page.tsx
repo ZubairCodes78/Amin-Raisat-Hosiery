@@ -90,9 +90,10 @@ export default function AccountPage() {
     );
   }
 
-  // Filter orders matching this customer's email or phone
+  // Filter orders matching this customer's user ID, email, or phone
   const customerOrders = orders.filter(
     (o) =>
+      (user?.id && o.userId === user.id) ||
       (user?.email && o.customerEmail?.toLowerCase() === user.email.toLowerCase()) ||
       (profile?.phone && o.customerPhone === profile.phone)
   );

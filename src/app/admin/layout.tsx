@@ -17,6 +17,7 @@ import {
   Store,
   Menu,
   X,
+  Users,
 } from 'lucide-react';
 import { useStore } from '@/context/StoreContext';
 
@@ -71,6 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/products', label: 'Products & Variants', icon: Package },
     { href: '/admin/categories', label: 'Categories & Subcategories', icon: Layers },
     { href: '/admin/orders', label: 'Customer Orders', icon: ShoppingCart },
+    { href: '/admin/customers', label: 'Customers', icon: Users },
     { href: '/admin/stock', label: 'Inventory / Stock', icon: Boxes },
     { href: '/admin/reviews', label: 'Customer Reviews', icon: MessageSquare },
     { href: '/admin/settings', label: 'Delivery & Settings', icon: Settings },

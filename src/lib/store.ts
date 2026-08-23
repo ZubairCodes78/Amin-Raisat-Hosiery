@@ -9,6 +9,9 @@ import {
   OrderStatus,
   ProductReview,
   HeroSlide,
+  CustomerProfile,
+  CustomerAddress,
+  CustomerRecord,
 } from '@/types';
 import {
   INITIAL_CATEGORIES,
@@ -967,5 +970,97 @@ export class DataStore {
       const filtered = reviews.filter((r) => r.id !== reviewId);
       localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(filtered));
     }
+  }
+
+  // ============================================================================
+  // 8. CUSTOMER MANAGEMENT FOR ADMIN
+  // ============================================================================
+  static async getCustomers(): Promise<CustomerRecord[]> {
+    let profiles: CustomerProfile[] = [];
+    let addresses: CustomerAddress[] = [];
+    const orders = await this.getOrders();
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: profData, error: profErr } = await supabase
+          .from('customer_profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!profErr && profData) {
+          profiles = profData.map((p: any) => ({
+            id: p.id,
+            fullName: p.full_name,
+            phone: p.phone || undefined,
+            email: p.email || undefined,
+            createdAt: p.created_at,
+            updatedAt: p.updated_at,
+          }));
+        }
+
+        const { data: addrData, error: addrErr } = await supabase
+          .from('customer_addresses')
+          .select('*');
+
+        if (!addrErr && addrData) {
+          addresses = addrData.map((a: any) => ({
+            id: a.id,
+            userId: a.user_id,
+            addressType: a.address_type || 'shipping',
+            fullName: a.full_name,
+            phone: a.phone,
+            address: a.address,
+            city: a.city,
+            province: a.province || 'Punjab',
+            postalCode: a.postal_code || undefined,
+            isDefault: a.is_default || false,
+            createdAt: a.created_at,
+            updatedAt: a.updated_at,
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase getCustomers error', err);
+      }
+    }
+
+    if (this.isClient() && profiles.length === 0) {
+      const localProf = localStorage.getItem('arh_customer_profile');
+      if (localProf) {
+        try {
+          const p = JSON.parse(localProf);
+          profiles = [p];
+        } catch {}
+      }
+      const localAddrs = localStorage.getItem('arh_customer_addresses');
+      if (localAddrs) {
+        try {
+          addresses = JSON.parse(localAddrs);
+        } catch {}
+      }
+    }
+
+    return profiles.map((p) => {
+      const custOrders = orders.filter(
+        (o) =>
+          (o.userId && o.userId === p.id) ||
+          (p.email && o.customerEmail && o.customerEmail.toLowerCase() === p.email.toLowerCase()) ||
+          (p.phone && o.customerPhone && o.customerPhone.replace(/\D/g, '') === p.phone.replace(/\D/g, ''))
+      );
+      const custAddrs = addresses.filter((a) => a.userId === p.id);
+      const totalSpent = custOrders.reduce((sum, o) => (o.status !== 'Cancelled' ? sum + o.totalAmount : sum), 0);
+
+      return {
+        id: p.id,
+        fullName: p.fullName,
+        email: p.email,
+        phone: p.phone,
+        createdAt: p.createdAt || new Date().toISOString(),
+        updatedAt: p.updatedAt,
+        addresses: custAddrs,
+        orders: custOrders,
+        totalSpent,
+        totalOrders: custOrders.length,
+      };
+    });
   }
 }
