@@ -1049,11 +1049,16 @@ export class DataStore {
       const custAddrs = addresses.filter((a) => a.userId === p.id);
       const totalSpent = custOrders.reduce((sum, o) => (o.status !== 'Cancelled' ? sum + o.totalAmount : sum), 0);
 
+      const effectiveName =
+        p.fullName && p.fullName !== 'Customer' && p.fullName.trim().length > 0
+          ? p.fullName
+          : custOrders[0]?.customerName || custAddrs[0]?.fullName || p.fullName || 'Valued Customer';
+
       return {
         id: p.id,
-        fullName: p.fullName,
+        fullName: effectiveName,
         email: p.email,
-        phone: p.phone,
+        phone: p.phone || custOrders[0]?.customerPhone || custAddrs[0]?.phone,
         createdAt: p.createdAt || new Date().toISOString(),
         updatedAt: p.updatedAt,
         addresses: custAddrs,

@@ -33,13 +33,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch Customer Profile
-  const fetchProfile = useCallback(async (userId: string, userEmail?: string) => {
+  // Fetch Customer Profile with smart fallback to auth metadata / signup name
+  const fetchProfile = useCallback(async (userId: string, userEmail?: string, fallbackName?: string) => {
+    const cleanFallback = fallbackName?.trim() || (userEmail ? userEmail.split('@')[0] : 'Valued Customer');
+
     if (!isSupabaseConfigured()) {
       const localProfile = typeof window !== 'undefined' ? localStorage.getItem('arh_customer_profile') : null;
       if (localProfile) {
         try {
-          setProfile(JSON.parse(localProfile));
+          const parsed = JSON.parse(localProfile);
+          setProfile(parsed);
           return;
         } catch {}
       }
@@ -54,25 +57,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (!error && data) {
+        // Use real saved name, or fallback to signup name if name in DB was generic
+        const hasValidDbName = data.full_name && data.full_name !== 'Customer' && data.full_name.trim().length > 0;
+        const effectiveName = hasValidDbName ? data.full_name : (fallbackName?.trim() || data.full_name || cleanFallback);
+
         setProfile({
           id: data.id,
-          fullName: data.full_name,
+          fullName: effectiveName,
           phone: data.phone || undefined,
           email: data.email || userEmail || undefined,
           createdAt: data.created_at,
           updatedAt: data.updated_at,
         });
+
+        // Sync fallback name to database if DB was unpopulated
+        if (!hasValidDbName && fallbackName?.trim() && fallbackName.trim() !== 'Customer') {
+          await supabase
+            .from('customer_profiles')
+            .update({ full_name: fallbackName.trim(), updated_at: new Date().toISOString() })
+            .eq('id', userId);
+        }
       } else if (error && error.code === 'PGRST116') {
-        // Profile does not exist yet; auto-create
+        // Profile does not exist yet; auto-create with the actual user/signup name
         const initialProfile = {
           id: userId,
-          full_name: 'Customer',
+          full_name: cleanFallback,
           email: userEmail || '',
         };
-        await supabase.from('customer_profiles').insert(initialProfile);
+        await supabase.from('customer_profiles').upsert(initialProfile);
         setProfile({
           id: userId,
-          fullName: 'Customer',
+          fullName: cleanFallback,
           email: userEmail || undefined,
         });
       }
@@ -140,8 +155,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(session);
           setUser(session?.user ?? null);
           if (session?.user) {
+            const metaName = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
             await Promise.all([
-              fetchProfile(session.user.id, session.user.email),
+              fetchProfile(session.user.id, session.user.email, metaName),
               fetchAddresses(session.user.id),
             ]);
           }
@@ -160,8 +176,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(newSession);
         setUser(newSession?.user ?? null);
         if (newSession?.user) {
+          const metaName = newSession.user.user_metadata?.full_name || newSession.user.user_metadata?.name;
           await Promise.all([
-            fetchProfile(newSession.user.id, newSession.user.email),
+            fetchProfile(newSession.user.id, newSession.user.email, metaName),
             fetchAddresses(newSession.user.id),
           ]);
         } else {
@@ -205,8 +222,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         setUser(data.user);
+        const metaName = data.user.user_metadata?.full_name || data.user.user_metadata?.name;
         await Promise.all([
-          fetchProfile(data.user.id, data.user.email),
+          fetchProfile(data.user.id, data.user.email, metaName),
           fetchAddresses(data.user.id),
         ]);
       }
@@ -216,24 +234,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Sign Up with Sanitized Error Handling & Profile Link
+  // Sign Up with Sanitized Error Handling & Immediate Full Name Profile Upsert
   const signUp = async (
     email: string,
     password: string,
     fullName: string,
     phone: string
   ): Promise<{ error?: string }> => {
+    const cleanEmail = email.trim();
+    const cleanName = fullName.trim();
+    const cleanPhone = phone.trim();
+
     if (!isSupabaseConfigured()) {
-      return { error: 'Database authentication is currently in demo mode.' };
+      const demoUser: any = { id: `usr-${Date.now()}`, email: cleanEmail };
+      const demoProfile: CustomerProfile = {
+        id: demoUser.id,
+        fullName: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone || undefined,
+        createdAt: new Date().toISOString(),
+      };
+      setUser(demoUser);
+      setProfile(demoProfile);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('arh_customer_profile', JSON.stringify(demoProfile));
+      }
+      return {};
     }
+
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: cleanEmail,
         password,
         options: {
           data: {
-            full_name: fullName.trim(),
-            phone: phone.trim(),
+            full_name: cleanName,
+            phone: cleanPhone,
           },
         },
       });
@@ -251,14 +287,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         setUser(data.user);
-        // Create initial profile record
+        const newProfile: CustomerProfile = {
+          id: data.user.id,
+          fullName: cleanName,
+          email: cleanEmail,
+          phone: cleanPhone || undefined,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setProfile(newProfile);
+
+        // Upsert exact full name into customer_profiles table
         await supabase.from('customer_profiles').upsert({
           id: data.user.id,
-          full_name: fullName.trim(),
-          phone: phone.trim() || null,
-          email: email.trim(),
+          full_name: cleanName,
+          phone: cleanPhone || null,
+          email: cleanEmail,
+          updated_at: new Date().toISOString(),
         });
-        await fetchProfile(data.user.id, email.trim());
+
+        await Promise.all([
+          fetchProfile(data.user.id, cleanEmail, cleanName),
+          fetchAddresses(data.user.id),
+        ]);
       }
 
       return {};
@@ -314,10 +365,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const payload: any = {
         updated_at: new Date().toISOString(),
       };
-      if (updates.fullName !== undefined) payload.full_name = updates.fullName;
-      if (updates.phone !== undefined) payload.phone = updates.phone;
-      if (updates.whatsappNumber !== undefined) payload.phone = updates.whatsappNumber;
-      if (updates.email !== undefined) payload.email = updates.email;
+      if (updates.fullName !== undefined) payload.full_name = updates.fullName.trim();
+      if (updates.phone !== undefined) payload.phone = updates.phone.trim();
+      if (updates.whatsappNumber !== undefined) payload.phone = updates.whatsappNumber.trim();
+      if (updates.email !== undefined) payload.email = updates.email.trim();
 
       const { error } = await supabase
         .from('customer_profiles')
@@ -325,7 +376,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', user.id);
 
       if (error) return { error: 'Failed to update profile information. Please try again.' };
-      await fetchProfile(user.id, user.email);
+
+      // Update local state and re-fetch
+      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
+      await fetchProfile(user.id, user.email, updates.fullName);
       return {};
     } catch (err: any) {
       return { error: 'Network error occurred while saving profile updates.' };

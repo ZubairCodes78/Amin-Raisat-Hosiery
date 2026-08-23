@@ -14,7 +14,7 @@ export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { totalQuantity, openDrawer } = useCart();
   const { categories, subcategories, settings } = useStore();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -376,8 +376,8 @@ export const Navbar: React.FC = () => {
                   title={user ? 'My Account' : 'Sign In'}
                 >
                   <User className="w-4 h-4" />
-                  <span className="text-[11px] font-semibold text-[#F1F0EC]">
-                    {user ? 'Account' : 'Sign In'}
+                  <span className="text-[11px] font-semibold text-[#F1F0EC] max-w-[90px] truncate">
+                    {user ? (profile?.fullName ? profile.fullName.split(' ')[0] : 'Account') : 'Sign In'}
                   </span>
                 </Link>
 
@@ -531,7 +531,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-3 py-2.5 text-sm font-semibold text-[#C9A96A] hover:bg-[#1D2025] rounded-xl"
               >
-                {user ? 'My Customer Account' : 'Sign In / Register'}
+                {user ? `My Account (${profile?.fullName ? profile.fullName.split(' ')[0] : 'Customer'})` : 'Sign In / Register'}
               </Link>
               <Link
                 href="/about"
