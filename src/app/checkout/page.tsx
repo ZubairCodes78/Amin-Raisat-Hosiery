@@ -13,7 +13,12 @@ import {
   Building2,
   Banknote,
   AlertCircle,
-  Zap,
+  Mail,
+  User as UserIcon,
+  Phone,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react';
 
 const PAKISTAN_PROVINCES = [
@@ -53,8 +58,19 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, totalQuantity, subtotal, deliveryFee, totalAmount, clearCart } = useCart();
   const { settings, createOrder } = useStore();
-  const { user, profile, addresses } = useAuth();
+  const { user, profile, addresses, isLoading: authLoading, signIn, signUp } = useAuth();
 
+  // Auth gate state (for unauthenticated customers)
+  const [authTab, setAuthTab] = useState<'signup' | 'signin'>('signup');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [authFullName, setAuthFullName] = useState('');
+  const [authPhone, setAuthPhone] = useState('');
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  // Checkout Form State
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -78,17 +94,18 @@ export default function CheckoutPage() {
       const defaultAddr = addresses.find((a) => a.isDefault) || addresses[0];
       setFormData((prev) => ({
         ...prev,
-        fullName: profile?.fullName || prev.fullName,
-        phone: profile?.phone || prev.phone,
-        whatsappNumber: profile?.whatsappNumber || prev.whatsappNumber,
-        email: user?.email || prev.email,
-        address: defaultAddr?.streetAddress || prev.address,
+        fullName: profile?.fullName || defaultAddr?.fullName || prev.fullName,
+        phone: profile?.phone || profile?.whatsappNumber || defaultAddr?.phone || prev.phone,
+        whatsappNumber: profile?.whatsappNumber || profile?.phone || prev.whatsappNumber,
+        email: user?.email || profile?.email || prev.email,
+        address: defaultAddr?.address || defaultAddr?.streetAddress || prev.address,
         city: defaultAddr?.city || prev.city,
         province: defaultAddr?.province || prev.province,
       }));
     }
   }, [user, profile, addresses]);
 
+  // Cart Empty State
   if (items.length === 0) {
     return (
       <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-4 bg-dark-bg text-gray-100 min-h-[70vh] flex flex-col items-center justify-center">
@@ -104,6 +121,7 @@ export default function CheckoutPage() {
     );
   }
 
+  // Minimum Order Check
   const minOrderQty = settings.shipping.minOrderQty || 3;
   if (totalQuantity < minOrderQty) {
     return (
@@ -122,6 +140,302 @@ export default function CheckoutPage() {
     );
   }
 
+  // Handle Authentication for Unregistered Guests
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+
+    if (authTab === 'signup') {
+      if (!authFullName.trim()) {
+        setAuthError('Please enter your full name.');
+        return;
+      }
+      if (!authEmail.trim()) {
+        setAuthError('Please enter your email address.');
+        return;
+      }
+      if (authPassword.length < 6) {
+        setAuthError('Password must be at least 6 characters.');
+        return;
+      }
+      if (authPassword !== authConfirmPassword) {
+        setAuthError('Passwords do not match.');
+        return;
+      }
+
+      try {
+        setAuthSubmitting(true);
+        const { error } = await signUp(
+          authEmail.trim(),
+          authPassword,
+          authFullName.trim(),
+          authPhone.trim()
+        );
+        if (error) {
+          setAuthError(typeof error === 'string' ? error : (error as any)?.message || 'Sign up failed');
+        }
+      } catch (err: any) {
+        setAuthError(err?.message || 'Failed to create account.');
+      } finally {
+        setAuthSubmitting(false);
+      }
+    } else {
+      if (!authEmail.trim() || !authPassword) {
+        setAuthError('Please enter both email and password.');
+        return;
+      }
+
+      try {
+        setAuthSubmitting(true);
+        const { error } = await signIn(authEmail.trim(), authPassword);
+        if (error) {
+          setAuthError(typeof error === 'string' ? error : (error as any)?.message || 'Invalid credentials.');
+        }
+      } catch (err: any) {
+        setAuthError(err?.message || 'Login failed.');
+      } finally {
+        setAuthSubmitting(false);
+      }
+    }
+  };
+
+  // STEP 1: AUTHENTICATION BARRIER — REQUIRED LOGIN/SIGNUP SCREEN
+  if (!user && !authLoading) {
+    return (
+      <div className="py-12 bg-dark-bg min-h-[85vh] text-gray-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
+            <Link href="/cart" className="hover:text-gold-400 flex items-center gap-1">
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Cart
+            </Link>
+            <span>/</span>
+            <span className="font-bold text-gray-200">Account Verification</span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left: Auth Form Card */}
+            <div className="lg:col-span-7 bg-dark-surface p-6 sm:p-8 rounded-2xl border border-dark-border shadow-elevation space-y-6">
+              <div>
+                <span className="text-[10px] font-bold text-gold-500 uppercase tracking-widest block">
+                  Step 1 of 2
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-100 mt-1 tracking-tight">
+                  Create an account to continue
+                </h1>
+                <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
+                  Sign up or log in to continue with your order and save your delivery information.
+                </p>
+              </div>
+
+              {/* Two Clear Options: [ Create Account ] / [ Sign In ] */}
+              <div className="grid grid-cols-2 gap-2 p-1 bg-dark-card rounded-xl border border-dark-border">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthTab('signup');
+                    setAuthError('');
+                  }}
+                  className={`py-2.5 text-xs font-bold rounded-lg transition-all ${
+                    authTab === 'signup'
+                      ? 'bg-gold-500 text-black shadow-glow-gold'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  Create Account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthTab('signin');
+                    setAuthError('');
+                  }}
+                  className={`py-2.5 text-xs font-bold rounded-lg transition-all ${
+                    authTab === 'signin'
+                      ? 'bg-gold-500 text-black shadow-glow-gold'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  Sign In
+                </button>
+              </div>
+
+              {authError && (
+                <div className="p-3.5 bg-rose-950/60 border border-rose-800/60 text-rose-300 rounded-xl text-xs flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleAuthSubmit} className="space-y-4">
+                {authTab === 'signup' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                      Full Name <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        required
+                        value={authFullName}
+                        onChange={(e) => setAuthFullName(e.target.value)}
+                        placeholder="e.g. Muhammad Usman"
+                        className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+                      />
+                      <UserIcon className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                    </div>
+                  </div>
+                )}
+
+                {authTab === 'signup' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                      Phone / WhatsApp Number (Optional)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        value={authPhone}
+                        onChange={(e) => setAuthPhone(e.target.value)}
+                        placeholder="03001234567"
+                        className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+                      />
+                      <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Email Address <span className="text-rose-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      required
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+                    />
+                    <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Password <span className="text-rose-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      placeholder="Minimum 6 characters"
+                      className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+                    />
+                    <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                  </div>
+                </div>
+
+                {authTab === 'signup' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-300 mb-1">
+                      Confirm Password <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        value={authConfirmPassword}
+                        onChange={(e) => setAuthConfirmPassword(e.target.value)}
+                        placeholder="Repeat your password"
+                        className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+                      />
+                      <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={authSubmitting}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-black font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-glow-gold active:scale-[0.99]"
+                >
+                  <span>
+                    {authSubmitting
+                      ? 'Processing...'
+                      : authTab === 'signup'
+                      ? 'Create Account & Continue'
+                      : 'Sign In & Continue'}
+                  </span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                </button>
+              </form>
+
+              <div className="pt-2 text-center text-[11px] text-gray-400 flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Your cart items and discounts are preserved securely.</span>
+              </div>
+            </div>
+
+            {/* Right: Preserved Cart Preview */}
+            <div className="lg:col-span-5 bg-dark-surface p-6 rounded-2xl border border-dark-border shadow-card space-y-4">
+              <h2 className="text-sm font-bold text-gray-100 border-b border-dark-border pb-3 flex items-center justify-between">
+                <span>Your Order Preview</span>
+                <span className="text-xs text-gold-400 font-semibold">{totalQuantity} Pieces</span>
+              </h2>
+
+              <div className="space-y-3 divide-y divide-dark-border max-h-64 overflow-y-auto">
+                {items.map((item) => (
+                  <div key={item.id} className="pt-3 first:pt-0 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-gray-100">{item.productName}</p>
+                      <p className="text-[11px] text-gray-400">
+                        {item.quality} • {item.sleeve} • Size: {item.size}
+                      </p>
+                      <p className="text-[11px] text-gray-300 font-medium">
+                        Qty: {item.quantity} x Rs. {item.unitPrice}
+                      </p>
+                    </div>
+                    <div className="font-bold text-gold-400">
+                      Rs. {item.unitPrice * item.quantity}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-dark-border pt-3 space-y-2 text-xs text-gray-300">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-gray-100">Rs. {subtotal}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Delivery</span>
+                  <span>
+                    {deliveryFee === 0 ? (
+                      <span className="text-emerald-400 font-bold">FREE Delivery (3+ pcs)</span>
+                    ) : (
+                      `Rs. ${deliveryFee}`
+                    )}
+                  </span>
+                </div>
+                <div className="border-t border-dark-border pt-2 flex justify-between text-base font-bold text-gold-400">
+                  <span>Total Payable</span>
+                  <span>Rs. {totalAmount}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // STEP 2: AUTHENTICATED CHECKOUT & DELIVERY FORM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -154,7 +468,7 @@ export default function CheckoutPage() {
       const orderPayload = {
         customerName: formData.fullName.trim(),
         customerPhone: formData.phone.trim(),
-        customerEmail: formData.email.trim() || undefined,
+        customerEmail: user?.email || formData.email.trim() || undefined,
         address: formData.address.trim(),
         city: finalCity,
         province: formData.province,
@@ -202,12 +516,23 @@ export default function CheckoutPage() {
         </div>
 
         <div className="border-b border-dark-border pb-4 mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-100 tracking-tight">
-            Checkout &amp; Delivery Details
-          </h1>
-          <p className="text-xs text-gray-400 mt-1">
-            {user ? `Logged in as ${user.email}. Address pre-filled.` : 'Guest checkout available. No password required.'}
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-100 tracking-tight">
+                Checkout &amp; Delivery Details
+              </h1>
+              <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Logged in as <strong className="text-gold-400">{user?.email || profile?.email}</strong>. Saved address details auto-applied.</span>
+              </p>
+            </div>
+            <Link
+              href="/account"
+              className="text-xs text-gold-400 hover:underline font-semibold"
+            >
+              Manage Saved Addresses →
+            </Link>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -247,7 +572,7 @@ export default function CheckoutPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-300 mb-1">
-                      Phone Number (For Rider Call) <span className="text-rose-400">*</span>
+                      Phone Number (For Courier Call) <span className="text-rose-400">*</span>
                     </label>
                     <input
                       type="tel"
@@ -276,14 +601,13 @@ export default function CheckoutPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-300 mb-1">
-                      Email Address (Optional)
+                      Account Email Address
                     </label>
                     <input
                       type="email"
-                      placeholder="name@example.com"
+                      readOnly
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-3.5 py-2.5 text-xs bg-dark-card border border-dark-border rounded-xl text-gray-100 focus:outline-none focus:border-gold-500"
+                      className="w-full px-3.5 py-2.5 text-xs bg-dark-card/60 border border-dark-border rounded-xl text-gray-400 cursor-not-allowed"
                     />
                   </div>
                 </div>
