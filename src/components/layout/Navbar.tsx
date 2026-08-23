@@ -101,9 +101,9 @@ export const Navbar: React.FC = () => {
             {/* ========================================================================= */}
             {/* MOBILE NAVBAR ROW (md:hidden) */}
             {/* ========================================================================= */}
-            <div className="flex items-center justify-between w-full md:hidden">
+            <div className="relative flex items-center justify-between w-full md:hidden min-h-[52px]">
               {/* Left: Mobile Hamburger Button (44px touch target) */}
-              <div className="flex items-center flex-shrink-0">
+              <div className="flex items-center flex-shrink-0 z-10">
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -114,16 +114,16 @@ export const Navbar: React.FC = () => {
                 </button>
               </div>
 
-              {/* Center: Mobile Header Logo (Existing Logo.png at 78-84px width) */}
-              <div className="flex items-center justify-center flex-1 px-1 sm:px-2 min-w-0">
-                <Link href="/" className="flex items-center justify-center py-0.5 group">
-                  <div className="relative w-[78px] xs:w-[84px] h-11 xs:h-12 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.03]">
+              {/* Center: Mobile Header Logo (Centered accurately using absolute layout with pointer-events-auto) */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-12 sm:px-14">
+                <Link href="/" className="pointer-events-auto flex items-center justify-center py-0.5 group">
+                  <div className="relative w-[92px] xs:w-[100px] sm:w-[110px] h-11 xs:h-12 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
-                      src="/images/Logo.png"
+                      src="/images/header logo.png"
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="100px"
-                      className="object-contain"
+                      sizes="(max-width: 640px) 120px, 140px"
+                      className="object-contain object-center"
                       priority
                     />
                   </div>
@@ -131,7 +131,7 @@ export const Navbar: React.FC = () => {
               </div>
 
               {/* Right: Mobile Action Buttons (Consistent 40-44px touch targets) */}
-              <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+              <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 z-10">
                 {/* Search Trigger */}
                 <button
                   type="button"
