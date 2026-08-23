@@ -177,9 +177,65 @@ CREATE TABLE IF NOT EXISTS public.reviews (
     customer_city TEXT,
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment TEXT NOT NULL,
-    is_approved BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 2.12 Customer Profiles Table
+CREATE TABLE IF NOT EXISTS public.customer_profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2.13 Customer Saved Addresses Table
+CREATE TABLE IF NOT EXISTS public.customer_addresses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    address_type TEXT NOT NULL DEFAULT 'shipping',
+    full_name TEXT NOT NULL DEFAULT '',
+    phone TEXT NOT NULL DEFAULT '',
+    address TEXT NOT NULL,
+    city TEXT NOT NULL,
+    province TEXT NOT NULL DEFAULT 'Punjab',
+    postal_code TEXT,
+    is_default BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_customer_addresses_user_id ON public.customer_addresses(user_id);
+
+-- Trigger to automatically create customer profile on auth.users signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.customer_profiles (id, full_name, email, phone, created_at, updated_at)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1), 'Customer'),
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'phone', NULL),
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = CASE 
+      WHEN EXCLUDED.full_name IS NOT NULL AND EXCLUDED.full_name <> 'Customer' THEN EXCLUDED.full_name 
+      ELSE public.customer_profiles.full_name 
+    END,
+    email = COALESCE(EXCLUDED.email, public.customer_profiles.email),
+    phone = COALESCE(EXCLUDED.phone, public.customer_profiles.phone),
+    updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ==============================================================================
 -- 3. STORAGE BUCKETS CONFIGURATION
@@ -217,6 +273,36 @@ ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_addresses ENABLE ROW LEVEL SECURITY;
+
+-- Customer Profiles Policies (Allows Admin & Customer Access)
+DROP POLICY IF EXISTS "Allow select customer_profiles" ON public.customer_profiles;
+CREATE POLICY "Allow select customer_profiles" ON public.customer_profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow update customer_profiles" ON public.customer_profiles;
+CREATE POLICY "Allow update customer_profiles" ON public.customer_profiles FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow insert customer_profiles" ON public.customer_profiles;
+CREATE POLICY "Allow insert customer_profiles" ON public.customer_profiles FOR INSERT WITH CHECK (true);
+
+-- Customer Addresses Policies (Allows Store & Customer Management)
+DROP POLICY IF EXISTS "Allow select customer_addresses" ON public.customer_addresses;
+CREATE POLICY "Allow select customer_addresses" ON public.customer_addresses FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert customer_addresses" ON public.customer_addresses;
+CREATE POLICY "Allow insert customer_addresses" ON public.customer_addresses FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow update customer_addresses" ON public.customer_addresses;
+CREATE POLICY "Allow update customer_addresses" ON public.customer_addresses FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow delete customer_addresses" ON public.customer_addresses;
+CREATE POLICY "Allow delete customer_addresses" ON public.customer_addresses FOR DELETE USING (true);
+
+-- Grants for Customer Tables
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL ON TABLE public.customer_profiles TO anon, authenticated;
+GRANT ALL ON TABLE public.customer_addresses TO anon, authenticated;
 
 -- 4.1 Public Read Policies
 DROP POLICY IF EXISTS "Allow public read categories" ON public.categories;

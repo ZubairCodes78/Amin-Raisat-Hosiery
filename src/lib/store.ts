@@ -987,6 +987,15 @@ export class DataStore {
           .select('*')
           .order('created_at', { ascending: false });
 
+        if (profErr) {
+          console.error('[DataStore.getCustomers] Supabase customer_profiles error:', {
+            message: profErr.message,
+            code: profErr.code,
+            details: profErr.details,
+            hint: profErr.hint,
+          });
+        }
+
         if (!profErr && profData) {
           profiles = profData.map((p: any) => ({
             id: p.id,
@@ -1001,6 +1010,14 @@ export class DataStore {
         const { data: addrData, error: addrErr } = await supabase
           .from('customer_addresses')
           .select('*');
+
+        if (addrErr) {
+          console.error('[DataStore.getCustomers] Supabase customer_addresses error:', {
+            message: addrErr.message,
+            code: addrErr.code,
+            details: addrErr.details,
+          });
+        }
 
         if (!addrErr && addrData) {
           addresses = addrData.map((a: any) => ({
@@ -1018,8 +1035,8 @@ export class DataStore {
             updatedAt: a.updated_at,
           }));
         }
-      } catch (err) {
-        console.warn('Supabase getCustomers error', err);
+      } catch (err: any) {
+        console.error('[DataStore.getCustomers] Exception loading customers:', err);
       }
     }
 
@@ -1039,7 +1056,10 @@ export class DataStore {
       }
     }
 
-    return profiles.map((p) => {
+    // Map existing profiles
+    const customerMap = new Map<string, CustomerRecord>();
+
+    profiles.forEach((p) => {
       const custOrders = orders.filter(
         (o) =>
           (o.userId && o.userId === p.id) ||
@@ -1054,7 +1074,7 @@ export class DataStore {
           ? p.fullName
           : custOrders[0]?.customerName || custAddrs[0]?.fullName || p.fullName || 'Valued Customer';
 
-      return {
+      customerMap.set(p.id, {
         id: p.id,
         fullName: effectiveName,
         email: p.email,
@@ -1065,7 +1085,59 @@ export class DataStore {
         orders: custOrders,
         totalSpent,
         totalOrders: custOrders.length,
-      };
+      });
     });
+
+    // Also synthesize customer profiles from orders if not already in customer_profiles
+    orders.forEach((o) => {
+      const key = o.userId || o.customerEmail?.toLowerCase() || o.customerPhone;
+      if (!key) return;
+
+      const alreadyExists = Array.from(customerMap.values()).some(
+        (c) =>
+          (o.userId && c.id === o.userId) ||
+          (o.customerEmail && c.email?.toLowerCase() === o.customerEmail.toLowerCase()) ||
+          (o.customerPhone && c.phone?.replace(/\D/g, '') === o.customerPhone.replace(/\D/g, ''))
+      );
+
+      if (!alreadyExists) {
+        const matchingOrders = orders.filter(
+          (m) =>
+            (o.userId && m.userId === o.userId) ||
+            (o.customerEmail && m.customerEmail?.toLowerCase() === o.customerEmail.toLowerCase()) ||
+            (o.customerPhone && m.customerPhone?.replace(/\D/g, '') === o.customerPhone.replace(/\D/g, ''))
+        );
+        const totalSpent = matchingOrders.reduce((sum, m) => (m.status !== 'Cancelled' ? sum + m.totalAmount : sum), 0);
+
+        customerMap.set(o.userId || `cust-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, {
+          id: o.userId || `guest-${Date.now()}`,
+          fullName: o.customerName || 'Customer',
+          email: o.customerEmail || undefined,
+          phone: o.customerPhone || undefined,
+          createdAt: o.createdAt,
+          addresses: [
+            {
+              id: `addr-${o.id}`,
+              userId: o.userId || '',
+              addressType: 'shipping',
+              fullName: o.customerName,
+              phone: o.customerPhone,
+              address: o.address,
+              city: o.city,
+              province: o.province,
+              isDefault: true,
+              createdAt: o.createdAt,
+            },
+          ],
+          orders: matchingOrders,
+          totalSpent,
+          totalOrders: matchingOrders.length,
+        });
+      }
+    });
+
+    return Array.from(customerMap.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 }

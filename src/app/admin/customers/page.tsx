@@ -17,6 +17,8 @@ import {
   UserCheck,
   CreditCard,
   Package,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 
@@ -26,14 +28,17 @@ export default function AdminCustomersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerRecord | null>(null);
   const [selectedCustomerOrder, setSelectedCustomerOrder] = useState<Order | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchCustomers = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const data = await DataStore.getCustomers();
       setCustomers(data);
-    } catch (err) {
-      console.warn('Failed to load customers:', err);
+    } catch (err: any) {
+      console.error('Failed to load customers:', err);
+      setLoadError(err?.message || 'Failed to query customer database.');
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +83,24 @@ export default function AdminCustomersPage() {
             Real customer database synchronized with Supabase Auth. Inspect customer order history, lifetime value, and saved addresses.
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={fetchCustomers}
+          disabled={isLoading}
+          className="inline-flex items-center gap-2 py-2 px-4 bg-[#1D2025] hover:bg-[#202329] text-[#F1F0EC] border border-[#30343A] rounded-xl text-xs font-bold transition-all self-start sm:self-auto active:scale-95 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-[#C9A96A]' : ''}`} />
+          <span>{isLoading ? 'Refreshing...' : 'Refresh List'}</span>
+        </button>
       </div>
+
+      {loadError && (
+        <div className="p-4 bg-[#D96B6B]/15 border border-[#D96B6B]/30 text-[#D96B6B] rounded-2xl text-xs flex items-center gap-2.5">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span>Error reading customer database: {loadError}</span>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">

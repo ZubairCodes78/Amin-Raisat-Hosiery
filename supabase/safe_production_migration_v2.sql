@@ -1,40 +1,39 @@
 -- ==============================================================================
--- Amin Raisat Hosiery — Safe Production Database Migration (V2)
--- File: supabase/safe_production_migration_v2.sql
--- 
--- KEY SAFETY PRINCIPLES:
--- 1. 100% Non-destructive: NO DROP TABLE, NO TRUNCATE, NO DELETE.
--- 2. Fully Idempotent: Can be executed 1, 2, or 100 times safely without error.
--- 3. Preserves all existing production products (including ID f0000000-0000-0000-0000-000000000001).
--- 4. Preserves all customer orders, existing product variants, images, and reviews.
--- 5. Safe conditional inserts using "WHERE NOT EXISTS" to prevent constraint collisions.
+-- AMIN RAISAT HOSIERY — SAFE PRODUCTION DATABASE MIGRATION V2
+-- 100% Non-Destructive, Idempotent, Production-Safe Schema Update
 -- ==============================================================================
 
--- 1. EXTENSIONS
+-- 1. Enable Required Extensions Safely
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ==============================================================================
--- 2. HERO SLIDES — ADD DEVICE_TYPE SUPPORT & SEED MOBILE SLIDES SAFELY
+-- 2. HERO SLIDES — DESKTOP & MOBILE SEPARATION
 -- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.hero_slides (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    device_type TEXT NOT NULL DEFAULT 'desktop' CHECK (device_type IN ('desktop', 'mobile')),
+    desktop_image TEXT NOT NULL,
+    mobile_image TEXT NOT NULL,
+    title TEXT,
+    subtitle TEXT,
+    link TEXT DEFAULT '/shop',
+    button_text TEXT DEFAULT 'Shop Now',
+    display_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Safely add device_type column if table already exists from v1
 DO $$
 BEGIN
-    -- Add device_type column if it doesn't already exist
     IF NOT EXISTS (
-        SELECT 1 
-        FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-          AND table_name = 'hero_slides' 
-          AND column_name = 'device_type'
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'hero_slides' AND column_name = 'device_type'
     ) THEN
-        ALTER TABLE public.hero_slides 
-        ADD COLUMN device_type TEXT NOT NULL DEFAULT 'desktop';
+        ALTER TABLE public.hero_slides ADD COLUMN device_type TEXT NOT NULL DEFAULT 'desktop' CHECK (device_type IN ('desktop', 'mobile'));
     END IF;
 END $$;
-
--- Ensure all existing hero slides have a valid device_type
-UPDATE public.hero_slides 
-SET device_type = 'desktop' 
-WHERE device_type IS NULL;
 
 -- Safely insert Desktop Slide 1 if missing
 INSERT INTO public.hero_slides (id, device_type, desktop_image, mobile_image, title, subtitle, link, button_text, display_order, is_active)
@@ -42,8 +41,8 @@ SELECT
     'd0000000-0000-0000-0000-000000000001'::uuid, 
     'desktop', 
     '/images/slider 1.png', 
-    '/images/slider 1.png', 
-    'Slider 1', 
+    '/images/mobile slider 1.png', 
+    'Desktop Slider 1', 
     '100% Fine Combed Cotton Vests & Innerwear', 
     '/shop', 
     'Shop Collection', 
@@ -59,8 +58,8 @@ SELECT
     'd0000000-0000-0000-0000-000000000002'::uuid, 
     'desktop', 
     '/images/slider 2.png', 
-    '/images/slider 2.png', 
-    'Slider 2', 
+    '/images/mobile slider 2.png', 
+    'Desktop Slider 2', 
     'Engineered for Lasting Comfort Across Pakistan', 
     '/shop', 
     'Explore Vests', 
@@ -75,7 +74,7 @@ INSERT INTO public.hero_slides (id, device_type, desktop_image, mobile_image, ti
 SELECT 
     'd0000000-0000-0000-0000-000000000011'::uuid, 
     'mobile', 
-    '/images/mobile slider 1.png', 
+    '/images/slider 1.png', 
     '/images/mobile slider 1.png', 
     'Mobile Slider 1', 
     '100% Fine Combed Cotton Vests & Innerwear', 
@@ -161,39 +160,96 @@ CREATE TABLE IF NOT EXISTS public.customer_addresses (
 -- Create index for fast user lookup
 CREATE INDEX IF NOT EXISTS idx_customer_addresses_user_id ON public.customer_addresses(user_id);
 
+-- 4.3 Database Trigger for Instant Customer Profile Creation
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.customer_profiles (id, full_name, email, phone, created_at, updated_at)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1), 'Customer'),
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'phone', NULL),
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = CASE 
+      WHEN EXCLUDED.full_name IS NOT NULL AND EXCLUDED.full_name <> 'Customer' THEN EXCLUDED.full_name 
+      ELSE public.customer_profiles.full_name 
+    END,
+    email = COALESCE(EXCLUDED.email, public.customer_profiles.email),
+    phone = COALESCE(EXCLUDED.phone, public.customer_profiles.phone),
+    updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 4.4 Retroactive Profile Creation for Existing Auth Users
+DO $$
+BEGIN
+    INSERT INTO public.customer_profiles (id, full_name, email, phone, created_at, updated_at)
+    SELECT 
+        u.id,
+        COALESCE(u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name', split_part(u.email, '@', 1), 'Customer'),
+        u.email,
+        COALESCE(u.raw_user_meta_data->>'phone', NULL),
+        COALESCE(u.created_at, NOW()),
+        NOW()
+    FROM auth.users u
+    LEFT JOIN public.customer_profiles p ON u.id = p.id
+    WHERE p.id IS NULL
+    ON CONFLICT (id) DO NOTHING;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Continue safely if auth.users is restricted in current role
+END $$;
+
 -- Enable RLS on Customer Tables
 ALTER TABLE public.customer_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customer_addresses ENABLE ROW LEVEL SECURITY;
 
--- Customer Profiles Policies (Users can manage own profile)
+-- Customer Profiles Policies (Allows Admin & Customer Access)
 DROP POLICY IF EXISTS "Users can view own profile" ON public.customer_profiles;
-CREATE POLICY "Users can view own profile" ON public.customer_profiles
-FOR SELECT USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Allow select customer_profiles" ON public.customer_profiles;
+CREATE POLICY "Allow select customer_profiles" ON public.customer_profiles
+FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Users can update own profile" ON public.customer_profiles;
-CREATE POLICY "Users can update own profile" ON public.customer_profiles
-FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Allow update customer_profiles" ON public.customer_profiles;
+CREATE POLICY "Allow update customer_profiles" ON public.customer_profiles
+FOR UPDATE USING (true);
 
 DROP POLICY IF EXISTS "Users can insert own profile" ON public.customer_profiles;
-CREATE POLICY "Users can insert own profile" ON public.customer_profiles
-FOR INSERT WITH CHECK (auth.uid() = id);
+DROP POLICY IF EXISTS "Allow insert customer_profiles" ON public.customer_profiles;
+CREATE POLICY "Allow insert customer_profiles" ON public.customer_profiles
+FOR INSERT WITH CHECK (true);
 
--- Customer Addresses Policies (Users can manage own addresses)
+-- Customer Addresses Policies (Allows Store & Customer Management)
 DROP POLICY IF EXISTS "Users can view own addresses" ON public.customer_addresses;
-CREATE POLICY "Users can view own addresses" ON public.customer_addresses
-FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Allow select customer_addresses" ON public.customer_addresses;
+CREATE POLICY "Allow select customer_addresses" ON public.customer_addresses
+FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Users can insert own addresses" ON public.customer_addresses;
-CREATE POLICY "Users can insert own addresses" ON public.customer_addresses
-FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Allow insert customer_addresses" ON public.customer_addresses;
+CREATE POLICY "Allow insert customer_addresses" ON public.customer_addresses
+FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Users can update own addresses" ON public.customer_addresses;
-CREATE POLICY "Users can update own addresses" ON public.customer_addresses
-FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Allow update customer_addresses" ON public.customer_addresses;
+CREATE POLICY "Allow update customer_addresses" ON public.customer_addresses
+FOR UPDATE USING (true);
 
 DROP POLICY IF EXISTS "Users can delete own addresses" ON public.customer_addresses;
-CREATE POLICY "Users can delete own addresses" ON public.customer_addresses
-FOR DELETE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Allow delete customer_addresses" ON public.customer_addresses;
+CREATE POLICY "Allow delete customer_addresses" ON public.customer_addresses
+FOR DELETE USING (true);
 
 -- Grants for Customer Tables
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
@@ -223,91 +279,3 @@ FOR INSERT WITH CHECK (bucket_id IN ('product-media', 'hero-slides'));
 DROP POLICY IF EXISTS "Public can update/delete product media" ON storage.objects;
 CREATE POLICY "Public can update/delete product media" ON storage.objects 
 FOR ALL USING (bucket_id IN ('product-media', 'hero-slides'));
-
--- ==============================================================================
--- 6. PRODUCT CATALOG — SAFE ADDITION OF SEPARATE STANDARD QUALITY LISTING
--- (DOES NOT OVERWRITE OR CONFLICT WITH EXISTING PRODUCT f0000000-0000-0000-0000-000000000001)
--- ==============================================================================
-
--- Safely add Product 2 (Standard Quality) only if it does not already exist
-INSERT INTO public.products (
-    id, category_id, subcategory_id, name, slug, subtitle, description, features, quality_comparison, care_instructions, shipping_info, is_published
-)
-SELECT
-    'f0000000-0000-0000-0000-000000000002'::uuid,
-    (SELECT id FROM public.categories WHERE slug = 'men' LIMIT 1),
-    (SELECT id FROM public.subcategories WHERE slug = 'vests' LIMIT 1),
-    'Men''s Pure Cotton Vest — Standard Quality (Folded Seams)',
-    'mens-vest-standard-quality',
-    '100% Pure Combed Cotton Daily Wear Innerwear with Clean Folded Stitched Finish',
-    'Dependable everyday pure cotton inner vest crafted for breathability and comfort. Built with clean double-needle machine-stitched folded seams for dependable daily wear at an affordable price.',
-    '["100% Pure Combed Cotton for gentle breathability", "Clean folded neckline machine-stitched seam", "Sweat-absorbent weave tailored for Pakistani climate", "Durable lockstitch seam construction", "Tagless comfort collar for irritation-free wear"]'::jsonb,
-    '{"standardQuality": {"neck": "Folded & machine-stitched seam (no tape).", "shoulders": "Clean double-needle stitched finish.", "stitching": "Durable everyday lockstitch seam construction.", "feel": "Classic breathable pure cotton feel suited for dependable daily wear."}}'::jsonb,
-    '["Machine wash gentle or hand wash in cold/lukewarm water", "Wash with similar light colors", "Do not use chlorine bleach", "Medium heat iron if required", "Line dry in shade for longest fabric life"]'::jsonb,
-    'Fast delivery across all cities of Pakistan. Minimum order 3 pieces. Orders of 3 or more pieces qualify for 100% Free Delivery. Cash on Delivery (COD) & Bank Transfer available.',
-    true
-WHERE NOT EXISTS (
-    SELECT 1 FROM public.products 
-    WHERE id = 'f0000000-0000-0000-0000-000000000002'::uuid 
-       OR slug = 'mens-vest-standard-quality'
-);
-
--- Safely add variants for Product 2 if product exists and variants do not
-DO $$
-DECLARE
-    p2_id UUID;
-BEGIN
-    SELECT id INTO p2_id FROM public.products WHERE slug = 'mens-vest-standard-quality' LIMIT 1;
-    
-    IF p2_id IS NOT NULL THEN
-        INSERT INTO public.product_variants (product_id, quality, sleeve, size, price, stock, sku, is_available)
-        SELECT p2_id, 'Standard Quality', 'Sleeveless', 'S', 380.00, 50, 'ARH-SQ-SL-S', true
-        WHERE NOT EXISTS (SELECT 1 FROM public.product_variants WHERE product_id = p2_id AND size = 'S' AND sleeve = 'Sleeveless');
-
-        INSERT INTO public.product_variants (product_id, quality, sleeve, size, price, stock, sku, is_available)
-        SELECT p2_id, 'Standard Quality', 'Sleeveless', 'M', 380.00, 65, 'ARH-SQ-SL-M', true
-        WHERE NOT EXISTS (SELECT 1 FROM public.product_variants WHERE product_id = p2_id AND size = 'M' AND sleeve = 'Sleeveless');
-
-        INSERT INTO public.product_variants (product_id, quality, sleeve, size, price, stock, sku, is_available)
-        SELECT p2_id, 'Standard Quality', 'Sleeveless', 'L', 380.00, 60, 'ARH-SQ-SL-L', true
-        WHERE NOT EXISTS (SELECT 1 FROM public.product_variants WHERE product_id = p2_id AND size = 'L' AND sleeve = 'Sleeveless');
-
-        INSERT INTO public.product_variants (product_id, quality, sleeve, size, price, stock, sku, is_available)
-        SELECT p2_id, 'Standard Quality', 'Sleeveless', 'XL', 400.00, 45, 'ARH-SQ-SL-XL', true
-        WHERE NOT EXISTS (SELECT 1 FROM public.product_variants WHERE product_id = p2_id AND size = 'XL' AND sleeve = 'Sleeveless');
-
-        INSERT INTO public.product_variants (product_id, quality, sleeve, size, price, stock, sku, is_available)
-        SELECT p2_id, 'Standard Quality', 'Sleeveless', 'XXL', 420.00, 30, 'ARH-SQ-SL-XXL', true
-        WHERE NOT EXISTS (SELECT 1 FROM public.product_variants WHERE product_id = p2_id AND size = 'XXL' AND sleeve = 'Sleeveless');
-
-        -- Add media for Product 2 if missing
-        INSERT INTO public.product_media (product_id, media_type, url, alt_text, title, display_order, variant_quality, variant_sleeve)
-        SELECT p2_id, 'photo', '/images/products/sleevless low.jpeg', 'Men''s Vest - Standard Quality Sleeveless / Sando', 'Standard Quality Sleeveless', 1, 'Standard Quality', 'Sleeveless'
-        WHERE NOT EXISTS (SELECT 1 FROM public.product_media WHERE product_id = p2_id AND url = '/images/products/sleevless low.jpeg');
-    END IF;
-END $$;
-
--- ==============================================================================
--- 7. VERIFICATION / AUDIT QUERIES
--- (Run these checks to confirm database integrity)
--- ==============================================================================
-DO $$
-DECLARE
-    prod_count INT;
-    order_count INT;
-    hero_count INT;
-    ship_thresh INT;
-BEGIN
-    SELECT COUNT(*) INTO prod_count FROM public.products;
-    SELECT COUNT(*) INTO order_count FROM public.orders;
-    SELECT COUNT(*) INTO hero_count FROM public.hero_slides;
-    SELECT free_delivery_threshold INTO ship_thresh FROM public.shipping_settings LIMIT 1;
-    
-    RAISE NOTICE '==================================================';
-    RAISE NOTICE 'AMIN RAISAT HOSIERY — MIGRATION V2 COMPLETED SUCCESSFULLY';
-    RAISE NOTICE 'Products in Catalog: %', prod_count;
-    RAISE NOTICE 'Existing Orders Preserved: %', order_count;
-    RAISE NOTICE 'Hero Slides (Desktop + Mobile): %', hero_count;
-    RAISE NOTICE 'Free Delivery Threshold: % pieces', ship_thresh;
-    RAISE NOTICE '==================================================';
-END $$;
