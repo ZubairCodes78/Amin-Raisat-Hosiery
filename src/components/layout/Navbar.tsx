@@ -208,12 +208,12 @@ export const Navbar: React.FC = () => {
               {/* Desktop Header Logo */}
               <div className="flex items-center">
                 <Link href="/" className="flex items-center group py-0.5">
-                  <div className="relative w-[200px] lg:w-[235px] xl:w-[260px] h-13 lg:h-16 xl:h-18 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-[180px] lg:w-[210px] xl:w-[232px] h-12 lg:h-14 xl:h-15 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
                       src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="(max-width: 1024px) 235px, 260px"
+                      sizes="(max-width: 1024px) 210px, 240px"
                       className="object-contain object-left"
                       priority
                     />
