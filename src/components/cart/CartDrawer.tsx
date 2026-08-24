@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { X, Trash2, Plus, Minus, ShoppingBag, Truck, ArrowRight, AlertCircle, Package } from 'lucide-react';
@@ -47,6 +47,17 @@ export const CartDrawer: React.FC = () => {
     wholesaleMinQty,
   } = useCart();
   const { settings } = useStore();
+
+  // Lock body scroll while drawer is open (prevents background scroll on mobile)
+  useEffect(() => {
+    if (isDrawerOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [isDrawerOpen]);
 
   if (!isDrawerOpen) return null;
 

@@ -140,9 +140,6 @@ export const Navbar: React.FC = () => {
         <div className="mx-auto w-full md:w-[calc(100%-48px)] max-w-[1240px] px-3 sm:px-6 md:px-0">
           <div className="flex items-center justify-between h-16 sm:h-18 md:h-20 lg:h-22">
             
-            {/* ========================================================================= */}
-            {/* MOBILE NAVBAR ROW (md:hidden) */}
-            {/* ========================================================================= */}
             {/* ================================================================= */}
             {/* MOBILE NAVBAR ROW (md:hidden)                                     */}
             {/* Logo is absolutely centered to the header — immune to icon count  */}
@@ -176,11 +173,11 @@ export const Navbar: React.FC = () => {
                 </button>
               </div>
 
-              {/* Center: Logo — absolutely positioned at exact 50% of header width */}
+              {/* Center: Logo — offset 8px left of exact 50% for visual balance */}
               <Link
                 href="/"
-                className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center py-0.5 group z-0"
-                style={{ pointerEvents: 'auto' }}
+                className="absolute flex items-center justify-center py-0.5 group z-0"
+                style={{ left: '50%', transform: 'translateX(calc(-50% - 8px))', pointerEvents: 'auto' }}
               >
                 <div className="relative w-[110px] xs:w-[122px] sm:w-[136px] h-9 xs:h-10 sm:h-10 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                   <Image
