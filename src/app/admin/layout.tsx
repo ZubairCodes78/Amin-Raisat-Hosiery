@@ -202,7 +202,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile Drawer Menu */}
       {mobileNavOpen && (
-        <div className="md:hidden bg-white dark:bg-[#0D0F12] border-b border-light-border dark:border-[#30343A] p-4 space-y-2 sticky top-[65px] z-30 animate-in fade-in">
+        <div className="md:hidden bg-white dark:bg-[#151513] border-b border-light-border dark:border-[#34322D] p-4 space-y-2 sticky top-[65px] z-30 animate-in fade-in">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -213,8 +213,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 onClick={() => setMobileNavOpen(false)}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold ${
                   isActive
-                    ? 'bg-champagne-100 dark:bg-[#1F2227] text-[#A07D38] dark:text-[#F1F0EC] border-l-2 border-[#C9A96A]'
-                    : 'text-charcoal-600 dark:text-[#8C8F95] hover:bg-light-hover dark:hover:bg-[#17191D] hover:text-charcoal-900 dark:hover:text-[#D7D7D4]'
+                    ? 'bg-champagne-100/80 dark:bg-[#22211E] text-[#B89555] dark:text-[#C9A96A] border-l-2 border-[#B89555]'
+                    : 'text-charcoal-600 dark:text-[#8E8A80] hover:bg-light-hover dark:hover:bg-[#22211E] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -225,11 +225,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             );
           })}
 
-          <div className="pt-2 border-t border-light-border dark:border-[#30343A] flex justify-between items-center text-xs">
-            <a href="/" target="_blank" className="text-charcoal-600 dark:text-[#8C8F95] hover:text-[#C9A96A] flex items-center gap-1">
+          <div className="pt-2 border-t border-light-border dark:border-[#34322D] flex justify-between items-center text-xs">
+            <a href="/" target="_blank" className="text-charcoal-600 dark:text-[#8E8A80] hover:text-[#B89555] dark:hover:text-[#C9A96A] flex items-center gap-1">
               <Store className="w-3.5 h-3.5" /> View Storefront
             </a>
-            <button onClick={handleLogout} className="text-[#D96B6B] font-semibold">
+            <button onClick={handleLogout} className="text-rose-600 dark:text-rose-400 font-semibold">
               Log Out
             </button>
           </div>
@@ -237,7 +237,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Main Admin Content Viewport */}
-      <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8 bg-light-bg dark:bg-[#101114]">
+      <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8 bg-light-bg dark:bg-[#11110F]">
         <div className="max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
