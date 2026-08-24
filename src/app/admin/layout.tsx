@@ -93,13 +93,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-light-border dark:border-[#34322D]">
-            <div className="flex items-center gap-2.5">
-              <div className="relative w-44 h-12 overflow-hidden flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="relative w-[136px] lg:w-[144px] h-10 lg:h-11 overflow-hidden flex-shrink-0">
                 <Image
                   src={logoSrc}
                   alt="Amin Raisat Hosiery"
                   fill
+                  sizes="150px"
                   className="object-contain object-left"
+                  priority
                 />
               </div>
             </div>
@@ -167,12 +169,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Mobile Top Header Bar for Admin */}
       <div className="md:hidden bg-white dark:bg-[#151513] text-charcoal-900 dark:text-[#F4F1E9] p-4 flex items-center justify-between sticky top-0 z-40 border-b border-light-border dark:border-[#34322D]">
         <div className="flex items-center gap-2.5">
-          <div className="relative w-28 h-8 overflow-hidden flex-shrink-0">
+          <div className="relative w-[105px] sm:w-[115px] h-8 sm:h-9 overflow-hidden flex-shrink-0">
             <Image
               src={logoSrc}
               alt="Amin Raisat Hosiery"
               fill
+              sizes="120px"
               className="object-contain object-left"
+              priority
             />
           </div>
         </div>
