@@ -194,16 +194,28 @@ export default function WholesalePage() {
           </div>
 
           {/* Wholesale Search Input */}
-          <div className="relative min-w-[240px]">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+              }
+            }}
+            className="relative min-w-[240px]"
+          >
             <input
               type="text"
+              enterKeyHint="search"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="Search wholesale products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl text-xs focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
             />
             <Search className="w-4 h-4 text-charcoal-400 dark:text-[#8E8A80] absolute left-3 top-2.5" />
-          </div>
+          </form>
         </div>
 
         {/* Product Grid */}

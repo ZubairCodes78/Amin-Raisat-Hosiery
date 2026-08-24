@@ -77,12 +77,41 @@ export const Navbar: React.FC = () => {
     }, 180);
   };
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const executeSearch = (rawQuery: string) => {
+    const trimmedQuery = rawQuery.trim();
+
+    if (!trimmedQuery) {
+      searchInputRef.current?.focus();
+      return;
+    }
+
+    // 1. Safely dismiss mobile keyboard immediately
+    if (searchInputRef.current) {
+      searchInputRef.current.blur();
+    }
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    // 2. Close search overlay/drawer and mobile navigation menu
+    setSearchOpen(false);
+    setMobileMenuOpen(false);
+
+    // 3. Preserve wholesale storefront context if currently in wholesale
+    const isWholesaleMode = pathname.startsWith('/wholesale');
+    const targetUrl = isWholesaleMode
+      ? `/search?q=${encodeURIComponent(trimmedQuery)}&mode=wholesale`
+      : `/search?q=${encodeURIComponent(trimmedQuery)}`;
+
+    // 4. Client-side navigation via Next.js router
+    router.push(targetUrl);
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      setSearchOpen(false);
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
+    executeSearch(searchQuery);
   };
 
   const isCategoryActive = pathname.startsWith('/category');
@@ -625,17 +654,27 @@ export const Navbar: React.FC = () => {
             <div className="py-3 border-t border-light-border dark:border-[#34322D] animate-in fade-in">
               <form onSubmit={handleSearchSubmit} className="relative max-w-lg mx-auto">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   autoFocus
-                  placeholder="Search products by name, category, or style..."
+                  enterKeyHint="search"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder={
+                    isWholesaleActive
+                      ? "Search wholesale vests, styles, categories..."
+                      : "Search products by name, category, or style..."
+                  }
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-24 py-2.5 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] rounded-xl text-xs focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
+                  className="w-full pl-10 pr-24 py-2.5 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] rounded-xl text-xs focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A] shadow-xs"
                 />
                 <Search className="w-4 h-4 text-charcoal-400 dark:text-[#8E8A80] absolute left-3.5 top-3" />
                 <button
                   type="submit"
-                  className="absolute right-2 top-1.5 px-3 py-1 bg-champagne-500 text-charcoal-950 rounded-lg text-xs font-bold hover:bg-champagne-400"
+                  className="absolute right-2 top-1.5 px-3 py-1 bg-champagne-500 text-charcoal-950 rounded-lg text-xs font-bold hover:bg-champagne-400 active:scale-95 transition-all shadow-2xs"
+                  aria-label="Submit Search"
                 >
                   Search
                 </button>
