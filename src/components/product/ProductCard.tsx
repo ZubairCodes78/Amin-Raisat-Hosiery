@@ -208,10 +208,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
           )}
 
           {/* Size Pills */}
-          <div className="space-y-1 mt-auto pt-1">
+          <div className="space-y-1.5 mt-auto pt-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="font-semibold text-charcoal-500 dark:text-[#85888E]">Size:</span>
-              <span className="text-charcoal-700 dark:text-[#B4B5BA] font-medium whitespace-nowrap">Fit {selectedSize}</span>
+              <span className="font-semibold text-charcoal-500 dark:text-[#B8B3A8]">Size:</span>
+              <span className="text-charcoal-700 dark:text-[#B8B3A8] font-medium whitespace-nowrap">Fit {selectedSize}</span>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {AVAILABLE_SIZES.map((sz) => (
@@ -219,10 +219,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
                   key={sz}
                   type="button"
                   onClick={() => setSelectedSize(sz)}
-                  className={`w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
+                  className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
                     selectedSize === sz
-                      ? 'bg-champagne-500 text-[#101114] font-extrabold shadow-xs scale-105'
-                      : 'bg-light-elevated dark:bg-[#1D2025] text-charcoal-700 dark:text-[#B4B5BA] hover:bg-light-hover dark:hover:bg-[#202329] border border-light-border dark:border-[#30343A]'
+                      ? 'bg-champagne-500 text-charcoal-950 font-extrabold shadow-xs scale-105'
+                      : 'bg-light-elevated dark:bg-[#22211E] text-charcoal-700 dark:text-[#B8B3A8] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D]'
                   }`}
                 >
                   {sz}

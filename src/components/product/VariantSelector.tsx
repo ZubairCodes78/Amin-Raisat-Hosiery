@@ -206,22 +206,22 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
         <button
           type="button"
           onClick={() => toggleOrderMode(false)}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-h-[42px] sm:min-h-[46px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
             !isWholesaleMode
               ? 'bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9] shadow-sm border border-light-border dark:border-[#34322D]'
               : 'text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
           }`}
         >
           <span>Retail Order</span>
-          <span className="text-[10px] text-charcoal-500 dark:text-[#8E8A80] font-normal">(Min 3 pcs)</span>
+          <span className="text-[10px] sm:text-xs text-charcoal-500 dark:text-[#8E8A80] font-normal">(Min 3 pcs)</span>
         </button>
 
         <button
           type="button"
           onClick={() => toggleOrderMode(true)}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+          className={`flex-1 min-h-[42px] sm:min-h-[46px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
             isWholesaleMode
-              ? 'bg-champagne-500 text-charcoal-950 shadow-xs'
+              ? 'bg-champagne-500 text-charcoal-950 shadow-xs font-extrabold'
               : 'text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
           }`}
         >
@@ -250,7 +250,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
             {/* Natural Wholesale Pricing Hint when in Retail Mode */}
             {!isWholesaleMode && (
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
                 <span className="text-xs text-charcoal-600 dark:text-[#B8B3A8]">
                   Wholesale: <strong className="text-emerald-700 dark:text-emerald-400 font-bold">Rs. {baseWholesalePrice} / piece</strong> (Min 12 pcs)
                 </span>
@@ -304,14 +304,14 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
       {/* 3. STEP 1: Sleeve Style Selector */}
       {availableSleeves.length > 1 && (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <label className="text-xs font-bold uppercase tracking-wider text-charcoal-700 dark:text-[#B8B3A8] flex items-center justify-between">
             <span>1. Select Sleeve Style</span>
             <span className="text-[#B89555] dark:text-[#C9A96A] font-semibold text-[11px]">
               {selectedSleeve}
             </span>
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
             {availableSleeves.map((sl) => {
               const isSelected = selectedSleeve === sl;
               return (
@@ -319,7 +319,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                   key={sl}
                   type="button"
                   onClick={() => setSelectedSleeve(sl)}
-                  className={`p-3 rounded-xl border text-center font-bold text-xs transition-all whitespace-nowrap ${
+                  className={`h-11 sm:h-12 px-3 rounded-xl border text-center font-bold text-xs sm:text-sm transition-all flex items-center justify-center whitespace-nowrap ${
                     isSelected
                       ? 'border-[#B89555] dark:border-[#C9A96A] bg-champagne-50 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] shadow-xs'
                       : 'border-light-border dark:border-[#34322D] bg-white dark:bg-[#191917] text-charcoal-700 dark:text-[#B8B3A8] hover:border-[#B89555]/40'
@@ -333,9 +333,9 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
         </div>
       )}
 
-      {/* 4. STEP 2: Size Selector */}
+      {/* 4. STEP 2: Size Selector (Mobile-first responsive flex with comfortable touch targets) */}
       {availableSizes.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold uppercase tracking-wider text-charcoal-700 dark:text-[#B8B3A8]">
               {availableSleeves.length > 1 ? '2.' : '1.'} Select Size
@@ -349,7 +349,8 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2.5">
+          {/* Comfortable touch targets: height 44-48px, min-width 48-56px, gap 8-10px */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
             {availableSizes.map((s) => {
               const isSelected = selectedSize === s;
               const sizeVar = product.variants.find(
@@ -363,12 +364,12 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                   key={s}
                   type="button"
                   onClick={() => setSelectedSize(s)}
-                  className={`py-2.5 px-4 rounded-xl border font-bold text-xs transition-all flex flex-col items-center justify-center min-w-[54px] ${
+                  className={`h-11 sm:h-12 min-w-[48px] sm:min-w-[56px] px-3.5 sm:px-4 rounded-xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-center ${
                     isSelected
                       ? 'border-[#B89555] dark:border-[#C9A96A] bg-champagne-500 text-charcoal-950 font-extrabold shadow-xs scale-105'
                       : isOutOfStock
-                      ? 'border-light-border dark:border-[#34322D] bg-light-elevated dark:bg-[#22211E] text-charcoal-400 dark:text-[#8E8A80] line-through opacity-60 cursor-not-allowed'
-                      : 'border-light-border dark:border-[#34322D] bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9] hover:border-[#B89555]/40'
+                      ? 'border-light-border dark:border-[#34322D] bg-light-elevated dark:bg-[#22211E] text-charcoal-400 dark:text-[#8E8A80] line-through opacity-50 cursor-not-allowed'
+                      : 'border-light-border dark:border-[#34322D] bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9] hover:border-[#B89555]/50 active:scale-95'
                   }`}
                 >
                   <span>{s}</span>
@@ -381,14 +382,14 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
       {/* 5. WHOLESALE QUICK PACK SELECTOR (Shown in Wholesale Mode) */}
       {isWholesaleMode && (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <label className="text-xs font-bold uppercase tracking-wider text-charcoal-700 dark:text-[#B8B3A8] flex items-center justify-between">
             <span>Wholesale Dozen Packs</span>
             <span className="text-[11px] text-[#B89555] dark:text-[#C9A96A] font-semibold">
               {quantity} pieces selected
             </span>
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
             {WHOLESALE_PACK_OPTIONS.map((pack) => {
               const isSelected = quantity === pack.count;
               return (
@@ -396,7 +397,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                   key={pack.count}
                   type="button"
                   onClick={() => setQuantity(pack.count)}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
+                  className={`h-10 sm:h-11 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center text-center ${
                     isSelected
                       ? 'border-[#B89555] dark:border-[#C9A96A] bg-champagne-500 text-charcoal-950 shadow-xs font-extrabold'
                       : 'border-light-border dark:border-[#34322D] bg-white dark:bg-[#191917] text-charcoal-700 dark:text-[#B8B3A8] hover:border-[#B89555]/40'
@@ -412,7 +413,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
       {/* 6. QUANTITY STEPPER */}
       <div className="p-4 rounded-2xl bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-charcoal-900 dark:text-[#F4F1E9] block">
               Quantity (Pieces)
@@ -427,19 +428,19 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
               type="button"
               disabled={quantity <= minOrder}
               onClick={() => setQuantity((prev) => Math.max(minOrder, prev - (isWholesaleMode ? 6 : 1)))}
-              className="px-3.5 py-2 text-charcoal-900 dark:text-[#F4F1E9] hover:bg-light-hover dark:hover:bg-[#2A2925] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-sm"
+              className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-charcoal-900 dark:text-[#F4F1E9] hover:bg-light-hover dark:hover:bg-[#2A2925] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-base"
               aria-label="Decrease quantity"
             >
               -
             </button>
-            <span className="w-14 text-center text-xs font-extrabold text-[#B89555] dark:text-[#C9A96A]">
+            <span className="w-12 sm:w-14 text-center text-xs sm:text-sm font-extrabold text-[#B89555] dark:text-[#C9A96A]">
               {quantity}
             </span>
             <button
               type="button"
               disabled={quantity >= maxOrder}
               onClick={() => setQuantity((prev) => Math.min(maxOrder, prev + (isWholesaleMode ? 6 : 1)))}
-              className="px-3.5 py-2 text-charcoal-900 dark:text-[#F4F1E9] hover:bg-light-hover dark:hover:bg-[#2A2925] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-sm"
+              className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-charcoal-900 dark:text-[#F4F1E9] hover:bg-light-hover dark:hover:bg-[#2A2925] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-bold text-base"
               aria-label="Increase quantity"
             >
               +
@@ -448,7 +449,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
         </div>
 
         {/* Clean Unified Delivery Row */}
-        <div className="pt-2 border-t border-light-border dark:border-[#34322D] flex items-center justify-between text-xs">
+        <div className="pt-2 border-t border-light-border dark:border-[#34322D] flex items-center justify-between text-xs flex-wrap gap-2">
           <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-semibold">
             <Truck className="w-4 h-4 flex-shrink-0" />
             <span>
@@ -458,7 +459,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
             </span>
           </div>
           {totalSavings > 0 && (
-            <span className="font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap ml-2">
+            <span className="font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
               Save Rs. {totalSavings}
             </span>
           )}
@@ -472,7 +473,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
           type="button"
           disabled={!isAvailable}
           onClick={handleBuyNow}
-          className={`w-full py-3.5 px-6 rounded-xl font-extrabold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
+          className={`w-full min-h-[46px] sm:min-h-[50px] py-3 px-6 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
             isAvailable
               ? 'bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 active:scale-[0.99]'
               : 'bg-light-elevated dark:bg-[#22211E] text-charcoal-400 dark:text-[#8E8A80] border border-light-border dark:border-[#34322D] cursor-not-allowed'
@@ -495,7 +496,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
             type="button"
             disabled={!isAvailable}
             onClick={handleAddToCart}
-            className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-white dark:bg-[#191917] hover:bg-light-hover dark:hover:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border border-light-border dark:border-[#34322D] transition-colors flex items-center justify-center gap-2 shadow-xs"
+            className="w-full min-h-[44px] sm:min-h-[46px] py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm bg-white dark:bg-[#191917] hover:bg-light-hover dark:hover:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border border-light-border dark:border-[#34322D] transition-colors flex items-center justify-center gap-2 shadow-xs"
           >
             <ShoppingBag className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
             <span>Add {isWholesaleMode ? 'Wholesale Pack ' : ''}to Cart</span>
@@ -506,7 +507,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full py-3 px-4 rounded-xl font-bold text-xs bg-[#25D366] hover:bg-[#1EBE5D] text-white shadow-xs transition-all flex items-center justify-center gap-2"
+            className="w-full min-h-[44px] sm:min-h-[46px] py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm bg-[#25D366] hover:bg-[#1EBE5D] text-white shadow-xs transition-all flex items-center justify-center gap-2"
           >
             <WhatsAppIcon size={16} className="text-white fill-current" />
             <span>Order on WhatsApp</span>
