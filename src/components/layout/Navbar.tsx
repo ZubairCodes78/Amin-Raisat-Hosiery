@@ -145,12 +145,12 @@ export const Navbar: React.FC = () => {
               {/* Center: Mobile Header Logo (Theme Aware) */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-12 sm:px-14">
                 <Link href="/" className="pointer-events-auto flex items-center justify-center py-0.5 group">
-                  <div className="relative w-[150px] xs:w-[170px] sm:w-[190px] h-12 xs:h-13 sm:h-15 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-[122px] xs:w-[136px] sm:w-[150px] h-9 xs:h-10 sm:h-11 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
                       src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="(max-width: 640px) 190px, 220px"
+                      sizes="(max-width: 640px) 150px, 170px"
                       className="object-contain object-center"
                       priority
                     />
