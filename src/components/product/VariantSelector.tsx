@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { SleeveType, ProductSize, Product, ProductVariant } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
-import { ShoppingBag, Truck, HelpCircle, X, ShieldAlert, Zap, Sparkles, Check } from 'lucide-react';
+import { ShoppingBag, Truck, HelpCircle, X, ShieldAlert, Zap, Check } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { createProductWhatsAppMessage } from '@/lib/whatsapp';
 
@@ -225,9 +225,8 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
               : 'text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
           }`}
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Wholesale Bulk</span>
-          <span className="text-[10px] bg-charcoal-950/15 text-charcoal-950 px-1.5 py-0.2 rounded font-extrabold">Min 12 pcs</span>
+          <span>Wholesale</span>
+          <span className="text-[10px] bg-charcoal-950/15 text-charcoal-950 px-1.5 py-0.2 rounded font-bold">Min 12 pcs</span>
         </button>
       </div>
 
@@ -257,9 +256,8 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                 <button
                   type="button"
                   onClick={() => toggleOrderMode(true)}
-                  className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] hover:bg-champagne-200 border border-[#B89555]/30 transition-colors"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] hover:bg-champagne-200 border border-[#B89555]/30 transition-colors"
                 >
-                  <Sparkles className="w-2.5 h-2.5" />
                   <span>Wholesale</span>
                 </button>
               </div>

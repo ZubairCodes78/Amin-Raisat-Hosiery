@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
-import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck, Sparkles, AlertCircle } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck, AlertCircle, Package } from 'lucide-react';
 import { createCartWhatsAppMessage } from '@/lib/whatsapp';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { CartItem } from '@/types';
@@ -67,9 +67,9 @@ export default function CartPage() {
           </Link>
           <Link
             href="/wholesale"
-            className="inline-flex items-center gap-2 bg-white dark:bg-dark-card hover:bg-light-hover dark:hover:bg-dark-hover text-charcoal-900 dark:text-gray-100 border border-light-border dark:border-dark-border font-bold text-xs py-3 px-6 rounded-xl transition-all"
+            className="inline-flex items-center gap-2 bg-white dark:bg-[#191917] hover:bg-light-hover dark:hover:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border border-light-border dark:border-[#34322D] font-bold text-xs py-3 px-6 rounded-xl transition-all"
           >
-            <Sparkles className="w-4 h-4 text-[#A07D38] dark:text-[#C9A96A]" />
+            <Package className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
             <span>Wholesale Store</span>
           </Link>
         </div>
@@ -78,16 +78,15 @@ export default function CartPage() {
   }
 
   return (
-    <div className="py-12 bg-light-bg dark:bg-dark-bg min-h-[85vh] text-charcoal-900 dark:text-gray-100 transition-colors duration-200">
+    <div className="py-12 bg-light-bg dark:bg-[#11110F] min-h-[85vh] text-charcoal-900 dark:text-[#F4F1E9] transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-charcoal-900 dark:text-gray-100 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-charcoal-900 dark:text-[#F4F1E9] tracking-tight">
             Shopping Cart ({totalQuantity} {totalQuantity === 1 ? 'piece' : 'pieces'})
           </h1>
           {hasWholesaleItems && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-champagne-100 dark:bg-[#1D2025] text-[#A07D38] dark:text-[#C9A96A] border border-[#C9A96A]/40 rounded-xl text-xs font-bold w-fit">
-              <Sparkles className="w-4 h-4" />
-              <span>Wholesale Bulk Order Active</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30 rounded-xl text-xs font-bold w-fit">
+              <span>Wholesale Order</span>
             </span>
           )}
         </div>
@@ -97,10 +96,9 @@ export default function CartPage() {
           <div className="lg:col-span-8 space-y-4">
             {/* Wholesale or Free Delivery Bar */}
             {hasWholesaleItems ? (
-              <div className="p-4 bg-champagne-50/80 dark:bg-dark-surface rounded-2xl border border-champagne-200 dark:border-dark-border shadow-sm">
+              <div className="p-4 bg-champagne-50/80 dark:bg-[#191917] rounded-2xl border border-champagne-200 dark:border-[#34322D] shadow-sm">
                 <div className="flex items-center justify-between text-xs font-semibold mb-2">
-                  <span className="flex items-center gap-1.5 text-[#A07D38] dark:text-champagne-400">
-                    <Sparkles className="w-4 h-4" />
+                  <span className="flex items-center gap-1.5 text-[#B89555] dark:text-[#C9A96A]">
                     {isWholesaleMinimumMet ? (
                       <span className="text-emerald-700 dark:text-emerald-400 font-bold">
                         ✓ Wholesale Minimum Met ({wholesaleQuantity} pcs) — Free Nationwide Delivery

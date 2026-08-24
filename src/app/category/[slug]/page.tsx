@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { ProductCard } from '@/components/product/ProductCard';
-import { ArrowLeft, Package, ShoppingBag, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, Package, ShoppingBag, ChevronRight } from 'lucide-react';
 
 export default function CategoryPage() {
   const params = useParams();
@@ -79,13 +79,13 @@ export default function CategoryPage() {
         {/* Category Header Banner */}
         <div className="bg-white dark:bg-[#17191D] rounded-2xl p-6 sm:p-10 border border-light-border dark:border-[#30343A] shadow-sm dark:shadow-card mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="max-w-2xl">
-            <span className="text-[10px] font-bold text-[#A07D38] dark:text-[#C9A96A] uppercase tracking-widest bg-champagne-50 dark:bg-[#1D2025] px-3 py-1 rounded-full border border-light-border dark:border-[#30343A] inline-block mb-2">
-              Category
+            <span className="text-[10px] font-bold text-[#B89555] dark:text-[#C9A96A] uppercase tracking-widest block mb-1">
+              Category Collection
             </span>
-            <h1 className="text-3xl sm:text-4xl font-bold text-charcoal-900 dark:text-[#F1F0EC] tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-charcoal-900 dark:text-[#F4F1E9] tracking-tight">
               {categoryName}&apos;s Collection
             </h1>
-            <p className="text-xs sm:text-sm text-charcoal-600 dark:text-[#B4B5BA] mt-2 leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-charcoal-600 dark:text-[#B8B3A8] mt-2 leading-relaxed font-normal">
               {currentCategory?.description ||
                 `Browse our collection of breathable cotton essentials for ${categoryName.toLowerCase()}.`}
             </p>
@@ -93,10 +93,10 @@ export default function CategoryPage() {
 
           <Link
             href="/wholesale"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-champagne-100 dark:bg-[#202329] hover:bg-champagne-200 text-[#A07D38] dark:text-[#C9A96A] border border-[#C9A96A]/40 text-xs font-bold transition-colors self-start sm:self-auto"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#191917] hover:bg-light-hover dark:hover:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border border-light-border dark:border-[#34322D] text-xs font-semibold transition-colors self-start sm:self-auto shadow-2xs"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Wholesale Bulk Rates (12+ pcs)</span>
+            <Package className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+            <span>Wholesale Store</span>
           </Link>
         </div>
 

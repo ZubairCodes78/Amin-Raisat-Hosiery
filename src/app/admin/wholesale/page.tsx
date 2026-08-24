@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { Product, ProductVariant } from '@/types';
 import {
-  Sparkles,
   Save,
   CheckCircle2,
   AlertCircle,
@@ -203,16 +202,11 @@ export default function AdminWholesalePage() {
       {/* 1. Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-light-border dark:border-[#34322D] pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-charcoal-900 dark:text-[#F4F1E9]">
-              Wholesale &amp; B2B Commerce Manager
-            </h1>
-            <span className="bg-champagne-500 text-charcoal-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">
-              B2B Engine
-            </span>
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-charcoal-900 dark:text-[#F4F1E9]">
+            Wholesale Management
+          </h1>
           <p className="text-xs text-charcoal-500 dark:text-[#B8B3A8] mt-1">
-            Product-centric wholesale pricing overview, factory rules, bulk discount policies, and direct catalog management.
+            Product-centric wholesale pricing overview, factory rules, bulk discount policies, and catalog management.
           </p>
         </div>
 
@@ -542,11 +536,11 @@ export default function AdminWholesalePage() {
             <div className="flex items-start justify-between border-b border-light-border dark:border-[#34322D] pb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30">
-                    Product Wholesale Management
+                  <span className="text-xs font-semibold text-[#B89555] dark:text-[#C9A96A] uppercase tracking-wider">
+                    Wholesale Pricing Editor
                   </span>
                   <span className="text-xs text-charcoal-500 dark:text-[#B8B3A8]">
-                    {modalVariants.length} Active Variants
+                    • {modalVariants.length} Variants
                   </span>
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-charcoal-900 dark:text-[#F4F1E9] mt-1">

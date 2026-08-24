@@ -14,7 +14,6 @@ import {
   Truck,
   ExternalLink,
   ChevronDown,
-  Sparkles,
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';

@@ -23,7 +23,8 @@ import {
   Eye,
   EyeOff,
   Layers,
-  Sparkles,
+  ChevronRight,
+  TrendingUp,
   Percent,
   DollarSign,
   TrendingDown,
@@ -1041,9 +1042,9 @@ function AdminProductsContent() {
               <div className="p-4 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+                    <Package className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
                     <h3 className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider">
-                      Wholesale &amp; Bulk Commerce Availability
+                      Wholesale Availability &amp; Minimum Rules
                     </h3>
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -1075,7 +1076,7 @@ function AdminProductsContent() {
                   </div>
 
                   <div className="flex items-center p-2.5 bg-champagne-50 dark:bg-[#191917] rounded-xl border border-[#B89555]/20 text-[11px] text-charcoal-700 dark:text-[#B8B3A8]">
-                    When checked, this garment will be featured in the public Wholesale Portal and unlock bulk tier rates when cart reaches {prodWholesaleMinQty} pieces.
+                    When checked, this garment will be featured in the public Wholesale catalog and unlock bulk tier rates when cart reaches {prodWholesaleMinQty} pieces.
                   </div>
                 </div>
               </div>

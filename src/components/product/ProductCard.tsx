@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Product, ProductSize, SleeveType } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
-import { ShoppingBag, Zap, Check, Sparkles } from 'lucide-react';
+import { ShoppingBag, Zap, Check } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -136,8 +136,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
           {/* Badges */}
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
             {isWholesaleView ? (
-              <span className="bg-[#C9A96A] text-[#101114] text-[10px] font-extrabold px-2.5 py-0.5 rounded-md shadow-xs uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
+              <span className="bg-champagne-500 text-charcoal-950 text-[10px] font-extrabold px-2.5 py-0.5 rounded-md shadow-xs uppercase tracking-wider whitespace-nowrap">
                 Wholesale (Min {product.wholesaleMinQty || 12} pcs)
               </span>
             ) : (

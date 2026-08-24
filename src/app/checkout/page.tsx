@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Sparkles,
 } from 'lucide-react';
 
 const PAKISTAN_PROVINCES = [
@@ -564,8 +563,8 @@ export default function CheckoutPage() {
                   Checkout &amp; Delivery Details
                 </h1>
                 {hasWholesaleItems && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#C9A96A]/20 text-[#A07D38] dark:text-[#C9A96A] border border-[#C9A96A]/40 text-xs font-bold">
-                    <Sparkles className="w-3.5 h-3.5" /> Wholesale Order
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30 text-xs font-bold">
+                    Wholesale Order
                   </span>
                 )}
               </div>

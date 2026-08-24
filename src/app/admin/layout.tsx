@@ -18,7 +18,6 @@ import {
   Menu,
   X,
   Users,
-  Sparkles,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -74,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navLinks = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/wholesale', label: 'Wholesale & B2B', icon: Sparkles, badge: 'New' },
+    { href: '/admin/wholesale', label: 'Wholesale Pricing', icon: Store },
     { href: '/admin/products', label: 'Products & Variants', icon: Package },
     { href: '/admin/categories', label: 'Categories & Subs', icon: Layers },
     { href: '/admin/orders', label: 'Customer Orders', icon: ShoppingCart },
@@ -132,14 +131,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#A07D38] dark:text-[#C9A96A]' : 'text-charcoal-400 dark:text-[#8C8F95]'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#B89555] dark:text-[#C9A96A]' : 'text-charcoal-400 dark:text-[#8E8A80]'}`} />
                     <span>{link.label}</span>
                   </div>
-                  {link.badge && (
-                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 bg-[#C9A96A] text-black rounded uppercase">
-                      {link.badge}
-                    </span>
-                  )}
                 </a>
               );
             })}
@@ -220,14 +214,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#A07D38] dark:text-[#C9A96A]' : 'text-charcoal-400 dark:text-[#8C8F95]'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#B89555] dark:text-[#C9A96A]' : 'text-charcoal-400 dark:text-[#8E8A80]'}`} />
                   <span>{link.label}</span>
                 </div>
-                {link.badge && (
-                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 bg-[#C9A96A] text-black rounded uppercase">
-                    {link.badge}
-                  </span>
-                )}
               </a>
             );
           })}

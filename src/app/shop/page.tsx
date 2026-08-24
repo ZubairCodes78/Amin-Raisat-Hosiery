@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
 import { ProductCard } from '@/components/product/ProductCard';
-import { ChevronRight, Filter, X, Sparkles } from 'lucide-react';
+import { ChevronRight, Filter, X, Package } from 'lucide-react';
 
 export default function ShopPage() {
   const { products, categories, subcategories } = useStore();
@@ -144,10 +144,10 @@ export default function ShopPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <Link
               href="/wholesale"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-champagne-100 dark:bg-[#1D2025] text-[#A07D38] dark:text-[#C9A96A] border border-[#C9A96A]/40 text-xs font-bold hover:bg-champagne-200 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#191917] hover:bg-light-hover dark:hover:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border border-light-border dark:border-[#34322D] text-xs font-semibold transition-colors shadow-2xs"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Wholesale Store &rarr;</span>
+              <Package className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+              <span>Wholesale Store</span>
             </Link>
 
             <button

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X, Trash2, Plus, Minus, ShoppingBag, Truck, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, Truck, ArrowRight, AlertCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
 import { createCartWhatsAppMessage } from '@/lib/whatsapp';
@@ -88,10 +88,9 @@ export const CartDrawer: React.FC = () => {
           {hasWholesaleItems ? (
             <div className="p-4 bg-champagne-50/80 dark:bg-dark-bg border-b border-light-border dark:border-dark-border">
               <div className="flex items-center justify-between text-xs font-semibold mb-2">
-                <span className="flex items-center gap-1.5 text-[#A07D38] dark:text-champagne-400">
-                  <Sparkles className="w-4 h-4" />
+                <span className="flex items-center gap-1.5 text-[#B89555] dark:text-[#C9A96A]">
                   {isWholesaleMinimumMet ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                    <span className="text-emerald-700 dark:text-emerald-400 font-bold">
                       ✓ Wholesale Minimum Met ({wholesaleQuantity} pcs) — Factory Rates Active
                     </span>
                   ) : (

@@ -19,7 +19,6 @@ import {
   Mail,
   Home,
   Briefcase,
-  Sparkles,
 } from 'lucide-react';
 
 const PAKISTAN_PROVINCES = [
@@ -528,8 +527,8 @@ export default function AccountPage() {
                           Order #{ord.orderNumber}
                         </span>
                         {ord.isWholesale && (
-                          <span className="text-[10px] font-extrabold bg-[#C9A96A]/20 text-[#A07D38] dark:text-[#C9A96A] border border-[#C9A96A]/40 px-2 py-0.5 rounded-full uppercase flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" /> Wholesale
+                          <span className="text-[10px] font-bold bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                            Wholesale
                           </span>
                         )}
                         <span className="text-xs text-charcoal-400 dark:text-[#85888E] ml-1">

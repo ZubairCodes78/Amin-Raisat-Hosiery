@@ -18,7 +18,6 @@ import {
   Star,
   ExternalLink,
   Truck,
-  Sparkles,
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 
@@ -99,10 +98,10 @@ export default function AdminDashboardPage() {
         <div className="flex items-center gap-2.5 flex-wrap">
           <Link
             href="/admin/wholesale"
-            className="inline-flex items-center gap-1.5 bg-champagne-100 dark:bg-[#202329] hover:bg-champagne-200 dark:hover:bg-[#272A2F] border border-[#C9A96A]/40 text-[#A07D38] dark:text-[#C9A96A] text-xs font-bold py-2.5 px-4 rounded-xl transition-all"
+            className="inline-flex items-center gap-1.5 bg-white dark:bg-[#191917] hover:bg-light-hover dark:hover:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] text-xs font-bold py-2.5 px-4 rounded-xl transition-colors shadow-2xs"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Wholesale Manager</span>
+            <Package className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+            <span>Wholesale Pricing</span>
           </Link>
           <Link
             href="/admin/products"

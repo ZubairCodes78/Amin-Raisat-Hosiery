@@ -8,7 +8,7 @@ import { CategoryGrid } from '@/components/home/CategoryGrid';
 import { FeaturesSection } from '@/components/home/FeaturesSection';
 import { ProductCard } from '@/components/product/ProductCard';
 import { useStore } from '@/context/StoreContext';
-import { ArrowRight, ShoppingBag, Sparkles, PackageCheck } from 'lucide-react';
+import { ArrowRight, ShoppingBag, PackageCheck } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 
 export default function HomePage() {
@@ -17,7 +17,7 @@ export default function HomePage() {
   const homepageProducts = activeProducts.slice(0, 8);
 
   return (
-    <div className="space-y-0 bg-light-bg dark:bg-dark-bg text-charcoal-900 dark:text-gray-100 transition-colors duration-200">
+    <div className="space-y-0 bg-light-bg dark:bg-[#11110F] text-charcoal-900 dark:text-[#F4F1E9] transition-colors duration-200">
       {/* 1. Full-Width Separate Desktop & Mobile Hero Slider */}
       <BrandHeroSlider />
 
@@ -27,52 +27,51 @@ export default function HomePage() {
       {/* 3. Main Categories Grid */}
       <CategoryGrid />
 
-      {/* 4. Wholesale B2B Commercial Callout Strip */}
-      <section className="py-10 bg-gradient-to-r from-champagne-100 via-champagne-50 to-champagne-100 dark:from-[#17191D] dark:via-[#1D2025] dark:to-[#17191D] border-y border-light-border dark:border-[#30343A]">
+      {/* 4. Wholesale Callout Strip */}
+      <section className="py-10 bg-light-elevated dark:bg-[#191917] border-y border-light-border dark:border-[#34322D]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-1.5 text-center sm:text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#C9A96A]/20 text-[#A07D38] dark:text-[#C9A96A] text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Wholesale &amp; Bulk Commercial Portal</span>
-            </div>
-            <h3 className="text-xl sm:text-2xl font-extrabold text-charcoal-900 dark:text-gray-100">
-              Retailers &amp; Bulk Buyers: Save Up to 27% with 1-Dozen Packs
+            <span className="text-[11px] font-bold text-[#B89555] dark:text-[#C9A96A] uppercase tracking-wider block">
+              Wholesale &amp; Bulk Orders
+            </span>
+            <h3 className="text-xl sm:text-2xl font-extrabold text-charcoal-900 dark:text-[#F4F1E9]">
+              Retailers &amp; Bulk Buyers: Save with 1-Dozen Master Packs
             </h3>
-            <p className="text-xs sm:text-sm text-charcoal-600 dark:text-gray-400">
-              Factory-direct prices starting from minimum 12 pieces with 100% Free Nationwide Delivery across Pakistan.
+            <p className="text-xs sm:text-sm text-charcoal-600 dark:text-[#B8B3A8]">
+              Factory-direct pricing starting from minimum 12 pieces with 100% Free Nationwide Delivery across Pakistan.
             </p>
           </div>
 
           <Link
             href="/wholesale"
-            className="flex-shrink-0 inline-flex items-center gap-2 bg-champagne-500 hover:bg-champagne-400 text-black font-extrabold text-xs py-3.5 px-6 rounded-xl shadow-xs transition-all"
+            className="flex-shrink-0 inline-flex items-center gap-2 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 font-extrabold text-xs py-3.5 px-6 rounded-xl shadow-xs transition-all active:scale-[0.99]"
           >
             <PackageCheck className="w-4 h-4" />
-            <span>Explore Wholesale Store</span>
+            <span>Explore Wholesale Catalog</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
 
       {/* 5. Featured Available Products Section (Max 8 Products in 4x2 Grid) */}
-      <section className="py-16 bg-white dark:bg-[#0c0c11] border-b border-light-border dark:border-dark-border">
+      <section className="py-16 bg-white dark:bg-[#141412] border-b border-light-border dark:border-[#34322D]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10">
             <div>
-              <span className="text-[10px] font-bold text-[#A07D38] dark:text-gold-500 uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-[#B89555] dark:text-[#C9A96A] uppercase tracking-widest">
                 Store Collection
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-charcoal-900 dark:text-gray-100 mt-1">
+              <h2 className="text-2xl sm:text-3xl font-bold text-charcoal-900 dark:text-[#F4F1E9] mt-1">
                 Available Products
               </h2>
-              <p className="text-xs sm:text-sm text-charcoal-500 dark:text-gray-400 mt-1 font-normal">
+              <p className="text-xs sm:text-sm text-charcoal-500 dark:text-[#B8B3A8] mt-1 font-normal">
                 Select your size and sleeve options directly to order online or via WhatsApp.
               </p>
             </div>
 
             <Link
               href="/shop"
-              className="mt-4 sm:mt-0 inline-flex items-center gap-1.5 text-xs font-bold text-[#A07D38] dark:text-gold-400 hover:text-[#C9A96A] transition-colors"
+              className="mt-4 sm:mt-0 inline-flex items-center gap-1.5 text-xs font-bold text-[#B89555] dark:text-[#C9A96A] hover:underline transition-colors"
             >
               <span>Explore Full Shop</span>
               <ArrowRight className="w-4 h-4" />
@@ -89,7 +88,7 @@ export default function HomePage() {
           <div className="mt-12 text-center">
             <Link
               href="/shop"
-              className="inline-flex items-center justify-center gap-2 bg-champagne-500 hover:bg-champagne-400 text-black font-bold text-xs py-3.5 px-8 rounded-xl shadow-xs transition-all active:scale-[0.99]"
+              className="inline-flex items-center justify-center gap-2 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 font-bold text-xs py-3.5 px-8 rounded-xl shadow-xs transition-all active:scale-[0.99]"
             >
               <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
               <span>View All Products</span>
@@ -103,15 +102,15 @@ export default function HomePage() {
       <FeaturesSection />
 
       {/* 7. Direct WhatsApp Consultation Banner */}
-      <section className="py-14 bg-light-elevated dark:bg-dark-surface border-t border-light-border dark:border-dark-border text-center">
+      <section className="py-14 bg-light-elevated dark:bg-[#191917] border-t border-light-border dark:border-[#34322D] text-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-          <span className="inline-block text-[10px] font-bold tracking-widest uppercase text-[#A07D38] dark:text-gold-500">
+          <span className="inline-block text-[10px] font-bold tracking-widest uppercase text-[#B89555] dark:text-[#C9A96A]">
             Direct Customer Support
           </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-charcoal-900 dark:text-gray-100 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-bold text-charcoal-900 dark:text-[#F4F1E9] tracking-tight">
             Order or Inquire Directly with Muhammad Amin
           </h2>
-          <p className="text-xs sm:text-sm text-charcoal-500 dark:text-gray-400 max-w-xl mx-auto leading-relaxed font-normal">
+          <p className="text-xs sm:text-sm text-charcoal-500 dark:text-[#B8B3A8] max-w-xl mx-auto leading-relaxed font-normal">
             Have questions about fabric quality, sleeve styles, or delivery anywhere in Pakistan? We are available on WhatsApp.
           </p>
           <div className="pt-2 flex justify-center">

@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
-import { CheckCircle2, ArrowRight, Home, Sparkles } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Home } from 'lucide-react';
 import { createOrderReceiptWhatsAppMessage } from '@/lib/whatsapp';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 
@@ -49,8 +49,8 @@ export default function OrderConfirmationPage() {
                 Order Confirmed
               </span>
               {order.isWholesale && (
-                <span className="text-[10px] font-extrabold bg-[#C9A96A]/20 text-[#A07D38] dark:text-[#C9A96A] border border-[#C9A96A]/40 px-2.5 py-1 rounded-full uppercase flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Wholesale B2B
+                <span className="text-[10px] font-bold bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                  Wholesale Order
                 </span>
               )}
             </div>

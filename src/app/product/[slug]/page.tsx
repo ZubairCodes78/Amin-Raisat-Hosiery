@@ -9,7 +9,7 @@ import { VariantSelector } from '@/components/product/VariantSelector';
 import { QualityComparison } from '@/components/product/QualityComparison';
 import { ProductReviews } from '@/components/product/ProductReviews';
 import { SleeveType, ProductSize } from '@/types';
-import { ChevronRight, Star, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { ChevronRight, Star, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -134,8 +134,8 @@ export default function ProductDetailPage() {
                   {category ? category.name : 'Men'} &gt; {subcategory ? subcategory.name : 'Vests'}
                 </span>
                 {isWholesale && (
-                  <span className="inline-flex items-center gap-1 text-[9px] font-extrabold bg-[#B89555]/15 text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    <Sparkles className="w-3 h-3" /> Wholesale Mode Active
+                  <span className="text-[10px] font-bold bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                    Wholesale
                   </span>
                 )}
               </div>
