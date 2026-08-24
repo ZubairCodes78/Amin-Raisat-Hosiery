@@ -16,16 +16,16 @@ export const Footer: React.FC = () => {
     .filter((c) => c.isActive !== false)
     .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
-  const logoSrc = isDark ? '/images/header logo.png' : '/images/light logo.jpeg';
+  const logoSrc = isDark ? '/images/header logo.png' : '/images/light logo.png';
 
   return (
-    <footer className="bg-light-elevated dark:bg-[#0D0F12] text-charcoal-700 dark:text-[#B4B5BA] border-t border-light-border dark:border-[#30343A] text-left transition-colors duration-200">
+    <footer className="bg-light-elevated dark:bg-[#0E0E0C] text-charcoal-700 dark:text-[#B8B3A8] border-t border-light-border dark:border-[#34322D] text-left transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-12 sm:py-14 lg:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 text-left items-start">
           {/* 1. Brand Column */}
           <div className="space-y-3.5 text-left">
             <Link href="/" className="inline-flex items-center group py-0.5">
-              <div className="relative w-44 h-14 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+              <div className="relative w-44 h-12 lg:h-14 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                 <Image
                   src={logoSrc}
                   alt={settings.brandName}

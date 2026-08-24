@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Image from 'next/image';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { Product, ProductVariant, ProductMedia } from '@/types';
 import {
@@ -23,10 +24,16 @@ import {
   EyeOff,
   Layers,
   Sparkles,
+  Percent,
+  DollarSign,
+  TrendingDown,
 } from 'lucide-react';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 
-export default function AdminProductsPage() {
+function AdminProductsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const {
     products,
     categories,
@@ -67,6 +74,8 @@ export default function AdminProductsPage() {
   const [prodCategoryId, setProdCategoryId] = useState('');
   const [prodSubcategoryId, setProdSubcategoryId] = useState('');
   const [prodIsPublished, setProdIsPublished] = useState(true);
+  const [prodIsWholesaleEnabled, setProdIsWholesaleEnabled] = useState(true);
+  const [prodWholesaleMinQty, setProdWholesaleMinQty] = useState(12);
   const [prodFeaturesText, setProdFeaturesText] = useState('');
   const [prodCareText, setProdCareText] = useState('');
   const [prodShippingText, setProdShippingText] = useState('');
@@ -86,8 +95,12 @@ export default function AdminProductsPage() {
 
   // Matrix Generator Settings
   const [genDefaultPrice, setGenDefaultPrice] = useState(480);
+  const [genDefaultWholesalePrice, setGenDefaultWholesalePrice] = useState(394);
   const [genDefaultComparePrice, setGenDefaultComparePrice] = useState<number | undefined>(undefined);
   const [genDefaultStock, setGenDefaultStock] = useState(50);
+
+  // Custom Bulk Discount percentage helper
+  const [bulkDiscountInput, setBulkDiscountInput] = useState(18);
 
   // Individual Variant Add State
   const [isAddSingleVarOpen, setIsAddSingleVarOpen] = useState(false);
@@ -95,6 +108,7 @@ export default function AdminProductsPage() {
   const [singleVarStyle, setSingleVarStyle] = useState('');
   const [singleVarSize, setSingleVarSize] = useState('');
   const [singleVarPrice, setSingleVarPrice] = useState(480);
+  const [singleVarWholesalePrice, setSingleVarWholesalePrice] = useState(394);
   const [singleVarSalePrice, setSingleVarSalePrice] = useState<number | undefined>(undefined);
   const [singleVarStock, setSingleVarStock] = useState(50);
   const [singleVarSku, setSingleVarSku] = useState('');
@@ -117,6 +131,22 @@ export default function AdminProductsPage() {
   // Search & Filter
   const [catalogSearch, setCatalogSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+
+  // Handle URL query parameters (e.g. from Wholesale dashboard ?edit=prod-123&tab=variants)
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    const tabParam = searchParams.get('tab');
+
+    if (editId && products.length > 0) {
+      const targetProd = products.find((p) => p.id === editId);
+      if (targetProd) {
+        handleStartEdit(targetProd);
+        if (tabParam === 'variants' || tabParam === 'basic' || tabParam === 'media') {
+          setEditorTab(tabParam);
+        }
+      }
+    }
+  }, [searchParams, products]);
 
   // Available subcategories for chosen category
   const activeSubcatsForCategory = useMemo(() => {
@@ -155,6 +185,8 @@ export default function AdminProductsPage() {
     const defaultSub = subcategories.find((s) => s.categoryId === defaultCat)?.id || '';
     setProdSubcategoryId(defaultSub);
     setProdIsPublished(true);
+    setProdIsWholesaleEnabled(true);
+    setProdWholesaleMinQty(12);
     setProdFeaturesText('100% Pure Combed Cotton\nAnti-Sag Double Top-Stitched Neck\nBreathable 1x1 Rib Knit Weave\nPre-Shrunk Colorfast Fabric');
     setProdCareText('Machine wash cold\nDo not bleach\nTumble dry low\nWarm iron if needed');
     setProdShippingText('Nationwide Cash on Delivery (COD) across Pakistan. Free delivery on 3+ pieces.');
@@ -175,6 +207,7 @@ export default function AdminProductsPage() {
         sleeve: 'Sleeveless',
         size: 'L',
         price: 480,
+        wholesalePrice: 394,
         stock: 50,
         sku: 'ARH-HQ-SL-L',
         isAvailable: true,
@@ -196,6 +229,8 @@ export default function AdminProductsPage() {
     setProdCategoryId(prod.categoryId);
     setProdSubcategoryId(prod.subcategoryId || '');
     setProdIsPublished(prod.isPublished);
+    setProdIsWholesaleEnabled(prod.isWholesaleEnabled !== false);
+    setProdWholesaleMinQty(prod.wholesaleMinQty ? Number(prod.wholesaleMinQty) : 12);
     setProdFeaturesText(prod.features ? prod.features.join('\n') : '');
     setProdCareText(prod.careInstructions ? prod.careInstructions.join('\n') : '');
     setProdShippingText(prod.shippingInfo || '');
@@ -214,7 +249,13 @@ export default function AdminProductsPage() {
     setCustomStyles(stylesFromVars.length > 0 ? stylesFromVars : ['Sleeveless', 'Full Sleeve']);
     setCustomSizes(sizesFromVars.length > 0 ? sizesFromVars : ['S', 'M', 'L', 'XL', 'XXL']);
 
-    setVariantsList(prod.variants || []);
+    // Ensure all variants have proper wholesale prices
+    const preparedVariants = (prod.variants || []).map((v) => ({
+      ...v,
+      wholesalePrice: v.wholesalePrice ? Number(v.wholesalePrice) : Math.round((Number(v.price) || 480) * 0.82),
+    }));
+
+    setVariantsList(preparedVariants);
     setMediaList(prod.media || []);
     setEditorTab('basic');
     setViewMode('editor');
@@ -250,12 +291,20 @@ export default function AdminProductsPage() {
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
 
-    const cleanVariants: ProductVariant[] = variantsList.map((v, i) => ({
-      ...v,
-      id: v.id || `var-${currentId}-${i + 1}`,
-      productId: currentId,
-      quality: v.quality || prodQualityGrade || 'High Quality',
-    }));
+    const cleanVariants: ProductVariant[] = variantsList.map((v, i) => {
+      const retailPrice = Number(v.price) || 0;
+      const wholesalePrice = v.wholesalePrice ? Number(v.wholesalePrice) : Math.round(retailPrice * 0.82);
+
+      return {
+        ...v,
+        id: v.id || `var-${currentId}-${i + 1}`,
+        productId: currentId,
+        quality: v.quality || prodQualityGrade || 'High Quality',
+        price: retailPrice,
+        wholesalePrice: wholesalePrice,
+        stock: Number(v.stock) || 0,
+      };
+    });
 
     const cleanMedia: ProductMedia[] = mediaList.map((m, i) => ({
       ...m,
@@ -288,7 +337,10 @@ export default function AdminProductsPage() {
       },
       careInstructions: careArray,
       shippingInfo: prodShippingText.trim(),
+      returnPolicy: 'Hassle-free exchange within 7 days of delivery for sizing or manufacturing defect.',
       isPublished: prodIsPublished,
+      isWholesaleEnabled: prodIsWholesaleEnabled,
+      wholesaleMinQty: Number(prodWholesaleMinQty) || 12,
       createdAt: editingProductId
         ? products.find((p) => p.id === editingProductId)?.createdAt || new Date().toISOString()
         : new Date().toISOString(),
@@ -298,32 +350,35 @@ export default function AdminProductsPage() {
 
     try {
       await saveProduct(productToSave);
-      showNotice(editingProductId ? `Updated "${productToSave.name}" successfully!` : `Created new garment "${productToSave.name}" live on store!`);
+      showNotice(`Successfully saved "${productToSave.name}" with ${cleanVariants.length} variants!`);
       setViewMode('list');
-    } catch (err) {
-      showNotice('Unable to save product to Supabase. Please try again.', 'error');
+    } catch (err: any) {
+      console.error(err);
+      showNotice(err?.message || 'Failed to save product.', 'error');
     }
   };
 
-  // ------------------ DELETE PRODUCT CONFIRMATION ------------------
+  // ------------------ DELETE PRODUCT ------------------
   const handleConfirmDeleteProduct = async () => {
     if (!deleteModalState.productId) return;
     try {
       await deleteProduct(deleteModalState.productId);
-      showNotice(`Garment "${deleteModalState.productName}" deleted from store.`);
-    } catch (err) {
-      showNotice('Unable to delete product.', 'error');
-    } finally {
+      showNotice(`Deleted "${deleteModalState.productName}"`);
       setDeleteModalState({ isOpen: false, productId: '', productName: '' });
+      if (editingProductId === deleteModalState.productId) {
+        setViewMode('list');
+      }
+    } catch (err) {
+      showNotice('Failed to delete product.', 'error');
     }
   };
 
-  // ------------------ QUALITY MANAGEMENT ------------------
+  // ------------------ TAXONOMY ACTIONS ------------------
   const handleAddQuality = () => {
-    const q = newQualityInput.trim();
-    if (!q) return;
-    if (!customQualities.includes(q)) {
-      setCustomQualities([...customQualities, q]);
+    if (!newQualityInput.trim()) return;
+    const clean = newQualityInput.trim();
+    if (!customQualities.includes(clean)) {
+      setCustomQualities([...customQualities, clean]);
     }
     setNewQualityInput('');
     setIsAddQualityOpen(false);
@@ -331,37 +386,35 @@ export default function AdminProductsPage() {
 
   const handleRemoveQuality = (qToRemove: string) => {
     if (customQualities.length <= 1) {
-      showNotice('Product listing must have at least 1 quality designation.', 'error');
+      showNotice('Product must have at least 1 quality level.', 'error');
       return;
     }
     setCustomQualities(customQualities.filter((q) => q !== qToRemove));
   };
 
-  // ------------------ STYLE MANAGEMENT ------------------
   const handleAddStyle = () => {
-    const st = newStyleInput.trim();
-    if (!st) return;
-    if (!customStyles.includes(st)) {
-      setCustomStyles([...customStyles, st]);
+    if (!newStyleInput.trim()) return;
+    const clean = newStyleInput.trim();
+    if (!customStyles.includes(clean)) {
+      setCustomStyles([...customStyles, clean]);
     }
     setNewStyleInput('');
     setIsAddStyleOpen(false);
   };
 
-  const handleRemoveStyle = (styleToRemove: string) => {
+  const handleRemoveStyle = (stToRemove: string) => {
     if (customStyles.length <= 1) {
-      showNotice('Product must have at least 1 style option.', 'error');
+      showNotice('Product must have at least 1 style/sleeve option.', 'error');
       return;
     }
-    setCustomStyles(customStyles.filter((s) => s !== styleToRemove));
+    setCustomStyles(customStyles.filter((st) => st !== stToRemove));
   };
 
-  // ------------------ SIZE MANAGEMENT ------------------
   const handleAddSize = () => {
-    const sz = newSizeInput.trim();
-    if (!sz) return;
-    if (!customSizes.includes(sz)) {
-      setCustomSizes([...customSizes, sz]);
+    if (!newSizeInput.trim()) return;
+    const clean = newSizeInput.trim();
+    if (!customSizes.includes(clean)) {
+      setCustomSizes([...customSizes, clean]);
     }
     setNewSizeInput('');
     setIsAddSizeOpen(false);
@@ -403,13 +456,19 @@ export default function AdminProductsPage() {
             (v) => v.quality === q && v.sleeve === st && v.size === sz
           );
 
+          const retail = existing ? existing.price : genDefaultPrice;
+          const wholesale = existing?.wholesalePrice
+            ? existing.wholesalePrice
+            : genDefaultWholesalePrice || Math.round(retail * 0.82);
+
           generated.push({
             id: existing ? existing.id : `var-gen-${Date.now()}-${count++}`,
             productId: editingProductId || '',
             quality: q,
             sleeve: st,
             size: sz,
-            price: existing ? existing.price : genDefaultPrice,
+            price: retail,
+            wholesalePrice: wholesale,
             salePrice: existing ? existing.salePrice : genDefaultComparePrice,
             stock: existing ? existing.stock : genDefaultStock,
             sku: existing?.sku || skuCode,
@@ -421,6 +480,26 @@ export default function AdminProductsPage() {
 
     setVariantsList(generated);
     showNotice(`Generated matrix with ${generated.length} variant combinations!`);
+  };
+
+  // ------------------ BULK DISCOUNT APPLICATOR ------------------
+  const handleBulkApplyDiscount = (discountPercent: number) => {
+    if (variantsList.length === 0) {
+      showNotice('No variants to update. Generate variants first.', 'error');
+      return;
+    }
+
+    const updated = variantsList.map((v) => {
+      const retail = Number(v.price) || 0;
+      const wholesale = Math.round(retail * (1 - discountPercent / 100));
+      return {
+        ...v,
+        wholesalePrice: wholesale,
+      };
+    });
+
+    setVariantsList(updated);
+    showNotice(`Applied ${discountPercent}% wholesale discount across all ${updated.length} variants!`);
   };
 
   // ------------------ ADD SINGLE CUSTOM VARIANT ------------------
@@ -439,13 +518,17 @@ export default function AdminProductsPage() {
     const stShort = st.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 3);
     const autoSku = singleVarSku.trim() || `${prodPrefix}-${qShort}-${stShort}-${sz}`;
 
+    const retail = Number(singleVarPrice) || 480;
+    const wholesale = singleVarWholesalePrice ? Number(singleVarWholesalePrice) : Math.round(retail * 0.82);
+
     const newVariant: ProductVariant = {
       id: `var-custom-${Date.now()}`,
       productId: editingProductId || '',
       quality: q,
       sleeve: st,
       size: sz,
-      price: Number(singleVarPrice) || 480,
+      price: retail,
+      wholesalePrice: wholesale,
       salePrice: singleVarSalePrice ? Number(singleVarSalePrice) : undefined,
       stock: Number(singleVarStock) || 50,
       sku: autoSku,
@@ -499,7 +582,7 @@ export default function AdminProductsPage() {
 
       setMediaList((prev) => [...prev, ...newItems]);
       setUploadProgress('uploaded');
-      showNotice(`Successfully uploaded ${files.length} photo(s) to Supabase Storage.`);
+      showNotice(`Successfully uploaded ${files.length} photo(s) to storage.`);
       setUploadMediaTitle('');
       setTimeout(() => setUploadProgress('idle'), 3000);
     } catch (err) {
@@ -518,37 +601,37 @@ export default function AdminProductsPage() {
       productId: editingProductId || '',
       type: 'video',
       url: videoUrlInput.trim(),
-      alt: `${prodName || 'Product'} Video Demo`,
-      title: uploadMediaTitle || 'Product Video',
+      alt: `${prodName || 'Product'} video demo`,
+      title: 'Video Showcase',
       displayOrder: mediaList.length + 1,
       variantQuality: uploadQualityTarget === 'All' ? undefined : uploadQualityTarget,
       variantSleeve: uploadSleeveTarget === 'All' ? undefined : uploadSleeveTarget,
     };
-    setMediaList((prev) => [...prev, newVideo]);
+    setMediaList([...mediaList, newVideo]);
     setVideoUrlInput('');
     setIsVideoModalOpen(false);
-    showNotice('Video reference added successfully.');
+    showNotice('Attached video demonstration.');
   };
 
   const handleRemoveMedia = (id: string) => {
-    setMediaList((prev) => prev.filter((m) => m.id !== id));
+    setMediaList(mediaList.filter((m) => m.id !== id));
   };
 
   return (
-    <div className="space-y-6 max-w-7xl text-[#F1F0EC]">
-      {/* Toast Notification */}
+    <div className="space-y-6 select-none">
+      {/* Toast Notification Banner */}
       {notification && (
         <div
-          className={`fixed bottom-6 right-6 z-50 p-4 rounded-xl shadow-elevation flex items-center gap-2.5 text-xs font-semibold animate-in fade-in border ${
+          className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-elevation text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-bottom-2 ${
             notification.type === 'success'
-              ? 'bg-[#17191D] text-[#F1F0EC] border-[#3FB982]/40'
-              : 'bg-[#17191D] text-[#D96B6B] border-[#D96B6B]/40'
+              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+              : 'bg-rose-950 text-rose-300 border border-rose-800'
           }`}
         >
           {notification.type === 'success' ? (
-            <CheckCircle className="w-4 h-4 text-[#3FB982]" />
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-[#D96B6B]" />
+            <AlertCircle className="w-4 h-4 text-rose-400" />
           )}
           <span>{notification.message}</span>
         </div>
@@ -587,24 +670,24 @@ export default function AdminProductsPage() {
       {viewMode === 'list' && (
         <div className="space-y-6">
           {/* Header Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#17191D] p-5 sm:p-6 rounded-2xl border border-[#30343A] shadow-card">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#191917] p-5 sm:p-6 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-[#F1F0EC]">
+                <h1 className="text-xl sm:text-2xl font-bold text-charcoal-900 dark:text-[#F4F1E9]">
                   Garments &amp; Dynamic Catalog
                 </h1>
-                <span className="text-xs font-bold bg-[#1D2025] text-[#C9A96A] border border-[#30343A] px-2.5 py-0.5 rounded-lg">
+                <span className="text-xs font-bold bg-light-elevated dark:bg-[#22211E] text-[#B89555] dark:text-[#C9A96A] border border-light-border dark:border-[#34322D] px-2.5 py-0.5 rounded-lg">
                   {products.length} Products
                 </span>
               </div>
-              <p className="text-xs text-[#85888E] mt-1">
-                Manage high quality and standard quality listings, dynamic sleeve tiers, sizes, real-time pricing, stock, and gallery photos.
+              <p className="text-xs text-charcoal-500 dark:text-[#B8B3A8] mt-1">
+                Configure products with unified Retail and Wholesale pricing per variant, stock management, and photography.
               </p>
             </div>
             <button
               type="button"
               onClick={handleStartCreate}
-              className="inline-flex items-center justify-center gap-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-semibold min-h-[48px] px-5 sm:px-6 rounded-xl shadow-xs transition-all active:scale-[0.99] w-full sm:w-auto flex-shrink-0"
+              className="inline-flex items-center justify-center gap-2 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 text-xs font-bold min-h-[44px] px-5 sm:px-6 rounded-xl shadow-xs transition-all active:scale-[0.99] w-full sm:w-auto flex-shrink-0"
             >
               <Plus className="w-[18px] h-[18px] stroke-[2.2]" />
               <span>Add Garment Listing</span>
@@ -612,23 +695,23 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Filter / Search Strip */}
-          <div className="bg-[#17191D] p-4 rounded-2xl border border-[#30343A] shadow-card flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="bg-white dark:bg-[#191917] p-4 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="w-full sm:w-80">
               <input
                 type="text"
                 placeholder="Search products by name, tagline, slug..."
                 value={catalogSearch}
                 onChange={(e) => setCatalogSearch(e.target.value)}
-                className="w-full px-3.5 py-2 text-xs bg-[#1D2025] border border-[#343840] text-[#F1F0EC] placeholder-[#85888E] rounded-xl focus:border-[#C9A96A] focus:outline-none"
+                className="w-full px-3.5 py-2 text-xs bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] rounded-xl focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
               />
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-xs text-[#85888E]">Category:</span>
+              <span className="text-xs text-charcoal-500 dark:text-[#B8B3A8]">Category:</span>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 text-xs bg-[#1D2025] border border-[#343840] text-[#F1F0EC] rounded-xl focus:border-[#C9A96A] focus:outline-none"
+                className="px-3 py-2 text-xs bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
               >
                 <option value="all">All Categories ({products.length})</option>
                 {categories.map((c) => (
@@ -642,85 +725,94 @@ export default function AdminProductsPage() {
 
           {/* Products List */}
           {filteredProducts.length === 0 ? (
-            <div className="bg-[#17191D] p-12 text-center rounded-2xl border border-[#30343A] space-y-3">
-              <Package className="w-12 h-12 text-[#85888E] mx-auto" />
-              <h3 className="font-bold text-base text-[#F1F0EC]">No Products Found</h3>
-              <p className="text-xs text-[#85888E]">
+            <div className="bg-white dark:bg-[#191917] p-12 text-center rounded-2xl border border-light-border dark:border-[#34322D] space-y-3">
+              <Package className="w-12 h-12 text-charcoal-400 dark:text-[#8E8A80] mx-auto" />
+              <h3 className="font-bold text-base text-charcoal-900 dark:text-[#F4F1E9]">No Products Found</h3>
+              <p className="text-xs text-charcoal-500 dark:text-[#B8B3A8]">
                 {catalogSearch || categoryFilter !== 'all'
                   ? 'No garment matched your current search or category filter.'
-                  : 'Click "+ Add Garment Listing" above to create your first catalog entry.'}
+                  : 'Start by creating your first garment listing with the button above.'}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {filteredProducts.map((prod) => {
-                const category = categories.find((c) => c.id === prod.categoryId);
-                const subcategory = subcategories.find((s) => s.id === prod.subcategoryId);
-                const primaryImage = prod.media?.[0]?.url || '/images/products/sleevless high.jpeg';
+                const totalStock = prod.variants.reduce((acc, v) => acc + (v.stock || 0), 0);
+                const prices = prod.variants.map((v) => v.price).filter((p) => p > 0);
+                const wholesalePrices = prod.variants.map((v) => v.wholesalePrice || Math.round(v.price * 0.82));
+                const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+                const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+                const minWholesale = wholesalePrices.length > 0 ? Math.min(...wholesalePrices) : Math.round(minPrice * 0.82);
+                const firstImage = prod.media?.find((m) => m.type === 'photo')?.url || '/images/hero/product 1.png';
 
-                const prices = prod.variants?.map((v) => v.price) || [480];
-                const minPrice = Math.min(...prices);
-                const maxPrice = Math.max(...prices);
-                const totalStock = prod.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
-                const uniqueQualities = Array.from(new Set(prod.variants?.map((v) => v.quality).filter(Boolean)));
-                const uniqueSleeves = Array.from(new Set(prod.variants?.map((v) => v.sleeve).filter(Boolean)));
+                const uniqueQualities = Array.from(new Set(prod.variants.map((v) => v.quality).filter(Boolean)));
+                const uniqueSleeves = Array.from(new Set(prod.variants.map((v) => v.sleeve).filter(Boolean)));
+                const catObj = categories.find((c) => c.id === prod.categoryId);
 
                 return (
                   <div
                     key={prod.id}
-                    className="bg-[#17191D] hover:bg-[#1D2025] p-4 sm:p-5 rounded-2xl border border-[#30343A] shadow-card hover:border-[#3E434B] transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                    className="bg-white dark:bg-[#191917] p-4 sm:p-5 rounded-2xl border border-light-border dark:border-[#34322D] hover:border-[#B89555]/40 dark:hover:border-[#C9A96A]/40 transition-all duration-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm"
                   >
-                    {/* Left Product Info */}
-                    <div className="flex items-center gap-4 w-full md:w-auto">
-                      <div className="relative w-16 h-20 sm:w-20 sm:h-24 bg-[#202329] rounded-xl overflow-hidden border border-[#30343A] flex-shrink-0 p-1">
+                    {/* Left: Thumbnail & Info */}
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-16 h-20 sm:w-20 sm:h-24 bg-light-elevated dark:bg-[#22211E] rounded-xl overflow-hidden flex-shrink-0 border border-light-border dark:border-[#34322D]">
                         <Image
-                          src={primaryImage}
+                          src={firstImage}
                           alt={prod.name}
                           fill
+                          className="object-cover object-top"
                           sizes="80px"
-                          className="object-contain p-1"
                         />
                       </div>
 
-                      <div className="space-y-1 min-w-0 flex-1">
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-[#23262B] text-[#B4B5BA] border border-[#30343A]">
-                            {category?.name || 'Category'} {subcategory ? `• ${subcategory.name}` : ''}
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-light-elevated dark:bg-[#22211E] text-charcoal-700 dark:text-[#B8B3A8] border border-light-border dark:border-[#34322D]">
+                            {catObj?.name || 'Garment'}
                           </span>
                           {prod.isPublished ? (
-                            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-[#3FB982]/15 text-[#3FB982] border border-[#3FB982]/30">
-                              Live on Store
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                              Published
                             </span>
                           ) : (
-                            <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-md bg-[#23262B] text-[#85888E] border border-[#30343A]">
-                              Draft / Hidden
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-charcoal-200 dark:bg-[#2A2925] text-charcoal-700 dark:text-[#B8B3A8]">
+                              Draft
+                            </span>
+                          )}
+                          {prod.isWholesaleEnabled !== false && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30">
+                              Wholesale Enabled (Min {prod.wholesaleMinQty || 12} pcs)
                             </span>
                           )}
                         </div>
 
-                        <h3 className="font-bold text-base sm:text-lg text-[#F1F0EC] leading-tight">
+                        <h3 className="font-bold text-base sm:text-lg text-charcoal-900 dark:text-[#F4F1E9] leading-tight">
                           {prod.name}
                         </h3>
-                        <p className="text-xs text-[#85888E] line-clamp-1">{prod.subtitle}</p>
+                        <p className="text-xs text-charcoal-500 dark:text-[#B8B3A8] line-clamp-1">{prod.subtitle}</p>
 
-                        <div className="flex items-center gap-3 text-xs text-[#85888E] pt-1 flex-wrap font-medium">
+                        <div className="flex items-center gap-3 text-xs text-charcoal-500 dark:text-[#B8B3A8] pt-1 flex-wrap font-medium">
                           <span>
-                            <strong className="text-[#F1F0EC]">Price:</strong>{' '}
-                            <span className="text-[#C9A96A] font-bold">
+                            <strong className="text-charcoal-900 dark:text-[#F4F1E9]">Retail:</strong>{' '}
+                            <span className="text-[#B89555] dark:text-[#C9A96A] font-bold">
                               {minPrice === maxPrice ? `Rs. ${minPrice}` : `Rs. ${minPrice} – Rs. ${maxPrice}`}
                             </span>
                           </span>
                           <span>•</span>
                           <span>
-                            <strong className="text-[#F1F0EC]">Stock:</strong> {totalStock} pcs
+                            <strong className="text-charcoal-900 dark:text-[#F4F1E9]">Wholesale from:</strong>{' '}
+                            <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                              Rs. {minWholesale}
+                            </span>
                           </span>
                           <span>•</span>
                           <span>
-                            <strong className="text-[#F1F0EC]">Quality:</strong> {uniqueQualities.join(', ') || 'High Quality'}
+                            <strong className="text-charcoal-900 dark:text-[#F4F1E9]">Stock:</strong> {totalStock} pcs
                           </span>
                           <span>•</span>
                           <span>
-                            <strong className="text-[#F1F0EC]">Styles:</strong> {uniqueSleeves.join(', ') || 'Standard'}
+                            <strong className="text-charcoal-900 dark:text-[#F4F1E9]">Variants:</strong> {prod.variants.length}
                           </span>
                         </div>
                       </div>
@@ -731,7 +823,7 @@ export default function AdminProductsPage() {
                       <a
                         href={`/product/${prod.slug}`}
                         target="_blank"
-                        className="p-2 bg-[#202329] hover:bg-[#272A2F] text-[#85888E] hover:text-[#C9A96A] rounded-xl border border-[#30343A] transition-colors"
+                        className="p-2 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] text-charcoal-600 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] rounded-xl border border-light-border dark:border-[#34322D] transition-colors"
                         title="View live product"
                       >
                         <Eye className="w-4 h-4" />
@@ -740,16 +832,16 @@ export default function AdminProductsPage() {
                       <button
                         type="button"
                         onClick={() => handleStartEdit(prod)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#23262B] hover:bg-[#2A2E35] text-[#F1F0EC] border border-[#30343A] hover:border-[#C9A96A] text-xs font-semibold rounded-xl shadow-xs transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] text-charcoal-900 dark:text-[#F4F1E9] border border-light-border dark:border-[#34322D] hover:border-[#B89555] dark:hover:border-[#C9A96A] text-xs font-semibold rounded-xl shadow-xs transition-colors"
                       >
-                        <Edit2 className="w-3.5 h-3.5 text-[#C9A96A]" />
-                        <span>Edit Listing</span>
+                        <Edit2 className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A]" />
+                        <span>Edit Product &amp; Pricing</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setDeleteModalState({ isOpen: true, productId: prod.id, productName: prod.name })}
-                        className="p-2 text-[#D96B6B] hover:bg-[#D96B6B]/10 rounded-xl border border-[#D96B6B]/30 transition-colors"
+                        className="p-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl border border-rose-300 dark:border-rose-800 transition-colors"
                         title="Delete garment listing"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -769,22 +861,22 @@ export default function AdminProductsPage() {
       {viewMode === 'editor' && (
         <form onSubmit={handleSaveProduct} className="space-y-6">
           {/* Top Bar Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#17191D] p-5 rounded-2xl border border-[#30343A] shadow-card">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#191917] p-5 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className="p-2 text-[#85888E] hover:text-[#F1F0EC] hover:bg-[#202329] rounded-xl transition-colors"
+                className="p-2 text-charcoal-500 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl transition-colors"
                 title="Back to all products"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-[#F1F0EC]">
+                <h1 className="text-lg sm:text-xl font-bold text-charcoal-900 dark:text-[#F4F1E9]">
                   {editingProductId ? `Edit Garment: ${prodName || 'Product'}` : 'Create New Garment Listing'}
                 </h1>
-                <p className="text-xs text-[#85888E]">
-                  Configure single-quality listing details, sleeve styles, sizes, prices, stock, and variant photography.
+                <p className="text-xs text-charcoal-500 dark:text-[#B8B3A8]">
+                  Set basic details, tax, and configure unified Retail + Wholesale pricing for each variant combination.
                 </p>
               </div>
             </div>
@@ -793,29 +885,29 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className="px-4 py-2 text-xs font-semibold text-[#B4B5BA] bg-[#202329] border border-[#30343A] hover:bg-[#272A2F] hover:text-[#F1F0EC] rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-charcoal-700 dark:text-[#B8B3A8] bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] hover:bg-light-hover dark:hover:bg-[#2A2925] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] rounded-xl transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 px-5 py-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99]"
+                className="inline-flex items-center gap-2 px-5 py-2 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99]"
               >
                 <Save className="w-4 h-4 stroke-[2.2]" />
-                <span>Save Garment</span>
+                <span>Save Product</span>
               </button>
             </div>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 border-b border-[#30343A] pb-2 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-2 border-b border-light-border dark:border-[#34322D] pb-2 overflow-x-auto scrollbar-none">
             <button
               type="button"
               onClick={() => setEditorTab('basic')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 ${
                 editorTab === 'basic'
-                  ? 'bg-[#1D2025] text-[#F1F0EC] border-b-2 border-[#C9A96A]'
-                  : 'bg-[#17191D] text-[#85888E] hover:text-[#F1F0EC] border border-[#30343A]'
+                  ? 'bg-light-elevated dark:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border-b-2 border-[#B89555] dark:border-[#C9A96A]'
+                  : 'bg-white dark:bg-[#191917] text-charcoal-500 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] border border-light-border dark:border-[#34322D]'
               }`}
             >
               1. Basic Info &amp; Taxonomy
@@ -826,11 +918,12 @@ export default function AdminProductsPage() {
               onClick={() => setEditorTab('variants')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 ${
                 editorTab === 'variants'
-                  ? 'bg-[#1D2025] text-[#F1F0EC] border-b-2 border-[#C9A96A]'
-                  : 'bg-[#17191D] text-[#85888E] hover:text-[#F1F0EC] border border-[#30343A]'
+                  ? 'bg-light-elevated dark:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border-b-2 border-[#B89555] dark:border-[#C9A96A]'
+                  : 'bg-white dark:bg-[#191917] text-charcoal-500 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] border border-light-border dark:border-[#34322D]'
               }`}
             >
-              <span>2. Styles &amp; Variants ({variantsList.length})</span>
+              <Zap className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A]" />
+              <span>2. Retail &amp; Wholesale Pricing Matrix ({variantsList.length})</span>
             </button>
 
             <button
@@ -838,8 +931,8 @@ export default function AdminProductsPage() {
               onClick={() => setEditorTab('media')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 ${
                 editorTab === 'media'
-                  ? 'bg-[#1D2025] text-[#F1F0EC] border-b-2 border-[#C9A96A]'
-                  : 'bg-[#17191D] text-[#85888E] hover:text-[#F1F0EC] border border-[#30343A]'
+                  ? 'bg-light-elevated dark:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border-b-2 border-[#B89555] dark:border-[#C9A96A]'
+                  : 'bg-white dark:bg-[#191917] text-charcoal-500 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] border border-light-border dark:border-[#34322D]'
               }`}
             >
               <span>3. Photos &amp; Video ({mediaList.length})</span>
@@ -850,34 +943,34 @@ export default function AdminProductsPage() {
           {/* TAB 1: BASIC INFORMATION */}
           {/* ========================================================================= */}
           {editorTab === 'basic' && (
-            <div className="bg-[#17191D] p-5 sm:p-6 rounded-2xl border border-[#30343A] shadow-card space-y-5 animate-in fade-in">
-              <div className="flex items-center justify-between border-b border-[#30343A] pb-3">
-                <h2 className="text-xs font-bold text-[#C9A96A] uppercase tracking-wider">
+            <div className="bg-white dark:bg-[#191917] p-5 sm:p-6 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card space-y-5 animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-light-border dark:border-[#34322D] pb-3">
+                <h2 className="text-xs font-bold text-[#B89555] dark:text-[#C9A96A] uppercase tracking-wider">
                   Product Identification &amp; Craftsmanship
                 </h2>
-                <span className="text-[11px] text-[#85888E]">
-                  Rule: Each garment listing represents ONE quality tier.
+                <span className="text-[11px] text-charcoal-500 dark:text-[#B8B3A8]">
+                  Single-source normalized catalog listing
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
-                    Garment Name <span className="text-[#D96B6B]">*</span>
+                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                    Garment Name <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Men's Pure Cotton Vest — High Quality"
                     value={prodName}
                     onChange={(e) => setProdName(e.target.value)}
-                    className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
+                    className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
-                    Quality Level <span className="text-[#D96B6B]">*</span>
+                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                    Quality Level <span className="text-rose-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -889,14 +982,14 @@ export default function AdminProductsPage() {
                         setCustomQualities([e.target.value.trim()]);
                       }
                     }}
-                    className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-bold text-[#C9A96A] focus:border-[#C9A96A] focus:outline-none"
+                    className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-bold text-[#B89555] dark:text-[#C9A96A] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
+                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
                     URL Slug
                   </label>
                   <input
@@ -904,21 +997,21 @@ export default function AdminProductsPage() {
                     placeholder="e.g. mens-cotton-vest-high-quality"
                     value={prodSlug}
                     onChange={(e) => setProdSlug(e.target.value)}
-                    className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-mono text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
+                    className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-mono text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
-                    Category <span className="text-[#D96B6B]">*</span>
+                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                    Category <span className="text-rose-600">*</span>
                   </label>
                   <select
                     value={prodCategoryId}
                     onChange={(e) => setProdCategoryId(e.target.value)}
-                    className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
+                    className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                   >
                     {categories.map((c) => (
-                      <option key={c.id} value={c.id} className="bg-[#17191D] text-[#F1F0EC]">
+                      <option key={c.id} value={c.id} className="bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9]">
                         {c.name}
                       </option>
                     ))}
@@ -926,17 +1019,17 @@ export default function AdminProductsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
+                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
                     Subcategory
                   </label>
                   <select
                     value={prodSubcategoryId}
                     onChange={(e) => setProdSubcategoryId(e.target.value)}
-                    className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
+                    className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                   >
-                    <option value="" className="bg-[#17191D] text-[#F1F0EC]">-- General / None --</option>
+                    <option value="" className="bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9]">-- General / None --</option>
                     {activeSubcatsForCategory.map((s) => (
-                      <option key={s.id} value={s.id} className="bg-[#17191D] text-[#F1F0EC]">
+                      <option key={s.id} value={s.id} className="bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9]">
                         {s.name}
                       </option>
                     ))}
@@ -944,8 +1037,51 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
+              {/* Wholesale Product-Level Settings Block */}
+              <div className="p-4 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+                    <h3 className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider">
+                      Wholesale &amp; Bulk Commerce Availability
+                    </h3>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={prodIsWholesaleEnabled}
+                      onChange={(e) => setProdIsWholesaleEnabled(e.target.checked)}
+                      className="w-4 h-4 accent-[#B89555] rounded"
+                    />
+                    <span className="text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9]">
+                      Available for Wholesale
+                    </span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                      Minimum Wholesale Quantity (Pieces)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={prodWholesaleMinQty}
+                      onChange={(e) => setProdWholesaleMinQty(Number(e.target.value))}
+                      className="w-full p-2 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                    />
+                    <span className="text-[10px] text-charcoal-500 dark:text-[#B8B3A8]">Default standard: 12 pcs (1 Dozen)</span>
+                  </div>
+
+                  <div className="flex items-center p-2.5 bg-champagne-50 dark:bg-[#191917] rounded-xl border border-[#B89555]/20 text-[11px] text-charcoal-700 dark:text-[#B8B3A8]">
+                    When checked, this garment will be featured in the public Wholesale Portal and unlock bulk tier rates when cart reaches {prodWholesaleMinQty} pieces.
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
+                <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
                   Tagline / Subtitle
                 </label>
                 <input
@@ -953,12 +1089,12 @@ export default function AdminProductsPage() {
                   placeholder="e.g. 100% Fine Combed Cotton • Anti-Sag Neck Seams • All-Day Comfort"
                   value={prodSubtitle}
                   onChange={(e) => setProdSubtitle(e.target.value)}
-                  className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
+                  className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
+                <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
                   Craftsmanship Description
                 </label>
                 <textarea
@@ -966,77 +1102,62 @@ export default function AdminProductsPage() {
                   placeholder="Detailed description of yarn quality, weave, softness, and durability..."
                   value={prodDesc}
                   onChange={(e) => setProdDesc(e.target.value)}
-                  className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs leading-relaxed text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
+                  className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs leading-relaxed text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
+                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
                     Key Features (One bullet per line)
                   </label>
                   <textarea
                     rows={3}
                     value={prodFeaturesText}
                     onChange={(e) => setProdFeaturesText(e.target.value)}
-                    className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs leading-relaxed text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
+                    className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
-                    Care Instructions (One per line)
+                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                    Care Instructions (One bullet per line)
                   </label>
                   <textarea
                     rows={3}
                     value={prodCareText}
                     onChange={(e) => setProdCareText(e.target.value)}
-                    className="w-full p-2.5 bg-[#1D2025] border border-[#343840] rounded-xl text-xs leading-relaxed text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
+                    className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                   />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-[#30343A] flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="prodPublishCheck"
-                    checked={prodIsPublished}
-                    onChange={(e) => setProdIsPublished(e.target.checked)}
-                    className="w-4 h-4 rounded border-[#343840] bg-[#1D2025] text-[#C9A96A] focus:ring-[#C9A96A]"
-                  />
-                  <label htmlFor="prodPublishCheck" className="text-xs font-semibold text-[#F1F0EC] cursor-pointer">
-                    Publish this garment live on the store
-                  </label>
                 </div>
               </div>
             </div>
           )}
 
           {/* ========================================================================= */}
-          {/* TAB 2: ADVANCED DYNAMIC VARIANT SYSTEM */}
+          {/* TAB 2: STYLES, VARIANTS & RETAIL + WHOLESALE PRICING MATRIX */}
           {/* ========================================================================= */}
           {editorTab === 'variants' && (
             <div className="space-y-6 animate-in fade-in">
-              {/* STEP 1: Styles / Sleeves */}
-              <div className="bg-[#17191D] p-5 rounded-2xl border border-[#30343A] shadow-card space-y-3">
+              {/* STEP 1: Sleeve Styles */}
+              <div className="bg-white dark:bg-[#191917] p-5 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h3 className="font-bold text-xs text-[#F1F0EC] uppercase tracking-wider flex items-center gap-1.5">
-                      <span>Step 1: Style / Sleeve Options</span>
-                      <span className="text-[#85888E] font-normal">({customStyles.length})</span>
+                    <h3 className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Step 1: Styles &amp; Sleeve Cuts</span>
+                      <span className="text-charcoal-500 dark:text-[#B8B3A8] font-normal">({customStyles.length})</span>
                     </h3>
-                    <p className="text-[11px] text-[#85888E]">
-                      Define styles for this garment (e.g. Sleeveless, Full Sleeve, Half Sleeve, Boxer Briefs).
+                    <p className="text-[11px] text-charcoal-500 dark:text-[#B8B3A8]">
+                      Define styles (e.g. Sleeveless, Half Sleeve, Full Sleeve).
                     </p>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setIsAddStyleOpen(true)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#23262B] hover:bg-[#2A2E35] border border-[#30343A] hover:border-[#C9A96A] text-[#F1F0EC] rounded-xl text-xs font-semibold transition-colors self-start sm:self-auto"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] hover:border-[#B89555] dark:hover:border-[#C9A96A] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl text-xs font-semibold transition-colors self-start sm:self-auto"
                   >
-                    <Plus className="w-3.5 h-3.5 text-[#C9A96A]" />
+                    <Plus className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A]" />
                     <span>Add Style</span>
                   </button>
                 </div>
@@ -1045,13 +1166,13 @@ export default function AdminProductsPage() {
                   {customStyles.map((st) => (
                     <div
                       key={st}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#202329] border border-[#30343A] rounded-xl text-xs font-semibold text-[#F1F0EC]"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9]"
                     >
                       <span>{st}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveStyle(st)}
-                        className="text-[#85888E] hover:text-[#D96B6B] transition-colors"
+                        className="text-charcoal-400 dark:text-[#8E8A80] hover:text-rose-600 transition-colors"
                         title="Delete Style Option"
                       >
                         <X className="w-3.5 h-3.5" />
@@ -1061,26 +1182,26 @@ export default function AdminProductsPage() {
                 </div>
 
                 {isAddStyleOpen && (
-                  <div className="p-3 bg-[#1D2025] rounded-xl border border-[#343840] flex items-center gap-2 max-w-md animate-in fade-in">
+                  <div className="p-3 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] flex items-center gap-2 max-w-md animate-in fade-in">
                     <input
                       type="text"
                       placeholder="e.g. Half Sleeve, Regular Fit..."
                       value={newStyleInput}
                       onChange={(e) => setNewStyleInput(e.target.value)}
-                      className="flex-1 p-2 bg-[#202329] border border-[#343840] rounded-lg text-xs text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
+                      className="flex-1 p-2 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-lg text-xs text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={handleAddStyle}
-                      className="px-3 py-2 bg-[#C9A96A] text-[#101114] text-xs font-bold rounded-lg"
+                      className="px-3 py-2 bg-champagne-500 text-charcoal-950 text-xs font-bold rounded-lg"
                     >
                       Add
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsAddStyleOpen(false)}
-                      className="p-1.5 text-[#85888E] hover:text-[#F1F0EC]"
+                      className="p-1.5 text-charcoal-400 dark:text-[#8E8A80] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -1089,24 +1210,24 @@ export default function AdminProductsPage() {
               </div>
 
               {/* STEP 2: Sizes */}
-              <div className="bg-[#17191D] p-5 rounded-2xl border border-[#30343A] shadow-card space-y-3">
+              <div className="bg-white dark:bg-[#191917] p-5 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h3 className="font-bold text-xs text-[#F1F0EC] uppercase tracking-wider flex items-center gap-1.5">
+                    <h3 className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider flex items-center gap-1.5">
                       <span>Step 2: Size Options</span>
-                      <span className="text-[#85888E] font-normal">({customSizes.length})</span>
+                      <span className="text-charcoal-500 dark:text-[#B8B3A8] font-normal">({customSizes.length})</span>
                     </h3>
-                    <p className="text-[11px] text-[#85888E]">
-                      Select sizes for this garment (e.g. S, M, L, XL, XXL, Free Size).
+                    <p className="text-[11px] text-charcoal-500 dark:text-[#B8B3A8]">
+                      Select sizes for this garment (e.g. S, M, L, XL, XXL).
                     </p>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setIsAddSizeOpen(true)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#23262B] hover:bg-[#2A2E35] border border-[#30343A] hover:border-[#C9A96A] text-[#F1F0EC] rounded-xl text-xs font-semibold transition-colors self-start sm:self-auto"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] hover:border-[#B89555] dark:hover:border-[#C9A96A] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl text-xs font-semibold transition-colors self-start sm:self-auto"
                   >
-                    <Plus className="w-3.5 h-3.5 text-[#C9A96A]" />
+                    <Plus className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A]" />
                     <span>Add Size</span>
                   </button>
                 </div>
@@ -1115,13 +1236,13 @@ export default function AdminProductsPage() {
                   {customSizes.map((sz) => (
                     <div
                       key={sz}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#202329] border border-[#30343A] rounded-xl text-xs font-semibold text-[#F1F0EC]"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9]"
                     >
                       <span>{sz}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveSize(sz)}
-                        className="text-[#85888E] hover:text-[#D96B6B] transition-colors"
+                        className="text-charcoal-400 dark:text-[#8E8A80] hover:text-rose-600 transition-colors"
                         title="Delete Size Option"
                       >
                         <X className="w-3.5 h-3.5" />
@@ -1131,26 +1252,26 @@ export default function AdminProductsPage() {
                 </div>
 
                 {isAddSizeOpen && (
-                  <div className="p-3 bg-[#1D2025] rounded-xl border border-[#343840] flex items-center gap-2 max-w-md animate-in fade-in">
+                  <div className="p-3 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] flex items-center gap-2 max-w-md animate-in fade-in">
                     <input
                       type="text"
                       placeholder="e.g. 28, 30, Free Size..."
                       value={newSizeInput}
                       onChange={(e) => setNewSizeInput(e.target.value)}
-                      className="flex-1 p-2 bg-[#202329] border border-[#343840] rounded-lg text-xs text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
+                      className="flex-1 p-2 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-lg text-xs text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={handleAddSize}
-                      className="px-3 py-2 bg-[#C9A96A] text-[#101114] text-xs font-bold rounded-lg"
+                      className="px-3 py-2 bg-champagne-500 text-charcoal-950 text-xs font-bold rounded-lg"
                     >
                       Add
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsAddSizeOpen(false)}
-                      className="p-1.5 text-[#85888E] hover:text-[#F1F0EC]"
+                      className="p-1.5 text-charcoal-400 dark:text-[#8E8A80] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -1159,14 +1280,14 @@ export default function AdminProductsPage() {
               </div>
 
               {/* STEP 3: Matrix Generator Settings & Action */}
-              <div className="bg-[#17191D] p-5 rounded-2xl border border-[#30343A] shadow-card space-y-4">
+              <div className="bg-white dark:bg-[#191917] p-5 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-xs text-[#F1F0EC] uppercase tracking-wider flex items-center gap-1.5">
-                      <Zap className="w-4 h-4 text-[#C9A96A]" />
+                    <h3 className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
                       <span>Step 3: Generate Matrix Combinations</span>
                     </h3>
-                    <p className="text-[11px] text-[#85888E]">
+                    <p className="text-[11px] text-charcoal-500 dark:text-[#B8B3A8]">
                       Auto-generate combination rows for Styles ({customStyles.length}) &times; Sizes ({customSizes.length}).
                     </p>
                   </div>
@@ -1175,16 +1296,16 @@ export default function AdminProductsPage() {
                     <button
                       type="button"
                       onClick={() => setIsAddSingleVarOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#23262B] hover:bg-[#2A2E35] border border-[#30343A] text-[#F1F0EC] text-xs font-semibold rounded-xl transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] text-xs font-semibold rounded-xl transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5 text-[#C9A96A]" />
+                      <Plus className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A]" />
                       <span>Custom Combination</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={handleGenerateCombinations}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99]"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.99]"
                     >
                       <Zap className="w-3.5 h-3.5" />
                       <span>Generate Matrix ({customStyles.length * customSizes.length} items)</span>
@@ -1193,21 +1314,37 @@ export default function AdminProductsPage() {
                 </div>
 
                 {/* Generator Default Preset Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-1">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#D8D8D4] mb-1">
-                      Default Unit Price (Rs.)
+                    <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                      Default Retail Price (Rs.)
                     </label>
                     <input
                       type="number"
                       value={genDefaultPrice}
-                      onChange={(e) => setGenDefaultPrice(Number(e.target.value))}
-                      className="w-full p-2 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-bold text-[#C9A96A] focus:border-[#C9A96A] focus:outline-none"
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setGenDefaultPrice(val);
+                        setGenDefaultWholesalePrice(Math.round(val * 0.82));
+                      }}
+                      className="w-full p-2 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-bold text-[#B89555] dark:text-[#C9A96A] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#D8D8D4] mb-1">
+                    <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                      Default Wholesale Price (Rs.)
+                    </label>
+                    <input
+                      type="number"
+                      value={genDefaultWholesalePrice}
+                      onChange={(e) => setGenDefaultWholesalePrice(Number(e.target.value))}
+                      className="w-full p-2 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
                       Default Compare Price (Rs.) (Optional)
                     </label>
                     <input
@@ -1219,49 +1356,49 @@ export default function AdminProductsPage() {
                           e.target.value ? Number(e.target.value) : undefined
                         )
                       }
-                      className="w-full p-2 bg-[#1D2025] border border-[#343840] rounded-xl text-xs text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
+                      className="w-full p-2 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#D8D8D4] mb-1">
+                    <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
                       Default Stock Units (Pcs)
                     </label>
                     <input
                       type="number"
                       value={genDefaultStock}
                       onChange={(e) => setGenDefaultStock(Number(e.target.value))}
-                      className="w-full p-2 bg-[#1D2025] border border-[#343840] rounded-xl text-xs font-bold text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
+                      className="w-full p-2 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Add Individual Single Variant Modal */}
                 {isAddSingleVarOpen && (
-                  <div className="p-4 bg-[#1D2025] rounded-xl border border-[#30343A] space-y-3 animate-in fade-in">
-                    <h4 className="font-bold text-xs text-[#C9A96A] uppercase">
+                  <div className="p-4 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] space-y-3 animate-in fade-in">
+                    <h4 className="font-bold text-xs text-[#B89555] dark:text-[#C9A96A] uppercase">
                       Add Specific Variant Combination
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-[#D8D8D4] mb-1">Quality</label>
+                        <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">Quality</label>
                         <input
                           type="text"
                           value={singleVarQuality || prodQualityGrade}
                           onChange={(e) => setSingleVarQuality(e.target.value)}
-                          className="w-full p-2 bg-[#202329] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC]"
+                          className="w-full p-2 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9]"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-[#D8D8D4] mb-1">Style / Sleeve</label>
+                        <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">Style / Sleeve</label>
                         <select
                           value={singleVarStyle || customStyles[0]}
                           onChange={(e) => setSingleVarStyle(e.target.value)}
-                          className="w-full p-2 bg-[#202329] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC]"
+                          className="w-full p-2 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9]"
                         >
                           {customStyles.map((st) => (
-                            <option key={st} value={st} className="bg-[#17191D] text-[#F1F0EC]">
+                            <option key={st} value={st} className="bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9]">
                               {st}
                             </option>
                           ))}
@@ -1269,14 +1406,14 @@ export default function AdminProductsPage() {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-[#D8D8D4] mb-1">Size</label>
+                        <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">Size</label>
                         <select
                           value={singleVarSize || customSizes[0]}
                           onChange={(e) => setSingleVarSize(e.target.value)}
-                          className="w-full p-2 bg-[#202329] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC]"
+                          className="w-full p-2 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9]"
                         >
                           {customSizes.map((sz) => (
-                            <option key={sz} value={sz} className="bg-[#17191D] text-[#F1F0EC]">
+                            <option key={sz} value={sz} className="bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9]">
                               {sz}
                             </option>
                           ))}
@@ -1284,12 +1421,26 @@ export default function AdminProductsPage() {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-[#D8D8D4] mb-1">Price (Rs.)</label>
+                        <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">Retail Price (Rs.)</label>
                         <input
                           type="number"
                           value={singleVarPrice}
-                          onChange={(e) => setSingleVarPrice(Number(e.target.value))}
-                          className="w-full p-2 bg-[#202329] border border-[#343840] rounded-xl text-xs font-bold text-[#C9A96A]"
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setSingleVarPrice(val);
+                            setSingleVarWholesalePrice(Math.round(val * 0.82));
+                          }}
+                          className="w-full p-2 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-bold text-[#B89555] dark:text-[#C9A96A]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">Wholesale (Rs.)</label>
+                        <input
+                          type="number"
+                          value={singleVarWholesalePrice}
+                          onChange={(e) => setSingleVarWholesalePrice(Number(e.target.value))}
+                          className="w-full p-2 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400"
                         />
                       </div>
                     </div>
@@ -1298,14 +1449,14 @@ export default function AdminProductsPage() {
                       <button
                         type="button"
                         onClick={() => setIsAddSingleVarOpen(false)}
-                        className="px-3 py-1.5 bg-[#23262B] text-[#B4B5BA] border border-[#30343A] text-xs font-semibold rounded-xl"
+                        className="px-3 py-1.5 bg-light-elevated dark:bg-[#22211E] text-charcoal-700 dark:text-[#B8B3A8] border border-light-border dark:border-[#34322D] text-xs font-semibold rounded-xl"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
                         onClick={handleAddSingleVariant}
-                        className="px-4 py-1.5 bg-[#C9A96A] text-[#101114] text-xs font-bold rounded-xl"
+                        className="px-4 py-1.5 bg-champagne-500 text-charcoal-950 text-xs font-bold rounded-xl"
                       >
                         Add This Variant
                       </button>
@@ -1314,121 +1465,158 @@ export default function AdminProductsPage() {
                 )}
               </div>
 
-              {/* STEP 4: Full Variant Matrix Table */}
-              <div className="bg-[#17191D] rounded-2xl border border-[#30343A] shadow-card overflow-hidden">
-                <div className="p-4 sm:p-5 border-b border-[#30343A] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* STEP 4: Full Variant Matrix Table & Wholesale Editor */}
+              <div className="bg-white dark:bg-[#191917] rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card overflow-hidden">
+                <div className="p-4 sm:p-5 border-b border-light-border dark:border-[#34322D] flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-sm text-[#F1F0EC]">
-                      Active Variant Matrix ({variantsList.length} combinations)
+                    <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9] flex items-center gap-2">
+                      <span>Active Variant Matrix ({variantsList.length} combinations)</span>
                     </h3>
-                    <p className="text-xs text-[#85888E]">
-                      Live pricing, compare price, and inventory units for each combination.
+                    <p className="text-xs text-charcoal-500 dark:text-[#B8B3A8]">
+                      Configure exact Retail and Wholesale price per variant. Dynamic savings and profit margins are calculated automatically.
                     </p>
                   </div>
 
                   {variantsList.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setIsClearMatrixModalOpen(true)}
-                      className="text-xs text-[#D96B6B] hover:underline font-semibold self-start sm:self-auto"
-                    >
-                      Clear Matrix
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1 bg-light-elevated dark:bg-[#22211E] p-1 rounded-xl border border-light-border dark:border-[#34322D]">
+                        <span className="text-[11px] text-charcoal-500 dark:text-[#B8B3A8] pl-2">Apply:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={70}
+                          value={bulkDiscountInput}
+                          onChange={(e) => setBulkDiscountInput(Number(e.target.value))}
+                          className="w-12 px-1.5 py-0.5 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded text-center text-xs font-bold text-[#B89555] dark:text-[#C9A96A]"
+                        />
+                        <span className="text-xs text-charcoal-500 dark:text-[#B8B3A8]">%</span>
+                        <button
+                          type="button"
+                          onClick={() => handleBulkApplyDiscount(bulkDiscountInput)}
+                          className="px-2.5 py-1 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 text-[11px] font-bold rounded-lg transition-colors"
+                        >
+                          Apply to All
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsClearMatrixModalOpen(true)}
+                        className="text-xs text-rose-600 dark:text-rose-400 hover:underline font-semibold px-2 py-1"
+                      >
+                        Clear Matrix
+                      </button>
+                    </div>
                   )}
                 </div>
 
                 {variantsList.length === 0 ? (
                   <div className="p-10 text-center space-y-2">
-                    <Boxes className="w-8 h-8 text-[#85888E] mx-auto" />
-                    <p className="text-xs font-bold text-[#F1F0EC]">No variants in matrix yet</p>
-                    <p className="text-xs text-[#85888E]">
+                    <Boxes className="w-8 h-8 text-charcoal-400 dark:text-[#8E8A80] mx-auto" />
+                    <p className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">No variants in matrix yet</p>
+                    <p className="text-xs text-charcoal-500 dark:text-[#B8B3A8]">
                       Click &quot;Generate Matrix&quot; above to create combinations automatically.
                     </p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left">
-                      <thead className="bg-[#1D2025] text-[#C9A96A] uppercase font-bold text-[11px] border-b border-[#30343A]">
+                    <table className="w-full text-xs text-left min-w-[760px]">
+                      <thead className="bg-light-elevated dark:bg-[#22211E] text-[#B89555] dark:text-[#C9A96A] uppercase font-bold text-[11px] border-b border-light-border dark:border-[#34322D]">
                         <tr>
                           <th className="p-3">Quality</th>
                           <th className="p-3">Style / Sleeve</th>
                           <th className="p-3 text-center">Size</th>
                           <th className="p-3">SKU</th>
-                          <th className="p-3">Unit Price (Rs.)</th>
-                          <th className="p-3">Compare Price</th>
+                          <th className="p-3">Retail Price (PKR)</th>
+                          <th className="p-3">Wholesale Unit (PKR)</th>
+                          <th className="p-3">Wholesale Savings</th>
                           <th className="p-3">Stock Units</th>
                           <th className="p-3 text-center">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#272A2F] font-medium text-[#F1F0EC]">
-                        {variantsList.map((v) => (
-                          <tr key={v.id} className="hover:bg-[#1D2025]/60 transition-colors">
-                            <td className="p-3">
-                              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-[#23262B] text-[#B4B5BA] border border-[#30343A]">
-                                {v.quality}
-                              </span>
-                            </td>
-                            <td className="p-3 font-semibold text-[#F1F0EC]">{v.sleeve}</td>
-                            <td className="p-3 text-center">
-                              <span className="font-bold bg-[#23262B] text-[#C9A96A] border border-[#30343A] px-2 py-0.5 rounded-md text-xs">
-                                {v.size}
-                              </span>
-                            </td>
-                            <td className="p-3 font-mono text-[11px] text-[#85888E]">
-                              <input
-                                type="text"
-                                value={v.sku}
-                                onChange={(e) => handleUpdateVariantField(v.id, 'sku', e.target.value)}
-                                className="w-32 px-2 py-1 bg-[#202329] border border-[#343840] rounded-lg font-mono text-[11px] text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
-                              />
-                            </td>
-                            <td className="p-3">
-                              <input
-                                type="number"
-                                value={v.price}
-                                onChange={(e) =>
-                                  handleUpdateVariantField(v.id, 'price', Number(e.target.value))
-                                }
-                                className="w-24 px-2 py-1 bg-[#202329] border border-[#343840] rounded-lg font-bold text-[#C9A96A] focus:border-[#C9A96A] focus:outline-none"
-                              />
-                            </td>
-                            <td className="p-3">
-                              <input
-                                type="number"
-                                placeholder="Optional"
-                                value={v.salePrice || ''}
-                                onChange={(e) =>
-                                  handleUpdateVariantField(
-                                    v.id,
-                                    'salePrice',
-                                    e.target.value ? Number(e.target.value) : undefined
-                                  )
-                                }
-                                className="w-24 px-2 py-1 bg-[#202329] border border-[#343840] rounded-lg text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
-                              />
-                            </td>
-                            <td className="p-3">
-                              <input
-                                type="number"
-                                value={v.stock}
-                                onChange={(e) =>
-                                  handleUpdateVariantField(v.id, 'stock', Number(e.target.value))
-                                }
-                                className="w-20 px-2 py-1 bg-[#202329] border border-[#343840] rounded-lg font-bold text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
-                              />
-                            </td>
-                            <td className="p-3 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveVariant(v.id)}
-                                className="p-1.5 text-[#D96B6B] hover:bg-[#D96B6B]/10 rounded-lg transition-colors"
-                                title="Remove this combination"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                      <tbody className="divide-y divide-light-border dark:divide-[#282723] font-medium text-charcoal-900 dark:text-[#F4F1E9]">
+                        {variantsList.map((v) => {
+                          const retailPrice = Number(v.price) || 0;
+                          const wholesalePrice = v.wholesalePrice ? Number(v.wholesalePrice) : Math.round(retailPrice * 0.82);
+                          const saving = retailPrice - wholesalePrice;
+                          const discountPercent = retailPrice > 0 && saving > 0 ? Math.round((saving / retailPrice) * 1000) / 10 : 0;
+
+                          return (
+                            <tr key={v.id} className="hover:bg-light-hover/60 dark:hover:bg-[#22211E]/60 transition-colors">
+                              <td className="p-3">
+                                <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-light-elevated dark:bg-[#22211E] text-charcoal-700 dark:text-[#B8B3A8] border border-light-border dark:border-[#34322D]">
+                                  {v.quality}
+                                </span>
+                              </td>
+                              <td className="p-3 font-semibold text-charcoal-900 dark:text-[#F4F1E9]">{v.sleeve}</td>
+                              <td className="p-3 text-center">
+                                <span className="font-bold bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30 px-2 py-0.5 rounded-md text-xs">
+                                  {v.size}
+                                </span>
+                              </td>
+                              <td className="p-3 font-mono text-[11px] text-charcoal-500 dark:text-[#B8B3A8]">
+                                <input
+                                  type="text"
+                                  value={v.sku}
+                                  onChange={(e) => handleUpdateVariantField(v.id, 'sku', e.target.value)}
+                                  className="w-28 px-2 py-1 bg-light-elevated dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-lg font-mono text-[11px] text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                                />
+                              </td>
+                              <td className="p-3">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-charcoal-400 text-xs">Rs.</span>
+                                  <input
+                                    type="number"
+                                    value={v.price}
+                                    onChange={(e) => {
+                                      const newRetail = Number(e.target.value);
+                                      handleUpdateVariantField(v.id, 'price', newRetail);
+                                    }}
+                                    className="w-20 px-2 py-1 bg-light-elevated dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-lg font-bold text-[#B89555] dark:text-[#C9A96A] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                                  />
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-charcoal-400 text-xs">Rs.</span>
+                                  <input
+                                    type="number"
+                                    value={wholesalePrice}
+                                    onChange={(e) =>
+                                      handleUpdateVariantField(v.id, 'wholesalePrice', Number(e.target.value))
+                                    }
+                                    className="w-20 px-2 py-1 bg-light-elevated dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-lg font-bold text-emerald-700 dark:text-emerald-400 focus:border-emerald-500 focus:outline-none"
+                                  />
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                  Save Rs. {saving} ({discountPercent}%)
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <input
+                                  type="number"
+                                  value={v.stock}
+                                  onChange={(e) =>
+                                    handleUpdateVariantField(v.id, 'stock', Number(e.target.value))
+                                  }
+                                  className="w-18 px-2 py-1 bg-light-elevated dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-lg font-bold text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                                />
+                              </td>
+                              <td className="p-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveVariant(v.id)}
+                                  className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                                  title="Remove this combination"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1441,31 +1629,31 @@ export default function AdminProductsPage() {
           {/* TAB 3: PHOTOS & VIDEOS (VARIANT SPECIFIC) */}
           {/* ========================================================================= */}
           {editorTab === 'media' && (
-            <div className="bg-[#17191D] p-5 sm:p-6 rounded-2xl border border-[#30343A] shadow-card space-y-6 animate-in fade-in">
+            <div className="bg-white dark:bg-[#191917] p-5 sm:p-6 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card space-y-6 animate-in fade-in">
               <div>
-                <h3 className="font-bold text-sm text-[#F1F0EC]">
+                <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9]">
                   Variant-Specific Product Photos &amp; Video Demonstration
                 </h3>
-                <p className="text-xs text-[#85888E] mt-0.5">
-                  Attach specific photos to exact sleeve options (e.g. Sleeveless vs Full Sleeve). The public storefront gallery will reactively update as the customer clicks different style options!
+                <p className="text-xs text-charcoal-500 dark:text-[#B8B3A8] mt-0.5">
+                  Attach specific photos to exact sleeve options (e.g. Sleeveless vs Full Sleeve). The storefront gallery dynamically adapts as buyers select different styles!
                 </p>
               </div>
 
               {/* Upload Box */}
-              <div className="p-5 bg-[#1D2025] rounded-2xl border border-dashed border-[#343840] space-y-4">
+              <div className="p-5 bg-light-elevated dark:bg-[#22211E] rounded-2xl border border-dashed border-light-border dark:border-[#34322D] space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
+                    <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
                       1. Quality Target:
                     </label>
                     <select
                       value={uploadQualityTarget}
                       onChange={(e) => setUploadQualityTarget(e.target.value)}
-                      className="w-full p-2.5 bg-[#202329] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
+                      className="w-full p-2.5 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                     >
-                      <option value="All" className="bg-[#17191D] text-[#F1F0EC]">All Qualities</option>
+                      <option value="All" className="bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9]">All Qualities</option>
                       {customQualities.map((q) => (
-                        <option key={q} value={q} className="bg-[#17191D] text-[#F1F0EC]">
+                        <option key={q} value={q} className="bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9]">
                           For &quot;{q}&quot;
                         </option>
                       ))}
@@ -1473,51 +1661,47 @@ export default function AdminProductsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
+                    <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
                       2. Style / Sleeve Target:
                     </label>
                     <select
                       value={uploadSleeveTarget}
                       onChange={(e) => setUploadSleeveTarget(e.target.value)}
-                      className="w-full p-2.5 bg-[#202329] border border-[#343840] rounded-xl text-xs font-semibold text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
+                      className="w-full p-2.5 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-semibold text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                     >
-                      <option value="All" className="bg-[#17191D] text-[#F1F0EC]">All Styles</option>
-                      {availableVariantStylesForMedia.map((sl) => (
-                        <option key={sl} value={sl} className="bg-[#17191D] text-[#F1F0EC]">
-                          For &quot;{sl}&quot;
+                      <option value="All" className="bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9]">All Styles</option>
+                      {availableVariantStylesForMedia.map((st) => (
+                        <option key={st} value={st} className="bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9]">
+                          For &quot;{st}&quot;
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#D8D8D4] mb-1">
-                      3. Photo Label (Optional):
+                    <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                      3. Photo Caption / Title:
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Front View, Stitching Detail"
+                      placeholder="e.g. Front chest close-up"
                       value={uploadMediaTitle}
                       onChange={(e) => setUploadMediaTitle(e.target.value)}
-                      className="w-full p-2.5 bg-[#202329] border border-[#343840] rounded-xl text-xs text-[#F1F0EC] placeholder-[#85888E] focus:border-[#C9A96A] focus:outline-none"
+                      className="w-full p-2.5 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                     />
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3 items-center pt-1">
-                  <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] text-xs font-bold rounded-xl cursor-pointer transition-all active:scale-[0.99] shadow-xs">
+                {/* Upload Actions */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                  <label className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-all active:scale-[0.99]">
                     <Upload className="w-4 h-4" />
-                    <span>
-                      {uploadProgress === 'uploading'
-                        ? 'Uploading Files to Supabase Storage...'
-                        : 'Choose Photos from Computer / Mobile'}
-                    </span>
+                    <span>Upload Image Files</span>
                     <input
                       type="file"
-                      accept="image/*"
                       multiple
+                      accept="image/*"
                       onChange={handleImageFilesChange}
-                      disabled={uploadProgress === 'uploading'}
                       className="hidden"
                     />
                   </label>
@@ -1525,103 +1709,62 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => setIsVideoModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#23262B] hover:bg-[#2A2E35] text-[#F1F0EC] text-xs font-semibold rounded-xl border border-[#30343A] transition-colors"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-[#191917] hover:bg-light-hover dark:hover:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] text-xs font-semibold rounded-xl transition-colors"
                   >
-                    <Film className="w-4 h-4 text-[#D96B6B]" />
-                    <span>Add Video URL</span>
+                    <Film className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+                    <span>Attach Video URL</span>
                   </button>
-
-                  {uploadProgress === 'uploaded' && (
-                    <span className="text-xs text-[#3FB982] font-semibold flex items-center gap-1">
-                      <Check className="w-4 h-4" /> Uploaded!
-                    </span>
-                  )}
                 </div>
               </div>
 
-              {/* Video Modal */}
-              {isVideoModalOpen && (
-                <div className="p-4 bg-[#1D2025] rounded-xl border border-[#30343A] space-y-3 animate-in fade-in">
-                  <h4 className="font-bold text-xs text-[#C9A96A] uppercase">
-                    Add Video Clip URL
-                  </h4>
-                  <input
-                    type="text"
-                    placeholder="https://example.com/video.mp4"
-                    value={videoUrlInput}
-                    onChange={(e) => setVideoUrlInput(e.target.value)}
-                    className="w-full p-2.5 bg-[#202329] border border-[#343840] rounded-xl text-xs text-[#F1F0EC] focus:border-[#C9A96A] focus:outline-none"
-                  />
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsVideoModalOpen(false)}
-                      className="px-3 py-1.5 bg-[#23262B] text-[#B4B5BA] text-xs font-semibold rounded-xl"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleAddVideo}
-                      className="px-4 py-1.5 bg-[#C9A96A] text-[#101114] text-xs font-bold rounded-xl"
-                    >
-                      Add Video
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Gallery Grid */}
-              <div className="space-y-2">
-                <h4 className="font-bold text-xs text-[#F1F0EC] uppercase tracking-wider">
-                  Gallery Photos &amp; Videos ({mediaList.length})
+              {/* Media List Grid */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider">
+                  Attached Gallery Media ({mediaList.length})
                 </h4>
 
                 {mediaList.length === 0 ? (
-                  <p className="text-xs text-[#85888E] py-8 text-center border border-dashed border-[#30343A] rounded-2xl">
-                    No photos uploaded yet for this garment listing. Use the file picker above to add photos.
-                  </p>
+                  <p className="text-xs text-charcoal-500 dark:text-[#B8B3A8] italic">No photos or videos attached yet.</p>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-                    {mediaList.map((item, idx) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {mediaList.map((m, idx) => (
                       <div
-                        key={item.id || idx}
-                        className="group relative bg-[#1D2025] rounded-2xl border border-[#30343A] overflow-hidden shadow-card flex flex-col"
+                        key={m.id}
+                        className="relative group aspect-square rounded-xl overflow-hidden bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D]"
                       >
-                        <div className="relative aspect-3/4 w-full bg-[#202329] p-1">
-                          {item.type === 'video' ? (
-                            <div className="w-full h-full flex items-center justify-center bg-[#17191D] text-[#C9A96A] text-xs font-bold">
-                              Video Clip
-                            </div>
-                          ) : (
-                            <Image
-                              src={item.url}
-                              alt={item.alt || 'Product Photo'}
-                              fill
-                              sizes="120px"
-                              className="object-contain p-1"
-                            />
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveMedia(item.id)}
-                            className="absolute top-2 right-2 p-1.5 bg-[#101114]/80 text-[#D96B6B] hover:text-white hover:bg-[#D96B6B] rounded-full transition-colors"
-                            title="Delete photo"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        {m.type === 'video' ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-charcoal-900 text-charcoal-50 p-2 text-center">
+                            <Film className="w-6 h-6 text-[#B89555] dark:text-[#C9A96A] mb-1" />
+                            <span className="text-[10px] truncate max-w-full font-mono">{m.url}</span>
+                          </div>
+                        ) : (
+                          <Image
+                            src={m.url}
+                            alt={m.alt || 'Product Image'}
+                            fill
+                            className="object-cover"
+                            sizes="120px"
+                          />
+                        )}
+
+                        <div className="absolute top-1 left-1 bg-black/75 backdrop-blur-sm text-white text-[9px] px-1.5 py-0.5 rounded font-mono">
+                          #{idx + 1}
                         </div>
 
-                        <div className="p-2.5 bg-[#17191D] border-t border-[#30343A] text-[10px] space-y-0.5">
-                          <p className="font-bold text-[#F1F0EC] truncate">
-                            {item.title || `Photo #${idx + 1}`}
-                          </p>
-                          <div className="flex items-center gap-1 text-[#85888E] font-medium">
-                            <span>Q: {item.variantQuality || 'All'}</span>
-                            <span>•</span>
-                            <span>S: {item.variantSleeve || 'All'}</span>
+                        {m.variantSleeve && (
+                          <div className="absolute bottom-1 left-1 bg-champagne-500/90 text-black text-[9px] px-1 rounded font-bold">
+                            {m.variantSleeve}
                           </div>
-                        </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMedia(m.id)}
+                          className="absolute top-1 right-1 p-1 bg-rose-600/90 hover:bg-rose-600 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Remove media"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -1631,6 +1774,61 @@ export default function AdminProductsPage() {
           )}
         </form>
       )}
+
+      {/* Video URL Modal */}
+      {isVideoModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#191917] rounded-2xl border border-light-border dark:border-[#34322D] p-5 max-w-md w-full space-y-4 shadow-elevation">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9]">Attach Video Demonstration</h3>
+              <button
+                type="button"
+                onClick={() => setIsVideoModalOpen(false)}
+                className="text-charcoal-400 dark:text-[#8E8A80] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                Direct Video MP4 or Embed URL:
+              </label>
+              <input
+                type="url"
+                placeholder="https://..."
+                value={videoUrlInput}
+                onChange={(e) => setVideoUrlInput(e.target.value)}
+                className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsVideoModalOpen(false)}
+                className="px-3 py-1.5 bg-light-elevated dark:bg-[#22211E] text-charcoal-700 dark:text-[#B8B3A8] text-xs font-semibold rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAddVideo}
+                className="px-4 py-1.5 bg-champagne-500 text-charcoal-950 text-xs font-bold rounded-xl"
+              >
+                Attach Video
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function AdminProductsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-charcoal-500 dark:text-[#8E8A80]">Loading Catalog Manager...</div>}>
+      <AdminProductsContent />
+    </Suspense>
   );
 }

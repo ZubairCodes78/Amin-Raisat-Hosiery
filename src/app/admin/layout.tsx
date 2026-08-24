@@ -85,25 +85,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/settings', label: 'Delivery & Settings', icon: Settings },
   ];
 
+  const logoSrc = isDark ? '/images/header logo.png' : '/images/light logo.png';
+
   return (
-    <div className="min-h-screen bg-light-bg dark:bg-[#101114] text-charcoal-900 dark:text-[#F1F0EC] flex flex-col md:flex-row transition-colors duration-200">
+    <div className="min-h-screen bg-light-bg dark:bg-[#11110F] text-charcoal-900 dark:text-[#F4F1E9] flex flex-col md:flex-row transition-colors duration-200">
       {/* Dedicated Admin Sidebar for Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-[#0D0F12] text-charcoal-700 dark:text-[#D7D7D4] border-r border-light-border dark:border-[#30343A] p-5 justify-between flex-shrink-0 min-h-screen sticky top-0">
+      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-[#151513] text-charcoal-700 dark:text-[#D7D7D4] border-r border-light-border dark:border-[#34322D] p-5 justify-between flex-shrink-0 min-h-screen sticky top-0">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-light-border dark:border-[#30343A]">
-            <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 overflow-hidden flex-shrink-0 bg-light-elevated dark:bg-[#1D2025] rounded-xl border border-light-border dark:border-[#30343A] p-1">
+          <div className="flex items-center justify-between pb-4 border-b border-light-border dark:border-[#34322D]">
+            <div className="flex items-center gap-2.5">
+              <div className="relative w-32 h-9 overflow-hidden flex-shrink-0">
                 <Image
-                  src="/images/Favicon Logo.jpeg"
+                  src={logoSrc}
                   alt="Amin Raisat Hosiery"
                   fill
-                  className="object-contain rounded-lg"
+                  className="object-contain object-left"
                 />
-              </div>
-              <div>
-                <h2 className="font-bold text-xs text-[#A07D38] dark:text-[#C9A96A] tracking-wider uppercase leading-none">Admin Portal</h2>
-                <p className="text-[10px] text-charcoal-500 dark:text-[#8C8F95] font-medium tracking-wide mt-1">Amin Raisat Hosiery</p>
               </div>
             </div>
 
@@ -111,10 +109,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-1.5 rounded-lg text-charcoal-600 dark:text-gray-400 hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] transition-colors"
+              className="p-1.5 rounded-lg text-charcoal-600 dark:text-gray-400 hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] transition-colors"
               title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
             >
-              {isDark ? <Sun className="w-4 h-4 text-[#D8BD88]" /> : <Moon className="w-4 h-4 text-charcoal-700" />}
+              {isDark ? <Sun className="w-4 h-4 text-[#C9A96A]" /> : <Moon className="w-4 h-4 text-charcoal-700" />}
             </button>
           </div>
 
@@ -173,19 +171,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Mobile Top Header Bar for Admin */}
-      <div className="md:hidden bg-white dark:bg-[#0D0F12] text-charcoal-900 dark:text-[#F1F0EC] p-4 flex items-center justify-between sticky top-0 z-40 border-b border-light-border dark:border-[#30343A]">
+      <div className="md:hidden bg-white dark:bg-[#151513] text-charcoal-900 dark:text-[#F4F1E9] p-4 flex items-center justify-between sticky top-0 z-40 border-b border-light-border dark:border-[#34322D]">
         <div className="flex items-center gap-2.5">
-          <div className="relative w-8 h-8 overflow-hidden flex-shrink-0 bg-light-elevated dark:bg-[#1D2025] rounded-lg border border-light-border dark:border-[#30343A] p-0.5">
+          <div className="relative w-28 h-8 overflow-hidden flex-shrink-0">
             <Image
-              src="/images/Favicon Logo.jpeg"
+              src={logoSrc}
               alt="Amin Raisat Hosiery"
               fill
-              className="object-contain rounded"
+              className="object-contain object-left"
             />
-          </div>
-          <div>
-            <h2 className="font-bold text-xs leading-none text-[#A07D38] dark:text-[#C9A96A]">Admin Portal</h2>
-            <span className="text-[10px] text-charcoal-500 dark:text-[#8C8F95]">Amin Raisat Hosiery</span>
           </div>
         </div>
 
@@ -193,15 +187,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button
             type="button"
             onClick={toggleTheme}
-            className="p-2 text-charcoal-600 dark:text-gray-400 hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D] rounded-xl"
+            className="p-2 text-charcoal-600 dark:text-gray-400 hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl"
             title="Toggle theme"
           >
-            {isDark ? <Sun className="w-4 h-4 text-[#D8BD88]" /> : <Moon className="w-4 h-4 text-charcoal-700" />}
+            {isDark ? <Sun className="w-4 h-4 text-[#C9A96A]" /> : <Moon className="w-4 h-4 text-charcoal-700" />}
           </button>
           <button
             type="button"
             onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            className="p-2 text-charcoal-600 dark:text-[#8C8F95] hover:text-charcoal-900 dark:hover:text-[#F1F0EC] hover:bg-light-hover dark:hover:bg-[#17191D] rounded-xl"
+            className="p-2 text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl"
           >
             {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>

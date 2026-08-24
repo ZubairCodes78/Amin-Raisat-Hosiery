@@ -89,7 +89,7 @@ function SignupForm() {
     }
   };
 
-  const logoSrc = isDark ? '/images/header logo.png' : '/images/light logo.jpeg';
+  const logoSrc = isDark ? '/images/header logo.png' : '/images/light logo.png';
 
   return (
     <div className="max-w-md w-full space-y-7 bg-white dark:bg-[#17191D] p-8 sm:p-10 rounded-2xl border border-light-border dark:border-[#30343A] shadow-sm dark:shadow-elevation text-charcoal-900 dark:text-[#F1F0EC]">

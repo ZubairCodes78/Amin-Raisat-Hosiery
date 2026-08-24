@@ -89,7 +89,7 @@ export const Navbar: React.FC = () => {
   const isWholesaleActive = pathname.startsWith('/wholesale');
 
   // Dynamic header logo based on theme
-  const logoSrc = isDark ? '/images/header logo.png' : '/images/light logo.jpeg';
+  const logoSrc = isDark ? '/images/header logo.png' : '/images/light logo.png';
 
   return (
     <header className="sticky top-0 z-40 w-full select-none">
@@ -98,14 +98,14 @@ export const Navbar: React.FC = () => {
 
       {/* 2. Main Brand Navbar */}
       <nav
-        className={`w-full backdrop-blur-md transition-all duration-300 border-b ${
+        className={`w-full backdrop-blur-md transition-all duration-200 border-b ${
           isDark
             ? isScrolled
-              ? 'bg-[#101114]/95 border-[#30343A] shadow-elevation py-0.5'
-              : 'bg-[#101114]/95 border-[#30343A]/80 py-1'
+              ? 'bg-[#11110F]/95 border-[#34322D] shadow-elevation py-0.5'
+              : 'bg-[#11110F]/95 border-[#34322D]/80 py-1'
             : isScrolled
-            ? 'bg-white/95 border-[#E2DDD3] shadow-sm py-0.5'
-            : 'bg-[#FAF8F5]/95 border-[#E2DDD3]/80 py-1'
+            ? 'bg-[#FFFFFF]/95 border-[#DDD8CE] shadow-sm py-0.5'
+            : 'bg-[#F7F4EE]/95 border-[#DDD8CE]/80 py-1'
         }`}
       >
         <div className="mx-auto w-full md:w-[calc(100%-48px)] max-w-[1240px] px-3 sm:px-6 md:px-0">
@@ -120,7 +120,7 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="w-10 h-10 flex items-center justify-center text-charcoal-800 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] active:scale-95 rounded-xl transition-colors"
+                  className="w-10 h-10 flex items-center justify-center text-charcoal-800 dark:text-[#F4F1E9] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] active:scale-95 rounded-xl transition-colors"
                   aria-label="Toggle navigation menu"
                 >
                   {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -130,12 +130,12 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={toggleTheme}
-                  className="w-9 h-9 flex items-center justify-center rounded-xl text-charcoal-700 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] transition-colors"
+                  className="w-9 h-9 flex items-center justify-center rounded-xl text-charcoal-700 dark:text-[#F4F1E9] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] transition-colors"
                   aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
                   title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
                 >
                   {isDark ? (
-                    <Sun className="w-4 h-4 text-[#D8BD88] hover:rotate-45 transition-transform duration-300" />
+                    <Sun className="w-4 h-4 text-[#C9A96A] hover:rotate-45 transition-transform duration-300" />
                   ) : (
                     <Moon className="w-4 h-4 text-charcoal-700 hover:-rotate-12 transition-transform duration-300" />
                   )}
@@ -145,12 +145,12 @@ export const Navbar: React.FC = () => {
               {/* Center: Mobile Header Logo (Theme Aware) */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-12 sm:px-14">
                 <Link href="/" className="pointer-events-auto flex items-center justify-center py-0.5 group">
-                  <div className="relative w-[95px] xs:w-[105px] sm:w-[115px] h-11 xs:h-12 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-[110px] xs:w-[118px] sm:w-[125px] h-10 xs:h-11 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
                       src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="(max-width: 640px) 120px, 140px"
+                      sizes="(max-width: 640px) 130px, 150px"
                       className="object-contain object-center"
                       priority
                     />
@@ -166,8 +166,8 @@ export const Navbar: React.FC = () => {
                   onClick={() => setSearchOpen(!searchOpen)}
                   className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${
                     searchOpen
-                      ? 'bg-light-hover dark:bg-[#1D2025] text-[#C9A96A] border border-light-border dark:border-[#30343A]'
-                      : 'text-charcoal-700 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025]'
+                      ? 'bg-light-hover dark:bg-[#22211E] text-[#B89555] dark:text-[#C9A96A] border border-light-border dark:border-[#34322D]'
+                      : 'text-charcoal-700 dark:text-[#F4F1E9] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E]'
                   }`}
                   aria-label="Search products"
                 >
@@ -177,7 +177,7 @@ export const Navbar: React.FC = () => {
                 {/* Customer Account Button */}
                 <Link
                   href={user ? '/account' : '/login'}
-                  className="w-9 h-9 flex items-center justify-center text-charcoal-700 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] rounded-xl transition-colors"
+                  className="w-9 h-9 flex items-center justify-center text-charcoal-700 dark:text-[#F4F1E9] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl transition-colors"
                   aria-label="Customer Account"
                   title={user ? 'My Account' : 'Sign In'}
                 >
@@ -188,12 +188,12 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={openDrawer}
-                  className="relative w-9 h-9 bg-champagne-500 hover:bg-champagne-400 text-[#101114] rounded-xl transition-all duration-200 flex items-center justify-center shadow-xs active:scale-[0.96]"
+                  className="relative w-9 h-9 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 rounded-xl transition-all duration-200 flex items-center justify-center shadow-xs active:scale-[0.96]"
                   aria-label="Shopping Cart"
                 >
-                  <ShoppingBag className="w-[18px] h-[18px] text-[#101114] stroke-[2.2]" />
+                  <ShoppingBag className="w-[18px] h-[18px] text-charcoal-950 stroke-[2.2]" />
                   {totalQuantity > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-[#D96B6B] text-white text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-white dark:border-[#101114] shadow-xs">
+                    <span className="absolute -top-1 -right-1 bg-[#D05A5A] text-white text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-white dark:border-[#11110F] shadow-xs">
                       {totalQuantity}
                     </span>
                   )}
@@ -208,12 +208,12 @@ export const Navbar: React.FC = () => {
               {/* Desktop Header Logo */}
               <div className="flex items-center">
                 <Link href="/" className="flex items-center group py-0.5">
-                  <div className="relative w-48 lg:w-56 h-12 lg:h-14 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-[138px] lg:w-[152px] h-11 lg:h-12 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
                       src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="(max-width: 1024px) 210px, 240px"
+                      sizes="(max-width: 1024px) 150px, 170px"
                       className="object-contain object-left"
                       priority
                     />
