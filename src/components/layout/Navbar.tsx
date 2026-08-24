@@ -143,7 +143,7 @@ export const Navbar: React.FC = () => {
             {/* ========================================================================= */}
             {/* MOBILE NAVBAR ROW (md:hidden) */}
             {/* ========================================================================= */}
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center w-full md:hidden min-h-[56px]">
+            <div className="grid grid-cols-[1.2fr_auto_1fr] items-center w-full md:hidden min-h-[56px]">
               {/* Left col: Hamburger + Theme Toggle */}
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
