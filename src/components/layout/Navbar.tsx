@@ -104,8 +104,8 @@ export const Navbar: React.FC = () => {
               ? 'bg-[#11110F]/95 border-[#34322D] shadow-elevation py-0.5'
               : 'bg-[#11110F]/95 border-[#34322D]/80 py-1'
             : isScrolled
-            ? 'bg-[#FFFFFF]/95 border-[#DDD8CE] shadow-sm py-0.5'
-            : 'bg-[#F7F4EE]/95 border-[#DDD8CE]/80 py-1'
+            ? 'bg-white/98 border-[#E5E5E0] shadow-xs py-0.5'
+            : 'bg-white/98 border-[#E5E5E0] py-1'
         }`}
       >
         <div className="mx-auto w-full md:w-[calc(100%-48px)] max-w-[1240px] px-3 sm:px-6 md:px-0">

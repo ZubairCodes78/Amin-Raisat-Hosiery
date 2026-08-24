@@ -33,7 +33,7 @@ export const BenefitsStrip: React.FC = () => {
   return (
     <section
       aria-label="Store Benefits"
-      className="relative z-10 w-full bg-light-elevated dark:bg-[#15171B] border-y border-light-border dark:border-[#2A2E34] transition-colors duration-200"
+      className="relative z-10 w-full bg-white dark:bg-[#15171B] border-y border-light-border dark:border-[#2A2E34] transition-colors duration-200"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-light-border dark:divide-[#2A2E34]">
