@@ -24,11 +24,27 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  // Close on Escape
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onCancel]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#101114]/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[#17191D] border border-[#30343A] rounded-2xl p-6 max-w-md w-full shadow-elevation space-y-4 text-[#F1F0EC]">
+    <div
+      className="fixed inset-0 z-50 bg-[#101114]/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-[#17191D] border border-[#30343A] rounded-2xl p-6 max-w-md w-full shadow-elevation space-y-4 text-[#F1F0EC]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div

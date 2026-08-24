@@ -29,6 +29,16 @@ function LoginForm() {
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotError, setForgotError] = useState('');
 
+  // Close forgot password modal on Escape
+  React.useEffect(() => {
+    if (!isForgotModalOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsForgotModalOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isForgotModalOpen]);
+
   // If already signed in, redirect
   React.useEffect(() => {
     if (user) {
@@ -200,8 +210,14 @@ function LoginForm() {
 
       {/* Forgot Password Modal */}
       {isForgotModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#17191D] rounded-2xl p-6 sm:p-7 max-w-sm w-full shadow-elevation border border-light-border dark:border-[#30343A] space-y-4 text-charcoal-900 dark:text-[#F1F0EC]">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setIsForgotModalOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-[#17191D] rounded-2xl p-6 sm:p-7 max-w-sm w-full shadow-elevation border border-light-border dark:border-[#30343A] space-y-4 text-charcoal-900 dark:text-[#F1F0EC]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-light-border dark:border-[#30343A] pb-3">
               <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F1F0EC]">Reset Your Password</h3>
               <button

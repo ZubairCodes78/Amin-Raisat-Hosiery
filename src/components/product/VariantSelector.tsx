@@ -55,6 +55,16 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isAddedToast, setIsAddedToast] = useState(false);
 
+  // Close size guide modal on Escape
+  React.useEffect(() => {
+    if (!isSizeGuideOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsSizeGuideOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isSizeGuideOpen]);
+
   const wholesaleMin = product.wholesaleMinQty || 12;
 
   // Sync mode if props or query change
@@ -560,8 +570,14 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
       {/* SIZE GUIDE MODAL */}
       {isSizeGuideOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-elevation">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-xs animate-in fade-in"
+          onClick={() => setIsSizeGuideOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-elevation"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-light-border dark:border-[#34322D] pb-3">
               <h3 className="font-bold text-base text-charcoal-900 dark:text-[#F4F1E9]">Size Guide (Inches)</h3>
               <button

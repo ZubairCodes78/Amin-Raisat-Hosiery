@@ -11,6 +11,11 @@ export const PublicLayoutShell: React.FC<{ children: React.ReactNode }> = ({ chi
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith('/admin');
 
+  // Route-change safety cleanup: ensure body scrolling is never locked across routes
+  React.useEffect(() => {
+    document.body.style.overflow = '';
+  }, [pathname]);
+
   if (isAdmin) {
     return <>{children}</>;
   }

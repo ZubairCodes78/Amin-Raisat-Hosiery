@@ -18,6 +18,16 @@ export default function ShopPage() {
   const [sortBy, setSortBy] = useState<string>('featured');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
+  // Close mobile filter drawer on Escape
+  React.useEffect(() => {
+    if (!mobileFilterOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileFilterOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [mobileFilterOpen]);
+
   // Available subcategories for selected category
   const activeSubcats = useMemo(() => {
     if (selectedCategory === 'all') return subcategories;
@@ -327,8 +337,14 @@ export default function ShopPage() {
 
       {/* Mobile Filters Drawer */}
       {mobileFilterOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex justify-end animate-in fade-in">
-          <div className="bg-white dark:bg-dark-surface w-full max-w-xs h-full p-6 overflow-y-auto space-y-6 shadow-elevation border-l border-light-border dark:border-dark-border text-charcoal-900 dark:text-gray-100">
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex justify-end animate-in fade-in"
+          onClick={() => setMobileFilterOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-dark-surface w-full max-w-xs h-full p-6 overflow-y-auto space-y-6 shadow-elevation border-l border-light-border dark:border-dark-border text-charcoal-900 dark:text-gray-100"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-light-border dark:border-dark-border pb-3">
               <h3 className="font-bold text-sm text-charcoal-900 dark:text-gray-100">Filter Products</h3>
               <button onClick={() => setMobileFilterOpen(false)} className="p-1 text-charcoal-400 hover:text-charcoal-900 dark:hover:text-gray-100">

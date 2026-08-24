@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { X, Trash2, Plus, Minus, ShoppingBag, Truck, ArrowRight, AlertCircle, Package } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
@@ -21,6 +22,7 @@ function getCartItemImage(item: CartItem): string {
 }
 
 export const CartDrawer: React.FC = () => {
+  const pathname = usePathname();
   const {
     items,
     cartMode,
@@ -48,16 +50,33 @@ export const CartDrawer: React.FC = () => {
   } = useCart();
   const { settings } = useStore();
 
-  // Lock body scroll while drawer is open (prevents background scroll on mobile)
+  // Auto close drawer when route changes
   useEffect(() => {
     if (isDrawerOpen) {
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prev;
-      };
+      closeDrawer();
     }
-  }, [isDrawerOpen]);
+  }, [pathname, isDrawerOpen, closeDrawer]);
+
+  // Lock body scroll while drawer is open + Escape key handler
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeDrawer();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDrawerOpen, closeDrawer]);
 
   if (!isDrawerOpen) return null;
 

@@ -20,6 +20,16 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({ productId, produ
   const [comment, setComment] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Close review modal on Escape
+  React.useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsModalOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isModalOpen]);
+
   const totalReviews = reviews.length;
   const averageRating =
     totalReviews > 0
@@ -156,8 +166,14 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({ productId, produ
 
       {/* Review Submission Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-dark-surface rounded-2xl p-6 max-w-md w-full shadow-elevation border border-dark-border space-y-4">
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="bg-dark-surface rounded-2xl p-6 max-w-md w-full shadow-elevation border border-dark-border space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-dark-border pb-3">
               <h4 className="font-bold text-gray-100 text-sm">Write a Review for {productName}</h4>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-100">
