@@ -15,7 +15,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = 'arh_theme_mode';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeMode>('dark');
+  const [theme, setThemeState] = useState<ThemeMode>('light');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -25,13 +25,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setThemeState(stored);
         applyTheme(stored);
       } else {
-        // Default to dark mode for luxury editorial look
-        setThemeState('dark');
-        applyTheme('dark');
+        // Default to light mode for first-time visitors with no saved preference
+        setThemeState('light');
+        applyTheme('light');
       }
     } catch {
-      setThemeState('dark');
-      applyTheme('dark');
+      setThemeState('light');
+      applyTheme('light');
     } finally {
       setMounted(true);
     }

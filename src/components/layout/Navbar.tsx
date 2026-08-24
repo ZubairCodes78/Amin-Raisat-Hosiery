@@ -143,9 +143,9 @@ export const Navbar: React.FC = () => {
             {/* ========================================================================= */}
             {/* MOBILE NAVBAR ROW (md:hidden) */}
             {/* ========================================================================= */}
-            <div className="relative flex items-center justify-between w-full md:hidden min-h-[56px]">
-              {/* Left: Mobile Hamburger Button & Mobile Theme Toggle */}
-              <div className="flex items-center gap-1 flex-shrink-0 z-10">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center w-full md:hidden min-h-[56px]">
+              {/* Left col: Hamburger + Theme Toggle */}
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -171,24 +171,22 @@ export const Navbar: React.FC = () => {
                 </button>
               </div>
 
-              {/* Center: Mobile Header Logo (Theme Aware) */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-12 sm:px-14">
-                <Link href="/" className="pointer-events-auto flex items-center justify-center py-0.5 group">
-                  <div className="relative w-[122px] xs:w-[136px] sm:w-[150px] h-9 xs:h-10 sm:h-11 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
-                    <Image
-                      src={logoSrc}
-                      alt="Amin Raisat Hosiery"
-                      fill
-                      sizes="(max-width: 640px) 150px, 170px"
-                      className="object-contain object-center"
-                      priority
-                    />
-                  </div>
-                </Link>
-              </div>
+              {/* Center col: Logo — naturally centered because both side cols are 1fr */}
+              <Link href="/" className="flex items-center justify-center py-0.5 group">
+                <div className="relative w-[122px] xs:w-[136px] sm:w-[150px] h-9 xs:h-10 sm:h-11 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <Image
+                    src={logoSrc}
+                    alt="Amin Raisat Hosiery"
+                    fill
+                    sizes="(max-width: 640px) 150px, 170px"
+                    className="object-contain object-center"
+                    priority
+                  />
+                </div>
+              </Link>
 
-              {/* Right: Mobile Action Buttons */}
-              <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 z-10">
+              {/* Right col: Search + Account + Cart */}
+              <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 justify-end">
                 {/* Search Trigger */}
                 <button
                   type="button"

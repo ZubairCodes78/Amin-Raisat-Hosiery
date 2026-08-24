@@ -44,21 +44,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className="dark">
+    <html lang="en" suppressHydrationWarning className="light">
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var theme = localStorage.getItem('arh_theme_mode') || 'dark';
-                if (theme === 'light') {
-                  document.documentElement.classList.remove('dark');
-                  document.documentElement.classList.add('light');
-                  document.documentElement.style.colorScheme = 'light';
-                } else {
+                var stored = localStorage.getItem('arh_theme_mode');
+                var theme = (stored === 'dark') ? 'dark' : 'light';
+                if (theme === 'dark') {
                   document.documentElement.classList.remove('light');
                   document.documentElement.classList.add('dark');
                   document.documentElement.style.colorScheme = 'dark';
+                } else {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.classList.add('light');
+                  document.documentElement.style.colorScheme = 'light';
                 }
               } catch (e) {}
             `,
