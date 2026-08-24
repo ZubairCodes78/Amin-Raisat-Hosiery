@@ -109,12 +109,12 @@ export const Navbar: React.FC = () => {
         }`}
       >
         <div className="mx-auto w-full md:w-[calc(100%-48px)] max-w-[1240px] px-3 sm:px-6 md:px-0">
-          <div className="flex items-center justify-between h-16 md:h-18">
+          <div className="flex items-center justify-between h-16 sm:h-18 md:h-20 lg:h-22">
             
             {/* ========================================================================= */}
             {/* MOBILE NAVBAR ROW (md:hidden) */}
             {/* ========================================================================= */}
-            <div className="relative flex items-center justify-between w-full md:hidden min-h-[52px]">
+            <div className="relative flex items-center justify-between w-full md:hidden min-h-[56px]">
               {/* Left: Mobile Hamburger Button & Mobile Theme Toggle */}
               <div className="flex items-center gap-1 flex-shrink-0 z-10">
                 <button
@@ -145,12 +145,12 @@ export const Navbar: React.FC = () => {
               {/* Center: Mobile Header Logo (Theme Aware) */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-12 sm:px-14">
                 <Link href="/" className="pointer-events-auto flex items-center justify-center py-0.5 group">
-                  <div className="relative w-[110px] xs:w-[118px] sm:w-[125px] h-10 xs:h-11 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-[130px] xs:w-[145px] sm:w-[160px] h-11 xs:h-12 sm:h-13 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
                       src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="(max-width: 640px) 130px, 150px"
+                      sizes="(max-width: 640px) 160px, 180px"
                       className="object-contain object-center"
                       priority
                     />
@@ -208,12 +208,12 @@ export const Navbar: React.FC = () => {
               {/* Desktop Header Logo */}
               <div className="flex items-center">
                 <Link href="/" className="flex items-center group py-0.5">
-                  <div className="relative w-[138px] lg:w-[152px] h-11 lg:h-12 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-[170px] lg:w-[195px] xl:w-[215px] h-12 lg:h-14 xl:h-15 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
                       src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="(max-width: 1024px) 150px, 170px"
+                      sizes="(max-width: 1024px) 195px, 220px"
                       className="object-contain object-left"
                       priority
                     />
