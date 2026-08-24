@@ -145,12 +145,12 @@ export const Navbar: React.FC = () => {
               {/* Center: Mobile Header Logo (Theme Aware) */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-12 sm:px-14">
                 <Link href="/" className="pointer-events-auto flex items-center justify-center py-0.5 group">
-                  <div className="relative w-[130px] xs:w-[145px] sm:w-[160px] h-11 xs:h-12 sm:h-13 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-[150px] xs:w-[170px] sm:w-[190px] h-12 xs:h-13 sm:h-15 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
                       src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="(max-width: 640px) 160px, 180px"
+                      sizes="(max-width: 640px) 190px, 220px"
                       className="object-contain object-center"
                       priority
                     />
@@ -208,12 +208,12 @@ export const Navbar: React.FC = () => {
               {/* Desktop Header Logo */}
               <div className="flex items-center">
                 <Link href="/" className="flex items-center group py-0.5">
-                  <div className="relative w-[170px] lg:w-[195px] xl:w-[215px] h-12 lg:h-14 xl:h-15 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-[200px] lg:w-[235px] xl:w-[260px] h-13 lg:h-16 xl:h-18 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
                       src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
-                      sizes="(max-width: 1024px) 195px, 220px"
+                      sizes="(max-width: 1024px) 235px, 260px"
                       className="object-contain object-left"
                       priority
                     />

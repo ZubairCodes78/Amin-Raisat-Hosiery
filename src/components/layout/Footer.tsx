@@ -25,12 +25,12 @@ export const Footer: React.FC = () => {
           {/* 1. Brand Column */}
           <div className="space-y-3.5 text-left">
             <Link href="/" className="inline-flex items-center group py-0.5">
-              <div className="relative w-44 h-12 lg:h-14 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+              <div className="relative w-56 sm:w-64 h-14 lg:h-16 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                 <Image
                   src={logoSrc}
                   alt={settings.brandName}
                   fill
-                  sizes="200px"
+                  sizes="260px"
                   className="object-contain object-left"
                 />
               </div>

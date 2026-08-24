@@ -94,7 +94,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-light-border dark:border-[#34322D]">
             <div className="flex items-center gap-2.5">
-              <div className="relative w-32 h-9 overflow-hidden flex-shrink-0">
+              <div className="relative w-44 h-12 overflow-hidden flex-shrink-0">
                 <Image
                   src={logoSrc}
                   alt="Amin Raisat Hosiery"
