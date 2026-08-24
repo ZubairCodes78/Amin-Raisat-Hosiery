@@ -495,7 +495,7 @@ export default function AdminWholesalePage() {
                 {/* Actions Right */}
                 <div className="flex items-center gap-2 self-end lg:self-center flex-shrink-0">
                   <Link
-                    href={`/product/${prod.slug}?mode=wholesale`}
+                    href={`/wholesale/product/${prod.slug}`}
                     target="_blank"
                     className="p-2.5 bg-white dark:bg-[#191917] hover:bg-light-hover dark:hover:bg-[#2A2925] text-charcoal-600 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] rounded-xl border border-light-border dark:border-[#34322D] transition-colors"
                     title="View live wholesale product page"
