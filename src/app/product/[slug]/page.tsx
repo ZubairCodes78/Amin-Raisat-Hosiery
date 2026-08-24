@@ -172,14 +172,14 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Reactive Variant Selector (Sleeve, Size, Price, Wholesale mode, Add to Cart, WhatsApp) */}
+            {/* Reactive Variant Selector (Sleeve, Size, Price, Retail mode, Add to Cart, WhatsApp) */}
             <VariantSelector
               product={product}
               selectedSleeve={selectedSleeve}
               setSelectedSleeve={setSelectedSleeve}
               selectedSize={selectedSize}
               setSelectedSize={setSelectedSize}
-              defaultWholesale={isWholesale}
+              lockRetailMode={true}
             />
 
             {/* Clean Accordion Sections */}

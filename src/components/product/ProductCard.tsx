@@ -126,7 +126,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
     }, 600);
   };
 
-  const detailUrl = isWholesaleView ? `/product/${product.slug}?wholesale=true` : `/product/${product.slug}`;
+  const detailUrl = isWholesaleView ? `/wholesale/product/${product.slug}` : `/product/${product.slug}`;
 
   return (
     <div className="group bg-white dark:bg-[#17191D] rounded-2xl border border-light-border dark:border-[#30343A] overflow-hidden flex flex-col justify-between shadow-sm dark:shadow-card hover:border-[#C9A96A]/60 dark:hover:border-[#3E434B] hover:shadow-md dark:hover:shadow-elevation transition-all duration-300 relative w-full h-full text-charcoal-900 dark:text-[#F1F0EC]">

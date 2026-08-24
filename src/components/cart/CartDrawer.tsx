@@ -23,10 +23,14 @@ function getCartItemImage(item: CartItem): string {
 export const CartDrawer: React.FC = () => {
   const {
     items,
+    cartMode,
     isDrawerOpen,
     closeDrawer,
     updateQuantity,
     removeItem,
+    modeConflict,
+    switchCartModeAndAdd,
+    clearModeConflict,
     totalQuantity,
     subtotal,
     regularSubtotal,
@@ -93,6 +97,39 @@ export const CartDrawer: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
           </div>
+
+          {/* Mode Switch Conflict Notification */}
+          {modeConflict && (
+            <div className="p-4 bg-amber-500/10 dark:bg-amber-950/40 border-b border-amber-500/30 text-xs animate-in fade-in">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-1.5 flex-1">
+                  <p className="font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+                    Switch to {modeConflict.targetMode === 'wholesale' ? 'Wholesale' : 'Retail'} Mode?
+                  </p>
+                  <p className="text-charcoal-600 dark:text-[#B8B3A8] text-[11px] leading-relaxed">
+                    Your cart currently has {modeConflict.currentMode} items. Adding this item will start a dedicated {modeConflict.targetMode} order.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => switchCartModeAndAdd(modeConflict.incomingItem)}
+                      className="px-3 py-1.5 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 rounded-lg text-xs font-bold shadow-xs transition-colors"
+                    >
+                      Clear &amp; Start {modeConflict.targetMode === 'wholesale' ? 'Wholesale' : 'Retail'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearModeConflict}
+                      className="px-3 py-1.5 bg-white dark:bg-[#22211E] text-charcoal-700 dark:text-[#B8B3A8] rounded-lg text-xs font-semibold border border-light-border dark:border-[#34322D] hover:bg-light-hover dark:hover:bg-[#2A2925] transition-colors"
+                    >
+                      Keep Current Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ========================================================================= */}
           {/* WHOLESALE STATUS & FREE DELIVERY PROGRESS BAR (Fixed Row) */}

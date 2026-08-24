@@ -16,6 +16,8 @@ interface VariantSelectorProps {
   selectedSize: ProductSize;
   setSelectedSize: (size: ProductSize) => void;
   defaultWholesale?: boolean;
+  lockWholesaleMode?: boolean;
+  lockRetailMode?: boolean;
 }
 
 const SIZES: ProductSize[] = ['S', 'M', 'L', 'XL', 'XXL'];
@@ -26,6 +28,7 @@ const WHOLESALE_PACK_OPTIONS = [
   { count: 36, label: '3 Dozen (36 pcs)' },
   { count: 48, label: '4 Dozen (48 pcs)' },
   { count: 60, label: '5 Dozen (60 pcs)' },
+  { count: 120, label: '10 Dozen (120 pcs)' },
 ];
 
 export const VariantSelector: React.FC<VariantSelectorProps> = ({
@@ -35,6 +38,8 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   selectedSize,
   setSelectedSize,
   defaultWholesale = false,
+  lockWholesaleMode = false,
+  lockRetailMode = false,
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -43,20 +48,27 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   const { addItem, openDrawer } = useCart();
   const { settings } = useStore();
 
-  const [isWholesaleMode, setIsWholesaleMode] = useState(defaultWholesale || isWholesaleFromQuery);
+  const [isWholesaleMode, setIsWholesaleMode] = useState(
+    lockWholesaleMode ? true : lockRetailMode ? false : defaultWholesale || isWholesaleFromQuery
+  );
   const [quantity, setQuantity] = useState(isWholesaleMode ? (product.wholesaleMinQty || 12) : 3);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isAddedToast, setIsAddedToast] = useState(false);
 
   const wholesaleMin = product.wholesaleMinQty || 12;
 
-  // Sync mode if query changes
+  // Sync mode if props or query change
   React.useEffect(() => {
-    if (isWholesaleFromQuery && !isWholesaleMode) {
+    if (lockWholesaleMode) {
+      setIsWholesaleMode(true);
+      setQuantity((q) => Math.max(wholesaleMin, q));
+    } else if (lockRetailMode) {
+      setIsWholesaleMode(false);
+    } else if (isWholesaleFromQuery && !isWholesaleMode) {
       setIsWholesaleMode(true);
       setQuantity((q) => Math.max(wholesaleMin, q));
     }
-  }, [isWholesaleFromQuery, wholesaleMin, isWholesaleMode]);
+  }, [lockWholesaleMode, lockRetailMode, isWholesaleFromQuery, wholesaleMin, isWholesaleMode]);
 
   // Available sleeves specifically for this product
   const availableSleeves = React.useMemo(() => {
@@ -201,34 +213,67 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
   return (
     <div className="space-y-6 select-none text-charcoal-900 dark:text-[#F4F1E9]">
-      {/* 1. ORDER MODE SELECTOR: Retail (Min 3 pcs) vs Wholesale B2B (Min 12 pcs) */}
-      <div className="p-1 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-2xl flex items-center shadow-xs">
-        <button
-          type="button"
-          onClick={() => toggleOrderMode(false)}
-          className={`flex-1 min-h-[42px] sm:min-h-[46px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
-            !isWholesaleMode
-              ? 'bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9] shadow-sm border border-light-border dark:border-[#34322D]'
-              : 'text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
-          }`}
-        >
-          <span>Retail Order</span>
-          <span className="text-[10px] sm:text-xs text-charcoal-500 dark:text-[#8E8A80] font-normal">(Min 3 pcs)</span>
-        </button>
+      {/* 1. ORDER MODE HEADER / SELECTOR */}
+      {lockWholesaleMode ? (
+        <div className="px-4 py-3 bg-champagne-500/10 border border-[#B89555]/30 rounded-2xl flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-champagne-500 animate-pulse" />
+            <span className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider">
+              Wholesale Storefront Mode Active
+            </span>
+          </div>
+          <span className="text-[11px] font-bold text-[#96763D] dark:text-[#C9A96A] bg-champagne-100 dark:bg-[#22211E] px-2 py-0.5 rounded-lg border border-[#B89555]/20">
+            Min {wholesaleMin} pieces
+          </span>
+        </div>
+      ) : lockRetailMode ? (
+        <div className="px-4 py-3 bg-light-elevated dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-2xl flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+              Retail Order
+            </span>
+            <span className="text-[11px] text-charcoal-500 dark:text-[#8E8A80]">
+              (Min 3 pieces)
+            </span>
+          </div>
+          {product.isWholesaleEnabled !== false && (
+            <a
+              href={`/wholesale/product/${product.slug}`}
+              className="text-[11px] font-bold text-[#96763D] dark:text-[#C9A96A] hover:underline flex items-center gap-1"
+            >
+              <span>Wholesale Storefront &rarr;</span>
+            </a>
+          )}
+        </div>
+      ) : (
+        <div className="p-1 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-2xl flex items-center shadow-xs">
+          <button
+            type="button"
+            onClick={() => toggleOrderMode(false)}
+            className={`flex-1 min-h-[42px] sm:min-h-[46px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+              !isWholesaleMode
+                ? 'bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9] shadow-sm border border-light-border dark:border-[#34322D]'
+                : 'text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
+            }`}
+          >
+            <span>Retail Order</span>
+            <span className="text-[10px] sm:text-xs text-charcoal-500 dark:text-[#8E8A80] font-normal">(Min 3 pcs)</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => toggleOrderMode(true)}
-          className={`flex-1 min-h-[42px] sm:min-h-[46px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
-            isWholesaleMode
-              ? 'bg-champagne-500 text-charcoal-950 shadow-xs font-extrabold'
-              : 'text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
-          }`}
-        >
-          <span>Wholesale</span>
-          <span className="text-[10px] bg-charcoal-950/15 text-charcoal-950 px-1.5 py-0.2 rounded font-bold">Min 12 pcs</span>
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => toggleOrderMode(true)}
+            className={`flex-1 min-h-[42px] sm:min-h-[46px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+              isWholesaleMode
+                ? 'bg-champagne-500 text-charcoal-950 shadow-xs font-extrabold'
+                : 'text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
+            }`}
+          >
+            <span>Wholesale</span>
+            <span className="text-[10px] bg-charcoal-950/15 text-charcoal-950 px-1.5 py-0.2 rounded font-bold">Min 12 pcs</span>
+          </button>
+        </div>
+      )}
 
       {/* 2. DYNAMIC MAIN PRICE SECTION */}
       <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] shadow-sm space-y-2.5">

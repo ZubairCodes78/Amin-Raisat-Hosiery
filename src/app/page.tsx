@@ -27,27 +27,27 @@ export default function HomePage() {
       {/* 3. Main Categories Grid */}
       <CategoryGrid />
 
-      {/* 4. Wholesale Callout Strip */}
+      {/* 4. Wholesale Callout Section */}
       <section className="py-10 bg-light-elevated dark:bg-[#191917] border-y border-light-border dark:border-[#34322D]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="space-y-1.5 text-center sm:text-left">
+          <div className="space-y-1 text-center sm:text-left">
             <span className="text-[11px] font-bold text-[#B89555] dark:text-[#C9A96A] uppercase tracking-wider block">
-              Wholesale &amp; Bulk Orders
+              Wholesale Orders
             </span>
             <h3 className="text-xl sm:text-2xl font-extrabold text-charcoal-900 dark:text-[#F4F1E9]">
-              Retailers &amp; Bulk Buyers: Save with 1-Dozen Master Packs
+              Special factory pricing starting from 12 pieces.
             </h3>
             <p className="text-xs sm:text-sm text-charcoal-600 dark:text-[#B8B3A8]">
-              Factory-direct pricing starting from minimum 12 pieces with 100% Free Nationwide Delivery across Pakistan.
+              100% Free Nationwide Delivery across Pakistan for retailers and bulk commercial buyers.
             </p>
           </div>
 
           <Link
             href="/wholesale"
-            className="flex-shrink-0 inline-flex items-center gap-2 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 font-extrabold text-xs py-3.5 px-6 rounded-xl shadow-xs transition-all active:scale-[0.99]"
+            className="flex-shrink-0 inline-flex items-center gap-2 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 font-bold text-xs py-3.5 px-6 rounded-xl shadow-xs transition-all active:scale-[0.99]"
           >
             <PackageCheck className="w-4 h-4" />
-            <span>Explore Wholesale Catalog</span>
+            <span>View Wholesale Collection</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
