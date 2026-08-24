@@ -33,6 +33,18 @@ export interface Category {
   productCount?: number;
 }
 
+export type ThemeMode = 'dark' | 'light';
+
+export interface WholesaleTier {
+  id?: string;
+  minQty: number;
+  maxQty?: number;
+  price: number;
+  discountPercent?: number;
+  label?: string;
+  isActive?: boolean;
+}
+
 export interface ProductVariant {
   id: string;
   productId?: string;
@@ -41,6 +53,8 @@ export interface ProductVariant {
   size: ProductSize;
   price: number;
   salePrice?: number;
+  wholesalePrice?: number;
+  wholesaleTiers?: WholesaleTier[];
   stock: number;
   sku?: string;
   isAvailable: boolean;
@@ -86,6 +100,8 @@ export interface Product {
   shippingInfo: string;
   returnPolicy?: string;
   isPublished: boolean;
+  isWholesaleEnabled?: boolean;
+  wholesaleMinQty?: number;
   createdAt: string;
   variants: ProductVariant[];
   media: ProductMedia[];
@@ -101,6 +117,9 @@ export interface CartItem {
   sleeve: SleeveType;
   size: ProductSize;
   unitPrice: number;
+  regularPrice?: number;
+  wholesalePrice?: number;
+  isWholesale?: boolean;
   quantity: number;
   image: string;
 }
@@ -127,6 +146,9 @@ export interface OrderItem {
   sleeve: SleeveType;
   size: ProductSize;
   unitPrice: number;
+  regularPrice?: number;
+  wholesalePrice?: number;
+  isWholesale?: boolean;
   quantity: number;
   totalPrice: number;
   image?: string;
@@ -150,6 +172,8 @@ export interface Order {
   paymentMethod: PaymentMethodType;
   paymentReference?: string;
   status: OrderStatus;
+  isWholesale?: boolean;
+  wholesaleDiscount?: number;
   items: OrderItem[];
   createdAt: string;
 }
@@ -169,6 +193,18 @@ export interface BankAccountDetails {
   instructions?: string;
 }
 
+export interface WholesaleSettings {
+  isEnabled: boolean;
+  defaultMinQty: number;
+  minQuantity?: number;
+  defaultDiscountPercent: number;
+  freeDeliveryForWholesale?: boolean;
+  inquiryWhatsApp?: string;
+  termsAndNotes?: string;
+  announcementText?: string;
+  policyNotes?: string;
+}
+
 export interface SiteSettings {
   brandName: string;
   ownerName: string;
@@ -181,6 +217,7 @@ export interface SiteSettings {
   currency: string;
   shipping: ShippingSettings;
   bankDetails: BankAccountDetails;
+  wholesale?: WholesaleSettings;
   isStoreOpen: boolean;
   isCodEnabled: boolean;
   isBankTransferEnabled: boolean;

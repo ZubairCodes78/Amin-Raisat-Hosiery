@@ -309,6 +309,8 @@ export class DataStore {
             shippingInfo: p.shipping_info || INITIAL_PRODUCTS[0].shippingInfo,
             returnPolicy: 'We offer hassle-free exchange within 7 days of delivery in case of sizing or defect issues. Product must be unwashed and in original condition.',
             isPublished: p.is_published ?? true,
+            isWholesaleEnabled: p.is_wholesale_enabled ?? true,
+            wholesaleMinQty: p.wholesale_min_qty ? Number(p.wholesale_min_qty) : 12,
             createdAt: p.created_at,
             variants: Array.isArray(p.product_variants)
               ? p.product_variants.map((v: any) => ({
@@ -319,6 +321,8 @@ export class DataStore {
                   size: v.size,
                   price: Number(v.price) || 0,
                   salePrice: v.sale_price ? Number(v.sale_price) : undefined,
+                  wholesalePrice: v.wholesale_price ? Number(v.wholesale_price) : Math.round((Number(v.price) || 480) * 0.82),
+                  wholesaleTiers: Array.isArray(v.wholesale_tiers) ? v.wholesale_tiers : undefined,
                   stock: Number(v.stock) || 0,
                   sku: v.sku || '',
                   isAvailable: v.is_available ?? true,
@@ -387,6 +391,8 @@ export class DataStore {
           care_instructions: product.careInstructions || [],
           shipping_info: product.shippingInfo || '',
           is_published: product.isPublished,
+          is_wholesale_enabled: product.isWholesaleEnabled ?? true,
+          wholesale_min_qty: product.wholesaleMinQty || 12,
           updated_at: new Date().toISOString(),
         };
         if (isUuid) {
@@ -412,6 +418,8 @@ export class DataStore {
               size: v.size,
               price: Number(v.price) || 0,
               sale_price: v.salePrice ? Number(v.salePrice) : null,
+              wholesale_price: v.wholesalePrice ? Number(v.wholesalePrice) : Math.round((Number(v.price) || 480) * 0.82),
+              wholesale_tiers: v.wholesaleTiers || [],
               stock: Number(v.stock) || 0,
               sku: v.sku || '',
               is_available: v.isAvailable,
@@ -496,6 +504,8 @@ export class DataStore {
             paymentMethod: o.payment_method || 'cod',
             paymentReference: o.payment_reference || undefined,
             status: (o.status || 'Pending') as OrderStatus,
+            isWholesale: o.is_wholesale ?? false,
+            wholesaleDiscount: o.wholesale_discount ? Number(o.wholesale_discount) : undefined,
             createdAt: o.created_at,
             items: Array.isArray(o.order_items)
               ? o.order_items.map((it: any) => ({
@@ -508,6 +518,9 @@ export class DataStore {
                   sleeve: it.sleeve,
                   size: it.size,
                   unitPrice: Number(it.unit_price) || 0,
+                  regularPrice: it.regular_price ? Number(it.regular_price) : undefined,
+                  wholesalePrice: it.wholesale_price ? Number(it.wholesale_price) : undefined,
+                  isWholesale: it.is_wholesale ?? false,
                   quantity: Number(it.quantity) || 1,
                   totalPrice: Number(it.total_price) || 0,
                   image: it.image_url,
@@ -584,6 +597,8 @@ export class DataStore {
             payment_method: orderData.paymentMethod || 'cod',
             payment_reference: orderData.paymentReference || null,
             status: 'Pending',
+            is_wholesale: orderData.isWholesale ?? false,
+            wholesale_discount: orderData.wholesaleDiscount || 0,
           })
           .select()
           .single();
@@ -609,6 +624,8 @@ export class DataStore {
               quantity: it.quantity,
               total_price: it.totalPrice,
               image_url: it.image,
+              is_wholesale: it.isWholesale ?? false,
+              wholesale_price: it.wholesalePrice || null,
             }));
             await supabase.from('order_items').insert(itemsPayload);
           }

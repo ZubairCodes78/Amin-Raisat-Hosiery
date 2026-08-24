@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { StoreProvider } from '@/context/StoreContext';
 import { CartProvider } from '@/context/CartContext';
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
     'Full Sleeve Vest',
     'Combed Cotton Innerwear',
     'Faisalabad Hosiery',
+    'Wholesale Hosiery Pakistan',
   ],
   authors: [{ name: 'Muhammad Amin' }],
   openGraph: {
@@ -42,15 +44,37 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen flex flex-col bg-dark-bg text-gray-100 antialiased selection:bg-gold-500 selection:text-black">
-        <AuthProvider>
-          <StoreProvider>
-            <CartProvider>
-              <PublicLayoutShell>{children}</PublicLayoutShell>
-            </CartProvider>
-          </StoreProvider>
-        </AuthProvider>
+    <html lang="en" suppressHydrationWarning className="dark">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var theme = localStorage.getItem('arh_theme_mode') || 'dark';
+                if (theme === 'light') {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.classList.add('light');
+                  document.documentElement.style.colorScheme = 'light';
+                } else {
+                  document.documentElement.classList.remove('light');
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.style.colorScheme = 'dark';
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-screen flex flex-col bg-light-bg dark:bg-dark-bg text-light-text dark:text-gray-100 antialiased selection:bg-gold-500 selection:text-black">
+        <ThemeProvider>
+          <AuthProvider>
+            <StoreProvider>
+              <CartProvider>
+                <PublicLayoutShell>{children}</PublicLayoutShell>
+              </CartProvider>
+            </StoreProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

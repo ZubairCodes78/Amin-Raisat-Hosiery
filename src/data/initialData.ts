@@ -83,6 +83,13 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   isBankTransferEnabled: true,
   isAnnouncementEnabled: true,
   announcementText: '100% Pure Combed Cotton Innerwear — Free Delivery on Orders of 3+ Pieces Across Pakistan!',
+  wholesale: {
+    isEnabled: true,
+    defaultMinQty: 12,
+    defaultDiscountPercent: 18,
+    announcementText: 'Wholesale Orders: Min 12 pieces at factory-direct bulk rates.',
+    policyNotes: 'All wholesale orders include direct warehouse dispatch with verified fabric inspection.',
+  },
   isWhatsAppFloatingEnabled: true,
   exchangeReturnDays: 7,
 };
@@ -251,6 +258,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     shippingInfo:
       'Fast delivery across all cities of Pakistan. Minimum order 3 pieces. Orders of 3 or more pieces qualify for 100% Free Delivery. Cash on Delivery (COD) & Bank Transfer available.',
     isPublished: true,
+    isWholesaleEnabled: true,
+    wholesaleMinQty: 12,
     createdAt: new Date().toISOString(),
     media: [
       {
@@ -278,18 +287,18 @@ export const INITIAL_PRODUCTS: Product[] = [
     ],
     variants: [
       // High Quality - Sleeveless / Sando (S, M, L, XL, XXL)
-      { id: 'var-hq-sl-s', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'S', price: 480, stock: 45, sku: 'ARH-HQ-SL-S', isAvailable: true },
-      { id: 'var-hq-sl-m', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'M', price: 480, stock: 60, sku: 'ARH-HQ-SL-M', isAvailable: true },
-      { id: 'var-hq-sl-l', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'L', price: 480, stock: 55, sku: 'ARH-HQ-SL-L', isAvailable: true },
-      { id: 'var-hq-sl-xl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'XL', price: 500, stock: 40, sku: 'ARH-HQ-SL-XL', isAvailable: true },
-      { id: 'var-hq-sl-xxl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'XXL', price: 520, stock: 30, sku: 'ARH-HQ-SL-XXL', isAvailable: true },
+      { id: 'var-hq-sl-s', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'S', price: 480, wholesalePrice: 390, stock: 45, sku: 'ARH-HQ-SL-S', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 390, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 370, label: '2–4 Dozen' }, { minQty: 48, price: 350, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-hq-sl-m', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'M', price: 480, wholesalePrice: 390, stock: 60, sku: 'ARH-HQ-SL-M', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 390, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 370, label: '2–4 Dozen' }, { minQty: 48, price: 350, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-hq-sl-l', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'L', price: 480, wholesalePrice: 390, stock: 55, sku: 'ARH-HQ-SL-L', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 390, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 370, label: '2–4 Dozen' }, { minQty: 48, price: 350, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-hq-sl-xl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'XL', price: 500, wholesalePrice: 410, stock: 40, sku: 'ARH-HQ-SL-XL', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 410, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 390, label: '2–4 Dozen' }, { minQty: 48, price: 370, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-hq-sl-xxl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'XXL', price: 520, wholesalePrice: 430, stock: 30, sku: 'ARH-HQ-SL-XXL', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 430, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 410, label: '2–4 Dozen' }, { minQty: 48, price: 390, label: 'Bulk 4+ Dozen' }] },
 
       // High Quality - Full Sleeve (S, M, L, XL, XXL)
-      { id: 'var-hq-fs-s', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'S', price: 540, stock: 35, sku: 'ARH-HQ-FS-S', isAvailable: true },
-      { id: 'var-hq-fs-m', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'M', price: 540, stock: 50, sku: 'ARH-HQ-FS-M', isAvailable: true },
-      { id: 'var-hq-fs-l', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'L', price: 540, stock: 50, sku: 'ARH-HQ-FS-L', isAvailable: true },
-      { id: 'var-hq-fs-xl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'XL', price: 560, stock: 35, sku: 'ARH-HQ-FS-XL', isAvailable: true },
-      { id: 'var-hq-fs-xxl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'XXL', price: 580, stock: 25, sku: 'ARH-HQ-FS-XXL', isAvailable: true },
+      { id: 'var-hq-fs-s', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'S', price: 540, wholesalePrice: 440, stock: 35, sku: 'ARH-HQ-FS-S', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 440, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 420, label: '2–4 Dozen' }, { minQty: 48, price: 395, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-hq-fs-m', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'M', price: 540, wholesalePrice: 440, stock: 50, sku: 'ARH-HQ-FS-M', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 440, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 420, label: '2–4 Dozen' }, { minQty: 48, price: 395, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-hq-fs-l', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'L', price: 540, wholesalePrice: 440, stock: 50, sku: 'ARH-HQ-FS-L', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 440, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 420, label: '2–4 Dozen' }, { minQty: 48, price: 395, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-hq-fs-xl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'XL', price: 560, wholesalePrice: 460, stock: 35, sku: 'ARH-HQ-FS-XL', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 460, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 440, label: '2–4 Dozen' }, { minQty: 48, price: 415, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-hq-fs-xxl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'XXL', price: 580, wholesalePrice: 480, stock: 25, sku: 'ARH-HQ-FS-XXL', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 480, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 460, label: '2–4 Dozen' }, { minQty: 48, price: 435, label: 'Bulk 4+ Dozen' }] },
     ],
   },
 
@@ -328,6 +337,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     shippingInfo:
       'Fast delivery across all cities of Pakistan. Minimum order 3 pieces. Orders of 3 or more pieces qualify for 100% Free Delivery. Cash on Delivery (COD) & Bank Transfer available.',
     isPublished: true,
+    isWholesaleEnabled: true,
+    wholesaleMinQty: 12,
     createdAt: new Date().toISOString(),
     media: [
       {
@@ -344,11 +355,11 @@ export const INITIAL_PRODUCTS: Product[] = [
     ],
     variants: [
       // Standard Quality - Sleeveless / Sando Only (S, M, L, XL, XXL)
-      { id: 'var-sq-sl-s', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'S', price: 380, stock: 50, sku: 'ARH-SQ-SL-S', isAvailable: true },
-      { id: 'var-sq-sl-m', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'M', price: 380, stock: 65, sku: 'ARH-SQ-SL-M', isAvailable: true },
-      { id: 'var-sq-sl-l', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'L', price: 380, stock: 60, sku: 'ARH-SQ-SL-L', isAvailable: true },
-      { id: 'var-sq-sl-xl', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'XL', price: 400, stock: 45, sku: 'ARH-SQ-SL-XL', isAvailable: true },
-      { id: 'var-sq-sl-xxl', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'XXL', price: 420, stock: 30, sku: 'ARH-SQ-SL-XXL', isAvailable: true },
+      { id: 'var-sq-sl-s', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'S', price: 380, wholesalePrice: 310, stock: 50, sku: 'ARH-SQ-SL-S', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 310, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 295, label: '2–4 Dozen' }, { minQty: 48, price: 280, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-sq-sl-m', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'M', price: 380, wholesalePrice: 310, stock: 65, sku: 'ARH-SQ-SL-M', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 310, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 295, label: '2–4 Dozen' }, { minQty: 48, price: 280, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-sq-sl-l', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'L', price: 380, wholesalePrice: 310, stock: 60, sku: 'ARH-SQ-SL-L', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 310, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 295, label: '2–4 Dozen' }, { minQty: 48, price: 280, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-sq-sl-xl', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'XL', price: 400, wholesalePrice: 330, stock: 45, sku: 'ARH-SQ-SL-XL', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 330, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 310, label: '2–4 Dozen' }, { minQty: 48, price: 295, label: 'Bulk 4+ Dozen' }] },
+      { id: 'var-sq-sl-xxl', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'XXL', price: 420, wholesalePrice: 350, stock: 30, sku: 'ARH-SQ-SL-XXL', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 350, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 330, label: '2–4 Dozen' }, { minQty: 48, price: 310, label: 'Bulk 4+ Dozen' }] },
     ],
   },
 ];

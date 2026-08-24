@@ -4,8 +4,33 @@
 
 @layer base {
   :root {
-    --background: #101114;
-    --foreground: #F1F0EC;
+    --bg-main: #101114;
+    --bg-header: #14161A;
+    --bg-surface: #17191D;
+    --bg-card: #1D2025;
+    --bg-elevated: #23262B;
+    --bg-hover: #22262D;
+    --text-primary: #F1F0EC;
+    --text-secondary: #85888E;
+    --text-muted: #5F6268;
+    --border-color: #30343A;
+    --border-subtle: #272A2F;
+    --accent-gold: #C9A96A;
+  }
+
+  html.light {
+    --bg-main: #F7F5F0;
+    --bg-header: #FFFFFF;
+    --bg-surface: #FFFFFF;
+    --bg-card: #FFFFFF;
+    --bg-elevated: #F1EFEA;
+    --bg-hover: #F2EFE9;
+    --text-primary: #171717;
+    --text-secondary: #525252;
+    --text-muted: #737373;
+    --border-color: #E2DDD3;
+    --border-subtle: #ECE8DF;
+    --accent-gold: #A07D38;
   }
 
   * {
@@ -19,28 +44,29 @@
   }
 
   body {
-    background-color: #101114;
-    color: #F1F0EC;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     overflow-x: hidden;
     scroll-behavior: smooth;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 }
 
-/* Refined Dark Theme Scrollbar */
+/* Theme-Aware Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #101114;
+  background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: #272A2F;
+  background: var(--border-color);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #30343A;
+  background: var(--text-secondary);
 }
 
 /* Premium Buttons */
@@ -49,16 +75,16 @@
 }
 
 .btn-secondary {
-  @apply bg-dark-surface text-charcoal-200 border border-dark-border hover:bg-dark-card hover:border-dark-border-light font-semibold text-xs py-2.5 px-5 rounded-xl transition-all duration-200 shadow-xs;
+  @apply bg-dark-surface dark:bg-dark-surface dark:text-charcoal-200 dark:border-dark-border dark:hover:bg-dark-card dark:hover:border-dark-border-light bg-light-elevated text-light-text border border-light-border hover:bg-light-hover font-semibold text-xs py-2.5 px-5 rounded-xl transition-all duration-200 shadow-xs;
 }
 
 .btn-dark {
-  @apply bg-dark-card text-charcoal-50 hover:bg-dark-elevated border border-dark-border font-bold text-xs py-2.5 px-5 rounded-xl transition-all duration-200 shadow-xs active:scale-[0.99];
+  @apply bg-dark-card dark:bg-dark-card dark:text-charcoal-50 dark:hover:bg-dark-elevated dark:border-dark-border bg-charcoal-800 text-charcoal-50 hover:bg-charcoal-900 border border-charcoal-700 font-bold text-xs py-2.5 px-5 rounded-xl transition-all duration-200 shadow-xs active:scale-[0.99];
 }
 
 /* Interactive Card & Container Smooth Hover */
 .card-hover-lift {
-  @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card hover:border-dark-border-light;
+  @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card hover:border-[#C9A96A]/40 dark:hover:border-dark-border-light;
 }
 
 /* Image Smooth Zoom inside group container */

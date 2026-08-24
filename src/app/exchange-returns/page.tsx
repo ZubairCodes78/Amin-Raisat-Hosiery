@@ -10,34 +10,34 @@ export default function ExchangeReturnsPage() {
   const { settings } = useStore();
 
   return (
-    <div className="min-h-[85vh] py-12 bg-dark-bg text-gray-100">
+    <div className="min-h-[85vh] py-12 bg-light-bg dark:bg-dark-bg text-charcoal-900 dark:text-gray-100 transition-colors duration-200">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
-          <Link href="/" className="hover:text-gold-400 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-charcoal-500 dark:text-gray-400 mb-6">
+          <Link href="/" className="hover:text-[#C9A96A] transition-colors">
             Home
           </Link>
-          <ChevronRight className="w-3 h-3 text-gray-600" />
-          <span className="font-semibold text-gray-200">Exchange &amp; Returns</span>
+          <ChevronRight className="w-3 h-3 text-charcoal-400 dark:text-gray-600" />
+          <span className="font-semibold text-charcoal-900 dark:text-gray-200">Exchange &amp; Returns</span>
         </div>
 
         {/* Header */}
-        <div className="border-b border-dark-border pb-6 mb-8">
-          <span className="text-[10px] font-bold text-gold-500 uppercase tracking-widest block">
+        <div className="border-b border-light-border dark:border-dark-border pb-6 mb-8">
+          <span className="text-[10px] font-bold text-[#A07D38] dark:text-gold-500 uppercase tracking-widest block">
             Customer Satisfaction Guarantee
           </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-100 mt-1 tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-charcoal-900 dark:text-gray-100 mt-1 tracking-tight">
             Exchange &amp; Returns Policy
           </h1>
-          <p className="text-xs sm:text-sm text-gray-400 mt-2 leading-relaxed">
-            Hassle-free 7-day exchange process for our customers across Pakistan.
+          <p className="text-xs sm:text-sm text-charcoal-600 dark:text-gray-400 mt-2 leading-relaxed">
+            Hassle-free 7-day exchange process for our retail and wholesale customers across Pakistan.
           </p>
         </div>
 
         {/* Content */}
-        <div className="space-y-6 text-xs sm:text-sm text-gray-300 leading-relaxed">
-          <div className="p-6 sm:p-8 bg-dark-surface rounded-2xl border border-dark-border shadow-card space-y-3">
-            <h2 className="font-bold text-gold-400 text-base flex items-center gap-2">
+        <div className="space-y-6 text-xs sm:text-sm text-charcoal-700 dark:text-gray-300 leading-relaxed">
+          <div className="p-6 sm:p-8 bg-white dark:bg-dark-surface rounded-2xl border border-light-border dark:border-dark-border shadow-sm dark:shadow-card space-y-3">
+            <h2 className="font-bold text-[#A07D38] dark:text-gold-400 text-base flex items-center gap-2">
               <RefreshCw className="w-5 h-5" />
               {settings.exchangeReturnDays ?? 7}-Day Sizing &amp; Defect Exchange
             </h2>
@@ -47,8 +47,8 @@ export default function ExchangeReturnsPage() {
           </div>
 
           <section className="space-y-2">
-            <h3 className="font-bold text-gray-100 text-sm">Exchange Conditions</h3>
-            <ul className="space-y-1.5 pl-4 list-disc text-gray-300">
+            <h3 className="font-bold text-charcoal-900 dark:text-gray-100 text-sm">Exchange Conditions</h3>
+            <ul className="space-y-1.5 pl-4 list-disc text-charcoal-700 dark:text-gray-300">
               <li>The garment must be <strong>unwashed</strong> and <strong>unworn</strong> (except for brief sizing fit trial).</li>
               <li>Original tags and packaging should be retained where possible.</li>
               <li>Exchange requests must be submitted within {settings.exchangeReturnDays ?? 7} days of package delivery.</li>
@@ -56,10 +56,10 @@ export default function ExchangeReturnsPage() {
           </section>
 
           <section className="space-y-2">
-            <h3 className="font-bold text-gray-100 text-sm">How to Request an Exchange</h3>
-            <ol className="space-y-2 pl-4 list-decimal text-gray-300">
+            <h3 className="font-bold text-charcoal-900 dark:text-gray-100 text-sm">How to Request an Exchange</h3>
+            <ol className="space-y-2 pl-4 list-decimal text-charcoal-700 dark:text-gray-300">
               <li>
-                Take a quick photo of the item and message our official WhatsApp support at <strong className="text-gold-400">{settings.whatsapp}</strong> with your <strong>Order Number</strong>.
+                Take a quick photo of the item and message our official WhatsApp support at <strong className="text-[#A07D38] dark:text-gold-400">{settings.whatsapp}</strong> with your <strong>Order Number</strong>.
               </li>
               <li>
                 Let Muhammad Amin know your desired replacement size or construction option.
@@ -78,7 +78,7 @@ export default function ExchangeReturnsPage() {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 py-3.5 px-6 bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold rounded-xl text-xs transition-all shadow-glow-whatsapp"
+              className="inline-flex items-center gap-2 py-3.5 px-6 bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold rounded-xl text-xs transition-all shadow-xs"
             >
               <WhatsAppIcon size={16} className="text-white fill-current" />
               <span>Initiate Exchange on WhatsApp ({settings.whatsapp})</span>

@@ -2,17 +2,20 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { ProductGallery } from '@/components/product/ProductGallery';
 import { VariantSelector } from '@/components/product/VariantSelector';
 import { QualityComparison } from '@/components/product/QualityComparison';
 import { ProductReviews } from '@/components/product/ProductReviews';
 import { SleeveType, ProductSize } from '@/types';
-import { ChevronRight, Star, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronRight, Star, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const isWholesale = searchParams.get('wholesale') === 'true';
+
   const slug = params?.slug as string;
   const { products, categories, subcategories, settings, isLoading } = useStore();
 
@@ -39,20 +42,20 @@ export default function ProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center bg-dark-bg">
-        <div className="w-9 h-9 border-4 border-gold-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[70vh] flex items-center justify-center bg-light-bg dark:bg-dark-bg">
+        <div className="w-9 h-9 border-4 border-[#C9A96A] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center bg-dark-bg">
-        <h1 className="text-2xl font-bold text-gray-100">Product Not Found</h1>
-        <p className="text-xs text-gray-400 mt-2">The product you requested does not exist or has been moved.</p>
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center bg-light-bg dark:bg-dark-bg">
+        <h1 className="text-2xl font-bold text-charcoal-900 dark:text-gray-100">Product Not Found</h1>
+        <p className="text-xs text-charcoal-500 dark:text-gray-400 mt-2">The product you requested does not exist or has been moved.</p>
         <Link
           href="/shop"
-          className="mt-6 inline-block bg-gold-500 text-black text-xs font-bold py-3 px-6 rounded-xl shadow-glow-gold"
+          className="mt-6 inline-block bg-champagne-500 text-black text-xs font-bold py-3 px-6 rounded-xl shadow-xs"
         >
           Return to Catalog
         </Link>
@@ -70,38 +73,46 @@ export default function ProductDetailPage() {
       : null;
 
   return (
-    <div className="min-h-screen py-10 bg-dark-bg text-gray-100">
+    <div className="min-h-screen py-10 bg-light-bg dark:bg-dark-bg text-charcoal-900 dark:text-gray-100 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center gap-2 text-xs text-gray-400 mb-8 flex-wrap">
-          <Link href="/" className="hover:text-gold-400 transition-colors">
+        <nav className="flex items-center gap-2 text-xs text-charcoal-500 dark:text-gray-400 mb-8 flex-wrap">
+          <Link href="/" className="hover:text-[#C9A96A] transition-colors">
             Home
           </Link>
-          <ChevronRight className="w-3 h-3 text-gray-600" />
-          <Link href="/shop" className="hover:text-gold-400 transition-colors">
+          <ChevronRight className="w-3 h-3 text-charcoal-400 dark:text-gray-600" />
+          <Link href="/shop" className="hover:text-[#C9A96A] transition-colors">
             Shop
           </Link>
+          {isWholesale && (
+            <>
+              <ChevronRight className="w-3 h-3 text-charcoal-400 dark:text-gray-600" />
+              <Link href="/wholesale" className="hover:text-[#C9A96A] text-[#A07D38] dark:text-champagne-400 font-bold transition-colors">
+                Wholesale Store
+              </Link>
+            </>
+          )}
           {category && (
             <>
-              <ChevronRight className="w-3 h-3 text-gray-600" />
-              <Link href={`/category/${category.slug}`} className="hover:text-gold-400 capitalize transition-colors">
+              <ChevronRight className="w-3 h-3 text-charcoal-400 dark:text-gray-600" />
+              <Link href={`/category/${category.slug}`} className="hover:text-[#C9A96A] capitalize transition-colors">
                 {category.name}&apos;s Collection
               </Link>
             </>
           )}
           {subcategory && (
             <>
-              <ChevronRight className="w-3 h-3 text-gray-600" />
+              <ChevronRight className="w-3 h-3 text-charcoal-400 dark:text-gray-600" />
               <Link
                 href={`/category/${category?.slug || 'men'}/${subcategory.slug}`}
-                className="hover:text-gold-400 capitalize transition-colors"
+                className="hover:text-[#C9A96A] capitalize transition-colors"
               >
                 {subcategory.name}
               </Link>
             </>
           )}
-          <ChevronRight className="w-3 h-3 text-gray-600" />
-          <span className="font-semibold text-gray-200 truncate max-w-[200px] sm:max-w-none">{product.name}</span>
+          <ChevronRight className="w-3 h-3 text-charcoal-400 dark:text-gray-600" />
+          <span className="font-semibold text-charcoal-900 dark:text-gray-200 truncate max-w-[200px] sm:max-w-none">{product.name}</span>
         </nav>
 
         {/* Main Product Layout */}
@@ -118,18 +129,26 @@ export default function ProductDetailPage() {
           {/* Right Column: Details & Variant Selection */}
           <div className="lg:col-span-6 space-y-6">
             <div>
-              <span className="text-[10px] font-bold text-gold-500 uppercase tracking-widest block">
-                {category ? category.name : 'Men'} &gt; {subcategory ? subcategory.name : 'Vests'}
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-100 mt-1 tracking-tight leading-tight">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-[#A07D38] dark:text-gold-500 uppercase tracking-widest block">
+                  {category ? category.name : 'Men'} &gt; {subcategory ? subcategory.name : 'Vests'}
+                </span>
+                {isWholesale && (
+                  <span className="inline-flex items-center gap-1 text-[9px] font-extrabold bg-[#C9A96A]/20 text-[#A07D38] dark:text-[#C9A96A] border border-[#C9A96A]/40 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3" /> Wholesale Mode Active
+                  </span>
+                )}
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-charcoal-900 dark:text-gray-100 mt-1 tracking-tight leading-tight">
                 {product.name}
               </h1>
-              <p className="text-xs sm:text-sm text-gray-300 mt-2 font-normal leading-relaxed">
+              <p className="text-xs sm:text-sm text-charcoal-600 dark:text-gray-300 mt-2 font-normal leading-relaxed">
                 {product.subtitle}
               </p>
 
               {/* Rating Summary */}
-              <div className="flex items-center gap-3 mt-3.5 pt-3.5 border-t border-dark-border">
+              <div className="flex items-center gap-3 mt-3.5 pt-3.5 border-t border-light-border dark:border-dark-border">
                 {reviewsCount > 0 ? (
                   <div className="flex items-center gap-1.5">
                     <div className="flex text-gold-500">
@@ -137,47 +156,48 @@ export default function ProductDetailPage() {
                         <Star
                           key={s}
                           className={`w-3.5 h-3.5 ${
-                            s <= Math.round(Number(avgRating)) ? 'fill-current' : 'text-gray-600'
+                            s <= Math.round(Number(avgRating)) ? 'fill-current' : 'text-charcoal-300 dark:text-gray-600'
                           }`}
                         />
                       ))}
                     </div>
-                    <span className="text-xs font-bold text-gray-100">{avgRating}</span>
-                    <span className="text-xs text-gray-400">({reviewsCount} reviews)</span>
+                    <span className="text-xs font-bold text-charcoal-900 dark:text-gray-100">{avgRating}</span>
+                    <span className="text-xs text-charcoal-500 dark:text-gray-400">({reviewsCount} reviews)</span>
                   </div>
                 ) : (
-                  <span className="text-xs text-gold-400 font-medium">★ Authentic Combed Cotton Quality</span>
+                  <span className="text-xs text-[#A07D38] dark:text-gold-400 font-medium">★ Authentic Combed Cotton Quality</span>
                 )}
-                <span className="text-gray-600">•</span>
-                <span className="text-xs font-semibold text-gray-300">Made in Pakistan</span>
+                <span className="text-charcoal-300 dark:text-gray-600">•</span>
+                <span className="text-xs font-semibold text-charcoal-700 dark:text-gray-300">Made in Faisalabad, Pakistan</span>
               </div>
             </div>
 
-            {/* Reactive Variant Selector (Sleeve, Size, Price, Delivery Rule, Add to Cart, WhatsApp) */}
+            {/* Reactive Variant Selector (Sleeve, Size, Price, Wholesale comparison, Add to Cart, WhatsApp) */}
             <VariantSelector
               product={product}
               selectedSleeve={selectedSleeve}
               setSelectedSleeve={setSelectedSleeve}
               selectedSize={selectedSize}
               setSelectedSize={setSelectedSize}
+              defaultWholesale={isWholesale}
             />
 
             {/* Clean Accordion Sections */}
-            <div className="border-t border-dark-border divide-y divide-dark-border pt-2 text-xs">
+            <div className="border-t border-light-border dark:border-dark-border divide-y divide-light-border dark:divide-dark-border pt-2 text-xs">
               {/* 1. Description & Key Features */}
               <div className="py-3.5">
                 <button
                   onClick={() => toggleSection('description')}
-                  className="w-full flex items-center justify-between font-bold text-gray-200 text-left py-1 hover:text-gold-400 transition-colors"
+                  className="w-full flex items-center justify-between font-bold text-charcoal-800 dark:text-gray-200 text-left py-1 hover:text-[#C9A96A] transition-colors"
                 >
                   <span>Product Description &amp; Features</span>
-                  {openSections.description ? <ChevronUp className="w-4 h-4 text-gold-400" /> : <ChevronDown className="w-4 h-4" />}
+                  {openSections.description ? <ChevronUp className="w-4 h-4 text-[#C9A96A]" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {openSections.description && (
-                  <div className="pt-2 text-gray-300 space-y-2.5 font-normal leading-relaxed">
+                  <div className="pt-2 text-charcoal-600 dark:text-gray-300 space-y-2.5 font-normal leading-relaxed">
                     <p>{product.description}</p>
                     {product.features && product.features.length > 0 && (
-                      <ul className="space-y-1.5 pl-4 list-disc text-gray-300">
+                      <ul className="space-y-1.5 pl-4 list-disc text-charcoal-600 dark:text-gray-300">
                         {product.features.map((feat, idx) => (
                           <li key={idx}>{feat}</li>
                         ))}
@@ -191,10 +211,10 @@ export default function ProductDetailPage() {
               <div className="py-3.5">
                 <button
                   onClick={() => toggleSection('qualityComparison')}
-                  className="w-full flex items-center justify-between font-bold text-gray-200 text-left py-1 hover:text-gold-400 transition-colors"
+                  className="w-full flex items-center justify-between font-bold text-charcoal-800 dark:text-gray-200 text-left py-1 hover:text-[#C9A96A] transition-colors"
                 >
                   <span>Quality &amp; Construction Guide (High vs Standard)</span>
-                  {openSections.qualityComparison ? <ChevronUp className="w-4 h-4 text-gold-400" /> : <ChevronDown className="w-4 h-4" />}
+                  {openSections.qualityComparison ? <ChevronUp className="w-4 h-4 text-[#C9A96A]" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {openSections.qualityComparison && (
                   <div className="pt-3">
@@ -207,13 +227,13 @@ export default function ProductDetailPage() {
               <div className="py-3.5">
                 <button
                   onClick={() => toggleSection('care')}
-                  className="w-full flex items-center justify-between font-bold text-gray-200 text-left py-1 hover:text-gold-400 transition-colors"
+                  className="w-full flex items-center justify-between font-bold text-charcoal-800 dark:text-gray-200 text-left py-1 hover:text-[#C9A96A] transition-colors"
                 >
                   <span>Fabric Care Instructions</span>
-                  {openSections.care ? <ChevronUp className="w-4 h-4 text-gold-400" /> : <ChevronDown className="w-4 h-4" />}
+                  {openSections.care ? <ChevronUp className="w-4 h-4 text-[#C9A96A]" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {openSections.care && (
-                  <div className="pt-2 text-gray-300 font-normal">
+                  <div className="pt-2 text-charcoal-600 dark:text-gray-300 font-normal">
                     <ul className="space-y-1.5 pl-4 list-disc">
                       {product.careInstructions.map((care, idx) => (
                         <li key={idx}>{care}</li>
@@ -227,19 +247,19 @@ export default function ProductDetailPage() {
               <div className="py-3.5">
                 <button
                   onClick={() => toggleSection('shipping')}
-                  className="w-full flex items-center justify-between font-bold text-gray-200 text-left py-1 hover:text-gold-400 transition-colors"
+                  className="w-full flex items-center justify-between font-bold text-charcoal-800 dark:text-gray-200 text-left py-1 hover:text-[#C9A96A] transition-colors"
                 >
-                  <span>Nationwide Pakistan Shipping</span>
-                  {openSections.shipping ? <ChevronUp className="w-4 h-4 text-gold-400" /> : <ChevronDown className="w-4 h-4" />}
+                  <span>Nationwide Pakistan Shipping &amp; Wholesale Logistics</span>
+                  {openSections.shipping ? <ChevronUp className="w-4 h-4 text-[#C9A96A]" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {openSections.shipping && (
-                  <div className="pt-2 text-gray-300 space-y-1.5 font-normal leading-relaxed">
+                  <div className="pt-2 text-charcoal-600 dark:text-gray-300 space-y-1.5 font-normal leading-relaxed">
                     <p>{product.shippingInfo}</p>
-                    <p className="font-semibold text-gray-200">
-                      • Minimum order: {settings.shipping.minOrderQty} pieces
+                    <p className="font-semibold text-charcoal-900 dark:text-gray-200">
+                      • Retail Minimum: {settings.shipping.minOrderQty} pieces | Wholesale Minimum: {product.wholesaleMinQty || 12} pieces
                     </p>
-                    <p className="font-semibold text-emerald-400">
-                      • 3 or more pieces: 100% FREE DELIVERY across all Pakistan cities
+                    <p className="font-semibold text-emerald-700 dark:text-emerald-400">
+                      • 100% FREE DELIVERY on 3+ pieces retail &amp; all wholesale orders across Pakistan.
                     </p>
                     <p>• Cash on Delivery (COD) and Direct Bank Transfer available.</p>
                   </div>
@@ -250,18 +270,18 @@ export default function ProductDetailPage() {
               <div className="py-3.5">
                 <button
                   onClick={() => toggleSection('returns')}
-                  className="w-full flex items-center justify-between font-bold text-gray-200 text-left py-1 hover:text-gold-400 transition-colors"
+                  className="w-full flex items-center justify-between font-bold text-charcoal-800 dark:text-gray-200 text-left py-1 hover:text-[#C9A96A] transition-colors"
                 >
-                  <span>Exchange &amp; Return Policy (7 Days)</span>
-                  {openSections.returns ? <ChevronUp className="w-4 h-4 text-gold-400" /> : <ChevronDown className="w-4 h-4" />}
+                  <span>Exchange &amp; Return Policy ({settings.exchangeReturnDays || 7} Days)</span>
+                  {openSections.returns ? <ChevronUp className="w-4 h-4 text-[#C9A96A]" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {openSections.returns && (
-                  <div className="pt-2 text-gray-300 font-normal leading-relaxed">
+                  <div className="pt-2 text-charcoal-600 dark:text-gray-300 font-normal leading-relaxed">
                     <p>
                       {product.returnPolicy ||
                         'We offer a 7-day hassle-free exchange policy for any manufacturing defect or sizing mismatch. Product must remain unwashed and unworn.'}
                     </p>
-                    <p className="mt-1 font-semibold text-gold-400">
+                    <p className="mt-1 font-semibold text-[#A07D38] dark:text-gold-400">
                       To initiate an exchange, message us directly on WhatsApp ({settings.whatsapp}).
                     </p>
                   </div>

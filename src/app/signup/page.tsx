@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { Lock, Mail, User, Phone, ArrowRight, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 function SignupForm() {
@@ -13,6 +14,7 @@ function SignupForm() {
   const redirectTarget = searchParams?.get('redirect') || '/account';
 
   const { signUp, user } = useAuth();
+  const { isDark } = useTheme();
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -87,14 +89,16 @@ function SignupForm() {
     }
   };
 
+  const logoSrc = isDark ? '/images/header logo.png' : '/images/light logo.jpeg';
+
   return (
-    <div className="max-w-md w-full space-y-7 bg-[#17191D] p-8 sm:p-10 rounded-2xl border border-[#30343A] shadow-elevation text-[#F1F0EC]">
+    <div className="max-w-md w-full space-y-7 bg-white dark:bg-[#17191D] p-8 sm:p-10 rounded-2xl border border-light-border dark:border-[#30343A] shadow-sm dark:shadow-elevation text-charcoal-900 dark:text-[#F1F0EC]">
       {/* Brand Header */}
       <div className="text-center space-y-3">
         <Link href="/" className="inline-block py-1">
           <div className="relative w-52 h-14 mx-auto overflow-hidden">
             <Image
-              src="/images/header logo.png"
+              src={logoSrc}
               alt="Amin Raisat Hosiery"
               fill
               sizes="220px"
@@ -103,23 +107,23 @@ function SignupForm() {
             />
           </div>
         </Link>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-[#F1F0EC] tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-extrabold text-charcoal-900 dark:text-[#F1F0EC] tracking-tight">
           Create Customer Account
         </h1>
-        <p className="text-xs text-[#85888E]">
+        <p className="text-xs text-charcoal-500 dark:text-[#85888E]">
           Save delivery addresses, earn free delivery perks, and track orders.
         </p>
       </div>
 
       {errorMsg && (
-        <div className="p-3.5 bg-[#D96B6B]/15 border border-[#D96B6B]/30 text-[#D96B6B] rounded-xl text-xs flex items-center gap-2.5 animate-in fade-in">
+        <div className="p-3.5 bg-rose-50 dark:bg-[#D96B6B]/15 border border-rose-200 dark:border-[#D96B6B]/30 text-rose-700 dark:text-[#D96B6B] rounded-xl text-xs flex items-center gap-2.5 animate-in fade-in">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {successMsg && (
-        <div className="p-3.5 bg-[#3FB982]/15 border border-[#3FB982]/30 text-[#3FB982] rounded-xl text-xs flex items-center gap-2.5 animate-in fade-in">
+        <div className="p-3.5 bg-emerald-50 dark:bg-[#3FB982]/15 border border-emerald-200 dark:border-[#3FB982]/30 text-emerald-700 dark:text-[#3FB982] rounded-xl text-xs flex items-center gap-2.5 animate-in fade-in">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
@@ -127,8 +131,8 @@ function SignupForm() {
 
       <form onSubmit={handleSubmit} className="space-y-3.5">
         <div>
-          <label className="block text-xs font-semibold text-[#B4B5BA] mb-1">
-            Full Name <span className="text-[#D96B6B]">*</span>
+          <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B4B5BA] mb-1">
+            Full Name <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -138,14 +142,14 @@ function SignupForm() {
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
               placeholder="e.g. Muhammad Usman"
-              className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-[#1D2025] border border-[#30343A] rounded-xl text-[#F1F0EC] placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
+              className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white dark:bg-[#1D2025] border border-light-border dark:border-[#30343A] rounded-xl text-charcoal-900 dark:text-[#F1F0EC] placeholder-charcoal-400 dark:placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
             />
-            <User className="w-4 h-4 text-[#85888E] absolute left-3.5 top-3" />
+            <User className="w-4 h-4 text-charcoal-400 dark:text-[#85888E] absolute left-3.5 top-3" />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#B4B5BA] mb-1">
+          <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B4B5BA] mb-1">
             Phone / WhatsApp Number (Optional)
           </label>
           <div className="relative">
@@ -155,15 +159,15 @@ function SignupForm() {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="03001234567"
-              className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-[#1D2025] border border-[#30343A] rounded-xl text-[#F1F0EC] placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
+              className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white dark:bg-[#1D2025] border border-light-border dark:border-[#30343A] rounded-xl text-charcoal-900 dark:text-[#F1F0EC] placeholder-charcoal-400 dark:placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
             />
-            <Phone className="w-4 h-4 text-[#85888E] absolute left-3.5 top-3" />
+            <Phone className="w-4 h-4 text-charcoal-400 dark:text-[#85888E] absolute left-3.5 top-3" />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#B4B5BA] mb-1">
-            Email Address <span className="text-[#D96B6B]">*</span>
+          <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B4B5BA] mb-1">
+            Email Address <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -173,15 +177,15 @@ function SignupForm() {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="name@example.com"
-              className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-[#1D2025] border border-[#30343A] rounded-xl text-[#F1F0EC] placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
+              className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white dark:bg-[#1D2025] border border-light-border dark:border-[#30343A] rounded-xl text-charcoal-900 dark:text-[#F1F0EC] placeholder-charcoal-400 dark:placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
             />
-            <Mail className="w-4 h-4 text-[#85888E] absolute left-3.5 top-3" />
+            <Mail className="w-4 h-4 text-charcoal-400 dark:text-[#85888E] absolute left-3.5 top-3" />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#B4B5BA] mb-1">
-            Create Password <span className="text-[#D96B6B]">*</span>
+          <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B4B5BA] mb-1">
+            Create Password <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -192,13 +196,13 @@ function SignupForm() {
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               placeholder="Minimum 6 characters"
-              className="w-full pl-10 pr-10 py-2.5 text-xs bg-[#1D2025] border border-[#30343A] rounded-xl text-[#F1F0EC] placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
+              className="w-full pl-10 pr-10 py-2.5 text-xs bg-white dark:bg-[#1D2025] border border-light-border dark:border-[#30343A] rounded-xl text-charcoal-900 dark:text-[#F1F0EC] placeholder-charcoal-400 dark:placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
             />
-            <Lock className="w-4 h-4 text-[#85888E] absolute left-3.5 top-3" />
+            <Lock className="w-4 h-4 text-charcoal-400 dark:text-[#85888E] absolute left-3.5 top-3" />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="p-1 text-[#85888E] hover:text-[#F1F0EC] absolute right-2.5 top-2.5"
+              className="p-1 text-charcoal-400 dark:text-[#85888E] hover:text-charcoal-900 dark:hover:text-[#F1F0EC] absolute right-2.5 top-2.5"
               tabIndex={-1}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -207,8 +211,8 @@ function SignupForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[#B4B5BA] mb-1">
-            Confirm Password <span className="text-[#D96B6B]">*</span>
+          <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B4B5BA] mb-1">
+            Confirm Password <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -219,28 +223,28 @@ function SignupForm() {
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               placeholder="Repeat your password"
-              className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-[#1D2025] border border-[#30343A] rounded-xl text-[#F1F0EC] placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
+              className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white dark:bg-[#1D2025] border border-light-border dark:border-[#30343A] rounded-xl text-charcoal-900 dark:text-[#F1F0EC] placeholder-charcoal-400 dark:placeholder-[#85888E] focus:outline-none focus:border-[#C9A96A] transition-colors"
             />
-            <Lock className="w-4 h-4 text-[#85888E] absolute left-3.5 top-3" />
+            <Lock className="w-4 h-4 text-charcoal-400 dark:text-[#85888E] absolute left-3.5 top-3" />
           </div>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 px-4 rounded-xl bg-[#C9A96A] hover:bg-[#D8BD88] disabled:opacity-50 text-[#101114] font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs active:scale-[0.99] mt-2"
+          className="w-full py-3 px-4 rounded-xl bg-champagne-500 hover:bg-champagne-400 disabled:opacity-50 text-black font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs active:scale-[0.99] mt-2"
         >
           <span>{loading ? 'Creating Account...' : 'Create Account'}</span>
           <ArrowRight className="w-4 h-4 stroke-[2.5]" />
         </button>
       </form>
 
-      <div className="border-t border-[#30343A] pt-4 text-center space-y-2">
-        <p className="text-xs text-[#85888E]">
+      <div className="border-t border-light-border dark:border-[#30343A] pt-4 text-center space-y-2">
+        <p className="text-xs text-charcoal-500 dark:text-[#85888E]">
           Already have an account?{' '}
           <Link
             href={`/login${redirectTarget ? `?redirect=${encodeURIComponent(redirectTarget)}` : ''}`}
-            className="font-bold text-[#C9A96A] hover:underline"
+            className="font-bold text-[#A07D38] dark:text-[#C9A96A] hover:underline"
           >
             Sign In
           </Link>
@@ -252,8 +256,8 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 bg-[#101114] text-[#F1F0EC]">
-      <Suspense fallback={<div className="text-[#85888E] text-xs">Loading registration...</div>}>
+    <div className="min-h-[85vh] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 bg-light-bg dark:bg-[#101114] text-charcoal-900 dark:text-[#F1F0EC] transition-colors duration-200">
+      <Suspense fallback={<div className="text-charcoal-500 dark:text-[#85888E] text-xs">Loading registration...</div>}>
         <SignupForm />
       </Suspense>
     </div>

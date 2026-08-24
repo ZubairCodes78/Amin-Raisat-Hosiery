@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
 import { ProductCard } from '@/components/product/ProductCard';
-import { ChevronRight, Filter, X } from 'lucide-react';
+import { ChevronRight, Filter, X, Sparkles } from 'lucide-react';
 
 export default function ShopPage() {
   const { products, categories, subcategories } = useStore();
@@ -118,44 +118,52 @@ export default function ShopPage() {
     inStockOnly;
 
   return (
-    <div className="min-h-[85vh] py-10 bg-dark-bg text-gray-100">
+    <div className="min-h-[85vh] py-10 bg-light-bg dark:bg-dark-bg text-charcoal-900 dark:text-gray-100 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
-          <Link href="/" className="hover:text-gold-400 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-charcoal-500 dark:text-gray-400 mb-6">
+          <Link href="/" className="hover:text-[#C9A96A] transition-colors">
             Home
           </Link>
-          <ChevronRight className="w-3 h-3 text-gray-600" />
-          <span className="font-semibold text-gray-200">Catalog &amp; Shop</span>
+          <ChevronRight className="w-3 h-3 text-charcoal-400 dark:text-gray-600" />
+          <span className="font-semibold text-charcoal-900 dark:text-gray-200">Catalog &amp; Shop</span>
         </div>
 
         {/* Page Header */}
-        <div className="border-b border-dark-border pb-6 mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="border-b border-light-border dark:border-dark-border pb-6 mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-100 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-charcoal-900 dark:text-gray-100 tracking-tight">
               All Products &amp; Garments
             </h1>
-            <p className="text-xs sm:text-sm text-gray-400 mt-1">
+            <p className="text-xs sm:text-sm text-charcoal-600 dark:text-gray-400 mt-1">
               Browse authentic 100% fine combed cotton vests and innerwear. Free Delivery on 3+ pieces.
             </p>
           </div>
 
-          {/* Sort selector & Mobile filter trigger */}
-          <div className="flex items-center gap-3">
+          {/* Wholesale banner link & Sort selector */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link
+              href="/wholesale"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-champagne-100 dark:bg-[#1D2025] text-[#A07D38] dark:text-[#C9A96A] border border-[#C9A96A]/40 text-xs font-bold hover:bg-champagne-200 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Wholesale Store &rarr;</span>
+            </Link>
+
             <button
               onClick={() => setMobileFilterOpen(true)}
-              className="lg:hidden inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-dark-border text-xs font-semibold text-gray-200 bg-dark-surface"
+              className="lg:hidden inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-light-border dark:border-dark-border text-xs font-semibold text-charcoal-800 dark:text-gray-200 bg-white dark:bg-dark-surface"
             >
-              <Filter className="w-4 h-4 text-gold-400" />
+              <Filter className="w-4 h-4 text-[#A07D38] dark:text-gold-400" />
               <span>Filters {hasActiveFilters && '•'}</span>
             </button>
 
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-gray-400 hidden sm:inline">Sort:</span>
+              <span className="text-charcoal-500 dark:text-gray-400 hidden sm:inline">Sort:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-dark-surface border border-dark-border rounded-xl px-3 py-2 text-xs font-semibold text-gray-200 focus:outline-none focus:border-gold-500"
+                className="bg-white dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-xl px-3 py-2 text-xs font-semibold text-charcoal-900 dark:text-gray-200 focus:outline-none focus:border-[#C9A96A]"
               >
                 <option value="featured">Featured</option>
                 <option value="newest">Newest</option>
@@ -171,15 +179,15 @@ export default function ShopPage() {
         {/* Main Grid: Sidebar Filters + Products */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Desktop Filter Sidebar */}
-          <aside className="hidden lg:block lg:col-span-3 space-y-6 bg-dark-surface p-6 rounded-2xl border border-dark-border shadow-card">
-            <div className="flex items-center justify-between border-b border-dark-border pb-3">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-gold-400 flex items-center gap-2">
+          <aside className="hidden lg:block lg:col-span-3 space-y-6 bg-white dark:bg-dark-surface p-6 rounded-2xl border border-light-border dark:border-dark-border shadow-sm dark:shadow-card">
+            <div className="flex items-center justify-between border-b border-light-border dark:border-dark-border pb-3">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-[#A07D38] dark:text-gold-400 flex items-center gap-2">
                 <Filter className="w-3.5 h-3.5" /> Filter Catalog
               </h3>
               {hasActiveFilters && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-[11px] font-semibold text-gray-400 hover:text-gold-400 transition-colors"
+                  className="text-[11px] font-semibold text-charcoal-500 dark:text-gray-400 hover:text-[#C9A96A] transition-colors"
                 >
                   Clear All
                 </button>
@@ -188,7 +196,7 @@ export default function ShopPage() {
 
             {/* Category Filter */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">Category</label>
+              <label className="text-xs font-bold text-charcoal-700 dark:text-gray-300 block">Category</label>
               <div className="space-y-1 text-xs">
                 <button
                   onClick={() => {
@@ -197,8 +205,8 @@ export default function ShopPage() {
                   }}
                   className={`block w-full text-left px-3 py-2 rounded-xl transition-colors ${
                     selectedCategory === 'all'
-                      ? 'bg-gold-500 text-black font-bold shadow-glow-gold'
-                      : 'text-gray-300 hover:bg-dark-card'
+                      ? 'bg-champagne-500 text-black font-bold shadow-xs'
+                      : 'text-charcoal-700 dark:text-gray-300 hover:bg-light-hover dark:hover:bg-dark-card'
                   }`}
                 >
                   All Categories
@@ -212,8 +220,8 @@ export default function ShopPage() {
                     }}
                     className={`block w-full text-left px-3 py-2 rounded-xl transition-colors ${
                       selectedCategory === c.slug
-                        ? 'bg-gold-500 text-black font-bold shadow-glow-gold'
-                        : 'text-gray-300 hover:bg-dark-card'
+                        ? 'bg-champagne-500 text-black font-bold shadow-xs'
+                        : 'text-charcoal-700 dark:text-gray-300 hover:bg-light-hover dark:hover:bg-dark-card'
                     }`}
                   >
                     {c.name}
@@ -224,15 +232,15 @@ export default function ShopPage() {
 
             {/* Subcategory Filter */}
             {activeSubcats.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-dark-border">
-                <label className="text-xs font-bold text-gray-300 block">Subcategory</label>
+              <div className="space-y-2 pt-2 border-t border-light-border dark:border-dark-border">
+                <label className="text-xs font-bold text-charcoal-700 dark:text-gray-300 block">Subcategory</label>
                 <div className="space-y-1 text-xs">
                   <button
                     onClick={() => setSelectedSubcategory('all')}
                     className={`block w-full text-left px-3 py-2 rounded-xl transition-colors ${
                       selectedSubcategory === 'all'
-                        ? 'bg-gold-500 text-black font-bold shadow-glow-gold'
-                        : 'text-gray-300 hover:bg-dark-card'
+                        ? 'bg-champagne-500 text-black font-bold shadow-xs'
+                        : 'text-charcoal-700 dark:text-gray-300 hover:bg-light-hover dark:hover:bg-dark-card'
                     }`}
                   >
                     All Subcategories
@@ -243,8 +251,8 @@ export default function ShopPage() {
                       onClick={() => setSelectedSubcategory(s.slug)}
                       className={`block w-full text-left px-3 py-2 rounded-xl transition-colors ${
                         selectedSubcategory === s.slug
-                          ? 'bg-gold-500 text-black font-bold shadow-glow-gold'
-                          : 'text-gray-300 hover:bg-dark-card'
+                          ? 'bg-champagne-500 text-black font-bold shadow-xs'
+                          : 'text-charcoal-700 dark:text-gray-300 hover:bg-light-hover dark:hover:bg-dark-card'
                       }`}
                     >
                       {s.name}
@@ -255,8 +263,8 @@ export default function ShopPage() {
             )}
 
             {/* Size Filter */}
-            <div className="space-y-2 pt-2 border-t border-dark-border">
-              <label className="text-xs font-bold text-gray-300 block">Size Fit</label>
+            <div className="space-y-2 pt-2 border-t border-light-border dark:border-dark-border">
+              <label className="text-xs font-bold text-charcoal-700 dark:text-gray-300 block">Size Fit</label>
               <div className="flex flex-wrap gap-1.5">
                 {['all', 'S', 'M', 'L', 'XL', 'XXL'].map((s) => (
                   <button
@@ -264,8 +272,8 @@ export default function ShopPage() {
                     onClick={() => setSelectedSize(s)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
                       selectedSize === s
-                        ? 'border-gold-500 bg-gold-500 text-black'
-                        : 'border-dark-border bg-dark-card text-gray-300 hover:border-gray-500'
+                        ? 'border-champagne-500 bg-champagne-500 text-black'
+                        : 'border-light-border dark:border-dark-border bg-light-elevated dark:bg-dark-card text-charcoal-700 dark:text-gray-300 hover:border-[#C9A96A]/40'
                     }`}
                   >
                     {s === 'all' ? 'All' : s}
@@ -275,13 +283,13 @@ export default function ShopPage() {
             </div>
 
             {/* Available Products Only */}
-            <div className="pt-2 border-t border-dark-border">
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-300">
+            <div className="pt-2 border-t border-light-border dark:border-dark-border">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-charcoal-700 dark:text-gray-300">
                 <input
                   type="checkbox"
                   checked={inStockOnly}
                   onChange={(e) => setInStockOnly(e.target.checked)}
-                  className="rounded accent-gold-500 w-4 h-4"
+                  className="rounded accent-[#C9A96A] w-4 h-4"
                 />
                 <span>In Stock Products Only</span>
               </label>
@@ -291,19 +299,19 @@ export default function ShopPage() {
           {/* Products Grid Area */}
           <div className="lg:col-span-9">
             {filteredProducts.length === 0 ? (
-              <div className="bg-dark-surface rounded-2xl p-12 text-center border border-dark-border space-y-3 shadow-card">
-                <p className="text-sm font-bold text-gray-200">No products found matching your filters.</p>
-                <p className="text-xs text-gray-400">Try adjusting or clearing your filters to see more results.</p>
+              <div className="bg-white dark:bg-dark-surface rounded-2xl p-12 text-center border border-light-border dark:border-dark-border space-y-3 shadow-sm dark:shadow-card">
+                <p className="text-sm font-bold text-charcoal-900 dark:text-gray-200">No products found matching your filters.</p>
+                <p className="text-xs text-charcoal-500 dark:text-gray-400">Try adjusting or clearing your filters to see more results.</p>
                 <button
                   onClick={clearAllFilters}
-                  className="mt-2 inline-block px-4 py-2 bg-gold-500 text-black rounded-xl text-xs font-bold hover:bg-gold-400 transition-colors"
+                  className="mt-2 inline-block px-4 py-2 bg-champagne-500 text-black rounded-xl text-xs font-bold hover:bg-champagne-400 transition-colors"
                 >
                   Reset Filters
                 </button>
               </div>
             ) : (
               <div>
-                <p className="text-xs font-medium text-gray-400 mb-4">
+                <p className="text-xs font-medium text-charcoal-500 dark:text-gray-400 mb-4">
                   Showing {filteredProducts.length} Product{filteredProducts.length > 1 ? 's' : ''}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -319,24 +327,24 @@ export default function ShopPage() {
 
       {/* Mobile Filters Drawer */}
       {mobileFilterOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end animate-in fade-in">
-          <div className="bg-dark-surface w-full max-w-xs h-full p-6 overflow-y-auto space-y-6 shadow-elevation border-l border-dark-border text-gray-100">
-            <div className="flex items-center justify-between border-b border-dark-border pb-3">
-              <h3 className="font-bold text-sm text-gray-100">Filter Products</h3>
-              <button onClick={() => setMobileFilterOpen(false)} className="p-1 text-gray-400 hover:text-gray-100">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex justify-end animate-in fade-in">
+          <div className="bg-white dark:bg-dark-surface w-full max-w-xs h-full p-6 overflow-y-auto space-y-6 shadow-elevation border-l border-light-border dark:border-dark-border text-charcoal-900 dark:text-gray-100">
+            <div className="flex items-center justify-between border-b border-light-border dark:border-dark-border pb-3">
+              <h3 className="font-bold text-sm text-charcoal-900 dark:text-gray-100">Filter Products</h3>
+              <button onClick={() => setMobileFilterOpen(false)} className="p-1 text-charcoal-400 hover:text-charcoal-900 dark:hover:text-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">Category</label>
+              <label className="text-xs font-bold text-charcoal-700 dark:text-gray-300 block">Category</label>
               <select
                 value={selectedCategory}
                 onChange={(e) => {
                   setSelectedCategory(e.target.value);
                   setSelectedSubcategory('all');
                 }}
-                className="w-full bg-dark-card border border-dark-border rounded-xl p-2.5 text-xs text-gray-100"
+                className="w-full bg-light-elevated dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl p-2.5 text-xs text-charcoal-900 dark:text-gray-100"
               >
                 <option value="all">All Categories</option>
                 {categories.map((c) => (
@@ -348,7 +356,7 @@ export default function ShopPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-300 block">Size Fit</label>
+              <label className="text-xs font-bold text-charcoal-700 dark:text-gray-300 block">Size Fit</label>
               <div className="flex flex-wrap gap-1.5">
                 {['all', 'S', 'M', 'L', 'XL', 'XXL'].map((s) => (
                   <button
@@ -356,8 +364,8 @@ export default function ShopPage() {
                     onClick={() => setSelectedSize(s)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${
                       selectedSize === s
-                        ? 'border-gold-500 bg-gold-500 text-black'
-                        : 'border-dark-border bg-dark-card text-gray-300'
+                        ? 'border-champagne-500 bg-champagne-500 text-black'
+                        : 'border-light-border dark:border-dark-border bg-light-elevated dark:bg-dark-card text-charcoal-700 dark:text-gray-300'
                     }`}
                   >
                     {s === 'all' ? 'All' : s}
@@ -366,16 +374,16 @@ export default function ShopPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-dark-border flex gap-2">
+            <div className="pt-4 border-t border-light-border dark:border-dark-border flex gap-2">
               <button
                 onClick={clearAllFilters}
-                className="flex-1 py-2.5 bg-dark-card text-gray-300 font-semibold text-xs rounded-xl border border-dark-border"
+                className="flex-1 py-2.5 bg-light-elevated dark:bg-dark-card text-charcoal-700 dark:text-gray-300 font-semibold text-xs rounded-xl border border-light-border dark:border-dark-border"
               >
                 Reset
               </button>
               <button
                 onClick={() => setMobileFilterOpen(false)}
-                className="flex-1 py-2.5 bg-gold-500 text-black font-bold text-xs rounded-xl shadow-glow-gold"
+                className="flex-1 py-2.5 bg-champagne-500 text-black font-bold text-xs rounded-xl shadow-xs"
               >
                 Apply
               </button>

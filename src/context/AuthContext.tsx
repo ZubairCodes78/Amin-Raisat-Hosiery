@@ -12,7 +12,7 @@ interface AuthContextType {
   addresses: CustomerAddress[];
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (email: string, password: string, fullName: string, phone: string) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string; message?: string }>;
   updateProfile: (updates: Partial<CustomerProfile>) => Promise<{ error?: string }>;
@@ -239,11 +239,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     email: string,
     password: string,
     fullName: string,
-    phone: string
+    phone?: string
   ): Promise<{ error?: string }> => {
     const cleanEmail = email.trim();
     const cleanName = fullName.trim();
-    const cleanPhone = phone.trim();
+    const cleanPhone = phone ? phone.trim() : '';
 
     if (!isSupabaseConfigured()) {
       const demoUser: any = { id: `usr-${Date.now()}`, email: cleanEmail };

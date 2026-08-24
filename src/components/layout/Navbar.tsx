@@ -4,18 +4,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingBag, Menu, X, Search, ChevronDown, ChevronRight, User, Layers } from 'lucide-react';
+import { ShoppingBag, Menu, X, Search, ChevronDown, User, Layers, Sun, Moon, Sparkles } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { AnnouncementMarquee } from '@/components/home/AnnouncementMarquee';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { totalQuantity, openDrawer } = useCart();
-  const { categories, subcategories, settings } = useStore();
+  const { categories, subcategories } = useStore();
   const { user, profile } = useAuth();
+  const { theme, isDark, toggleTheme } = useTheme();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -84,6 +86,10 @@ export const Navbar: React.FC = () => {
   };
 
   const isCategoryActive = pathname.startsWith('/category');
+  const isWholesaleActive = pathname.startsWith('/wholesale');
+
+  // Dynamic header logo based on theme
+  const logoSrc = isDark ? '/images/header logo.png' : '/images/light logo.jpeg';
 
   return (
     <header className="sticky top-0 z-40 w-full select-none">
@@ -92,8 +98,14 @@ export const Navbar: React.FC = () => {
 
       {/* 2. Main Brand Navbar */}
       <nav
-        className={`w-full bg-[#101114]/95 backdrop-blur-md transition-all duration-300 border-b ${
-          isScrolled ? 'border-[#30343A] shadow-elevation py-0.5' : 'border-[#30343A]/80 py-1'
+        className={`w-full backdrop-blur-md transition-all duration-300 border-b ${
+          isDark
+            ? isScrolled
+              ? 'bg-[#101114]/95 border-[#30343A] shadow-elevation py-0.5'
+              : 'bg-[#101114]/95 border-[#30343A]/80 py-1'
+            : isScrolled
+            ? 'bg-white/95 border-[#E2DDD3] shadow-sm py-0.5'
+            : 'bg-[#FAF8F5]/95 border-[#E2DDD3]/80 py-1'
         }`}
       >
         <div className="mx-auto w-full md:w-[calc(100%-48px)] max-w-[1240px] px-3 sm:px-6 md:px-0">
@@ -103,24 +115,39 @@ export const Navbar: React.FC = () => {
             {/* MOBILE NAVBAR ROW (md:hidden) */}
             {/* ========================================================================= */}
             <div className="relative flex items-center justify-between w-full md:hidden min-h-[52px]">
-              {/* Left: Mobile Hamburger Button (44px touch target) */}
-              <div className="flex items-center flex-shrink-0 z-10">
+              {/* Left: Mobile Hamburger Button & Mobile Theme Toggle */}
+              <div className="flex items-center gap-1 flex-shrink-0 z-10">
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="w-11 h-11 flex items-center justify-center text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] active:bg-[#202329] rounded-xl transition-colors"
+                  className="w-10 h-10 flex items-center justify-center text-charcoal-800 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] active:scale-95 rounded-xl transition-colors"
                   aria-label="Toggle navigation menu"
                 >
                   {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
+
+                {/* Mobile Theme Toggle */}
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl text-charcoal-700 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] transition-colors"
+                  aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+                  title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+                >
+                  {isDark ? (
+                    <Sun className="w-4 h-4 text-[#D8BD88] hover:rotate-45 transition-transform duration-300" />
+                  ) : (
+                    <Moon className="w-4 h-4 text-charcoal-700 hover:-rotate-12 transition-transform duration-300" />
+                  )}
+                </button>
               </div>
 
-              {/* Center: Mobile Header Logo (Centered accurately using absolute layout with pointer-events-auto) */}
+              {/* Center: Mobile Header Logo (Theme Aware) */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-12 sm:px-14">
                 <Link href="/" className="pointer-events-auto flex items-center justify-center py-0.5 group">
-                  <div className="relative w-[92px] xs:w-[100px] sm:w-[110px] h-11 xs:h-12 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-[95px] xs:w-[105px] sm:w-[115px] h-11 xs:h-12 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
-                      src="/images/header logo.png"
+                      src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
                       sizes="(max-width: 640px) 120px, 140px"
@@ -131,16 +158,16 @@ export const Navbar: React.FC = () => {
                 </Link>
               </div>
 
-              {/* Right: Mobile Action Buttons (Consistent 40-44px touch targets) */}
+              {/* Right: Mobile Action Buttons */}
               <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 z-10">
                 {/* Search Trigger */}
                 <button
                   type="button"
                   onClick={() => setSearchOpen(!searchOpen)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors ${
+                  className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${
                     searchOpen
-                      ? 'bg-[#1D2025] text-[#C9A96A] border border-[#30343A]'
-                      : 'text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025]'
+                      ? 'bg-light-hover dark:bg-[#1D2025] text-[#C9A96A] border border-light-border dark:border-[#30343A]'
+                      : 'text-charcoal-700 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025]'
                   }`}
                   aria-label="Search products"
                 >
@@ -150,7 +177,7 @@ export const Navbar: React.FC = () => {
                 {/* Customer Account Button */}
                 <Link
                   href={user ? '/account' : '/login'}
-                  className="w-10 h-10 flex items-center justify-center text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl transition-colors"
+                  className="w-9 h-9 flex items-center justify-center text-charcoal-700 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] rounded-xl transition-colors"
                   aria-label="Customer Account"
                   title={user ? 'My Account' : 'Sign In'}
                 >
@@ -161,12 +188,12 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={openDrawer}
-                  className="relative w-10 h-10 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] rounded-xl transition-all duration-200 flex items-center justify-center shadow-xs active:scale-[0.96]"
+                  className="relative w-9 h-9 bg-champagne-500 hover:bg-champagne-400 text-[#101114] rounded-xl transition-all duration-200 flex items-center justify-center shadow-xs active:scale-[0.96]"
                   aria-label="Shopping Cart"
                 >
                   <ShoppingBag className="w-[18px] h-[18px] text-[#101114] stroke-[2.2]" />
                   {totalQuantity > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-[#D96B6B] text-white text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-[#101114] shadow-xs">
+                    <span className="absolute -top-1 -right-1 bg-[#D96B6B] text-white text-[10px] font-extrabold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border border-white dark:border-[#101114] shadow-xs">
                       {totalQuantity}
                     </span>
                   )}
@@ -181,9 +208,9 @@ export const Navbar: React.FC = () => {
               {/* Desktop Header Logo */}
               <div className="flex items-center">
                 <Link href="/" className="flex items-center group py-0.5">
-                  <div className="relative w-52 lg:w-60 h-13 lg:h-14 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
+                  <div className="relative w-48 lg:w-56 h-12 lg:h-14 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <Image
-                      src="/images/header logo.png"
+                      src={logoSrc}
                       alt="Amin Raisat Hosiery"
                       fill
                       sizes="(max-width: 1024px) 210px, 240px"
@@ -194,15 +221,15 @@ export const Navbar: React.FC = () => {
                 </Link>
               </div>
 
-              {/* Desktop Navigation Links: HOME | CATEGORIES ▾ | SHOP | ABOUT | CONTACT */}
+              {/* Desktop Navigation Links: HOME | CATEGORIES ▾ | SHOP | WHOLESALE | ABOUT | CONTACT */}
               <div className="flex items-center space-x-1 lg:space-x-1.5">
                 {/* 1. HOME */}
                 <Link
                   href="/"
                   className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/'
-                      ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
-                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
+                      ? 'text-[#C9A96A] bg-light-elevated dark:bg-[#17191D] border border-light-border dark:border-[#30343A]'
+                      : 'text-charcoal-700 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D]'
                   }`}
                 >
                   Home
@@ -219,23 +246,23 @@ export const Navbar: React.FC = () => {
                     onClick={() => setIsCategoriesDropdownOpen(!isCategoriesDropdownOpen)}
                     className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg flex items-center gap-1.5 ${
                       isCategoryActive || isCategoriesDropdownOpen
-                        ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
-                        : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
+                        ? 'text-[#C9A96A] bg-light-elevated dark:bg-[#17191D] border border-light-border dark:border-[#30343A]'
+                        : 'text-charcoal-700 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D]'
                     }`}
                     aria-expanded={isCategoriesDropdownOpen}
                   >
                     <span>Categories</span>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-[#85888E] transition-transform duration-200 ${
+                      className={`w-3.5 h-3.5 text-charcoal-400 dark:text-[#85888E] transition-transform duration-200 ${
                         isCategoriesDropdownOpen ? 'rotate-180 text-[#C9A96A]' : ''
                       }`}
                     />
                   </button>
 
-                  {/* Desktop Dropdown / Mega Menu Container (Controlled max width, scalable) */}
+                  {/* Desktop Dropdown Container */}
                   {isCategoriesDropdownOpen && (
                     <div
-                      className={`absolute top-full left-0 mt-1 bg-[#17191D] rounded-2xl shadow-elevation border border-[#30343A] p-4 z-50 animate-in fade-in slide-in-from-top-1 duration-150 max-h-[75vh] overflow-y-auto ${
+                      className={`absolute top-full left-0 mt-1 bg-white dark:bg-[#17191D] rounded-2xl shadow-elevation border border-light-border dark:border-[#30343A] p-4 z-50 animate-in fade-in slide-in-from-top-1 duration-150 max-h-[75vh] overflow-y-auto ${
                         activeCategories.length > 3
                           ? 'w-[560px] lg:w-[640px]'
                           : activeCategories.length > 1
@@ -243,8 +270,8 @@ export const Navbar: React.FC = () => {
                           : 'w-[290px]'
                       }`}
                     >
-                      <div className="px-3 py-2 border-b border-[#30343A] mb-3 flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-[#85888E] uppercase tracking-wider flex items-center gap-1.5">
+                      <div className="px-3 py-2 border-b border-light-border dark:border-[#30343A] mb-3 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-charcoal-500 dark:text-[#85888E] uppercase tracking-wider flex items-center gap-1.5">
                           <Layers className="w-3.5 h-3.5 text-[#C9A96A]" />
                           <span>Garment Collections ({activeCategories.length})</span>
                         </span>
@@ -271,17 +298,15 @@ export const Navbar: React.FC = () => {
                           const subs = getActiveSubcategoriesForCat(category.id, category.subcategories);
 
                           return (
-                            <div key={category.id} className="space-y-2 p-2 rounded-xl hover:bg-[#1D2025]/50 transition-colors">
-                              {/* Main Category Header Link */}
+                            <div key={category.id} className="space-y-2 p-2 rounded-xl hover:bg-light-hover dark:hover:bg-[#1D2025]/50 transition-colors">
                               <Link
                                 href={`/category/${category.slug}`}
                                 onClick={() => setIsCategoriesDropdownOpen(false)}
-                                className="block font-bold text-xs text-[#F1F0EC] hover:text-[#C9A96A] transition-colors border-b border-[#30343A]/60 pb-1.5"
+                                className="block font-bold text-xs text-charcoal-900 dark:text-[#F1F0EC] hover:text-[#C9A96A] transition-colors border-b border-light-border dark:border-[#30343A]/60 pb-1.5"
                               >
                                 <span>{category.name}</span>
                               </Link>
 
-                              {/* Subcategories under this category */}
                               {subs.length > 0 ? (
                                 <ul className="space-y-1 pl-1">
                                   {subs.map((sub) => (
@@ -289,16 +314,16 @@ export const Navbar: React.FC = () => {
                                       <Link
                                         href={`/category/${category.slug}/${sub.slug}`}
                                         onClick={() => setIsCategoriesDropdownOpen(false)}
-                                        className="text-[11px] text-[#85888E] hover:text-[#F1F0EC] hover:underline flex items-center gap-1 transition-colors py-0.5"
+                                        className="text-[11px] text-charcoal-500 dark:text-[#85888E] hover:text-charcoal-900 dark:hover:text-[#F1F0EC] hover:underline flex items-center gap-1 transition-colors py-0.5"
                                       >
-                                        <span className="text-[#C9A96A]/60">&bull;</span>
+                                        <span className="text-[#C9A96A]">&bull;</span>
                                         <span>{sub.name}</span>
                                       </Link>
                                     </li>
                                   ))}
                                 </ul>
                               ) : (
-                                <p className="text-[10px] text-[#85888E] italic pl-1">
+                                <p className="text-[10px] text-charcoal-400 dark:text-[#85888E] italic pl-1">
                                   View all {category.name.toLowerCase()} items
                                 </p>
                               )}
@@ -308,7 +333,7 @@ export const Navbar: React.FC = () => {
                       </div>
 
                       {/* Bottom Banner inside Dropdown */}
-                      <div className="mt-3 pt-2.5 border-t border-[#30343A] flex items-center justify-between text-[11px] text-[#85888E] px-2">
+                      <div className="mt-3 pt-2.5 border-t border-light-border dark:border-[#30343A] flex items-center justify-between text-[11px] text-charcoal-500 dark:text-[#85888E] px-2">
                         <span>Free Delivery Across Pakistan on 3+ Pieces</span>
                         <span className="text-[#3FB982] font-semibold">100% Combed Cotton</span>
                       </div>
@@ -321,48 +346,78 @@ export const Navbar: React.FC = () => {
                   href="/shop"
                   className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/shop'
-                      ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
-                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
+                      ? 'text-[#C9A96A] bg-light-elevated dark:bg-[#17191D] border border-light-border dark:border-[#30343A]'
+                      : 'text-charcoal-700 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D]'
                   }`}
                 >
                   Shop
                 </Link>
 
-                {/* 4. ABOUT */}
+                {/* 4. WHOLESALE (Prominent B2B Commercial Portal) */}
+                <Link
+                  href="/wholesale"
+                  className={`relative px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg flex items-center gap-1.5 ${
+                    isWholesaleActive
+                      ? 'text-[#C9A96A] bg-light-elevated dark:bg-[#17191D] border border-[#C9A96A]'
+                      : 'text-charcoal-700 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D]'
+                  }`}
+                >
+                  <span>Wholesale</span>
+                  <span className="bg-[#C9A96A]/20 text-[#C9A96A] text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#C9A96A]/30">
+                    Bulk
+                  </span>
+                </Link>
+
+                {/* 5. ABOUT */}
                 <Link
                   href="/about"
                   className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/about'
-                      ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
-                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
+                      ? 'text-[#C9A96A] bg-light-elevated dark:bg-[#17191D] border border-light-border dark:border-[#30343A]'
+                      : 'text-charcoal-700 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D]'
                   }`}
                 >
                   About
                 </Link>
 
-                {/* 5. CONTACT */}
+                {/* 6. CONTACT */}
                 <Link
                   href="/contact"
                   className={`px-3 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg ${
                     pathname === '/contact'
-                      ? 'text-[#C9A96A] bg-[#17191D] border border-[#30343A]'
-                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
+                      ? 'text-[#C9A96A] bg-light-elevated dark:bg-[#17191D] border border-light-border dark:border-[#30343A]'
+                      : 'text-charcoal-700 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D]'
                   }`}
                 >
                   Contact
                 </Link>
               </div>
 
-              {/* Desktop Right Actions: Search, Customer Account, Cart */}
+              {/* Desktop Right Actions: Theme Toggle, Search, Customer Account, Cart */}
               <div className="flex items-center gap-1.5 lg:gap-2">
+                {/* Theme Toggle Button */}
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-xl text-charcoal-700 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D] border border-transparent hover:border-light-border dark:hover:border-[#30343A] transition-all duration-200"
+                  aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+                  title={`Current theme: ${theme}. Click to switch to ${isDark ? 'Light' : 'Dark'} mode.`}
+                >
+                  {isDark ? (
+                    <Sun className="w-4 h-4 text-[#D8BD88] hover:rotate-90 transition-transform duration-300" />
+                  ) : (
+                    <Moon className="w-4 h-4 text-charcoal-700 hover:-rotate-12 transition-transform duration-300" />
+                  )}
+                </button>
+
                 {/* Search Trigger */}
                 <button
                   type="button"
                   onClick={() => setSearchOpen(!searchOpen)}
                   className={`w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center rounded-xl transition-colors ${
                     searchOpen
-                      ? 'bg-[#17191D] text-[#C9A96A] border border-[#30343A]'
-                      : 'text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D]'
+                      ? 'bg-light-hover dark:bg-[#17191D] text-[#C9A96A] border border-light-border dark:border-[#30343A]'
+                      : 'text-charcoal-700 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D]'
                   }`}
                   aria-label="Search products"
                 >
@@ -372,12 +427,12 @@ export const Navbar: React.FC = () => {
                 {/* Customer Account Button */}
                 <Link
                   href={user ? '/account' : '/login'}
-                  className="h-9 lg:h-10 px-3 text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#17191D] rounded-xl transition-colors flex items-center gap-1.5 border border-transparent hover:border-[#30343A]"
+                  className="h-9 lg:h-10 px-3 text-charcoal-700 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#17191D] rounded-xl transition-colors flex items-center gap-1.5 border border-transparent hover:border-light-border dark:hover:border-[#30343A]"
                   aria-label="Customer Account"
                   title={user ? 'My Account' : 'Sign In'}
                 >
                   <User className="w-4 h-4" />
-                  <span className="text-[11px] font-semibold text-[#F1F0EC] max-w-[90px] truncate">
+                  <span className="text-[11px] font-semibold text-charcoal-900 dark:text-[#F1F0EC] max-w-[90px] truncate">
                     {user ? (profile?.fullName ? profile.fullName.split(' ')[0] : 'Account') : 'Sign In'}
                   </span>
                 </Link>
@@ -386,7 +441,7 @@ export const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={openDrawer}
-                  className="relative h-9 lg:h-10 px-3.5 bg-[#C9A96A] hover:bg-[#D8BD88] text-[#101114] rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 shadow-xs hover:shadow-xs active:scale-[0.98]"
+                  className="relative h-9 lg:h-10 px-3.5 bg-champagne-500 hover:bg-champagne-400 text-[#101114] rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 shadow-xs hover:shadow-xs active:scale-[0.98]"
                   aria-label="Shopping Cart"
                 >
                   <ShoppingBag className="w-4 h-4 text-[#101114] stroke-[2.2]" />
@@ -404,7 +459,7 @@ export const Navbar: React.FC = () => {
 
           {/* Integrated Search Bar Drawer */}
           {searchOpen && (
-            <div className="py-3 border-t border-[#30343A] animate-in fade-in">
+            <div className="py-3 border-t border-light-border dark:border-[#30343A] animate-in fade-in">
               <form onSubmit={handleSearchSubmit} className="relative max-w-lg mx-auto">
                 <input
                   type="text"
@@ -412,9 +467,9 @@ export const Navbar: React.FC = () => {
                   placeholder="Search products by name, category, or style..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-24 py-2.5 bg-[#17191D] border border-[#343840] text-[#F1F0EC] placeholder-[#85888E] rounded-xl text-xs focus:outline-none focus:border-[#C9A96A]"
+                  className="w-full pl-10 pr-24 py-2.5 bg-white dark:bg-[#17191D] border border-light-border dark:border-[#343840] text-charcoal-900 dark:text-[#F1F0EC] placeholder-charcoal-400 dark:placeholder-[#85888E] rounded-xl text-xs focus:outline-none focus:border-[#C9A96A]"
                 />
-                <Search className="w-4 h-4 text-[#85888E] absolute left-3.5 top-3" />
+                <Search className="w-4 h-4 text-charcoal-400 dark:text-[#85888E] absolute left-3.5 top-3" />
                 <button
                   type="submit"
                   className="absolute right-2 top-1.5 px-3 py-1 bg-[#C9A96A] text-[#101114] rounded-lg text-xs font-bold hover:bg-[#D8BD88]"
@@ -430,28 +485,58 @@ export const Navbar: React.FC = () => {
         {/* MOBILE NAVIGATION DRAWER */}
         {/* ========================================================================= */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[#30343A] bg-[#17191D] px-4 pt-3 pb-6 space-y-2 shadow-elevation max-h-[85vh] overflow-y-auto">
+          <div className="md:hidden border-t border-light-border dark:border-[#30343A] bg-white dark:bg-[#17191D] px-4 pt-3 pb-6 space-y-2 shadow-elevation max-h-[85vh] overflow-y-auto">
+            {/* Theme Toggle Bar inside Mobile Drawer */}
+            <div className="flex items-center justify-between p-3 bg-light-elevated dark:bg-[#1D2025] rounded-xl border border-light-border dark:border-[#30343A] mb-2">
+              <span className="text-xs font-semibold text-charcoal-700 dark:text-[#F1F0EC] flex items-center gap-2">
+                {isDark ? <Moon className="w-4 h-4 text-[#C9A96A]" /> : <Sun className="w-4 h-4 text-[#C9A96A]" />}
+                <span>Theme: {isDark ? 'Dark Mode' : 'Light Mode'}</span>
+              </span>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="px-3 py-1 bg-light-hover dark:bg-[#272A2F] border border-light-border dark:border-[#3E434B] text-xs font-bold text-charcoal-900 dark:text-[#F1F0EC] rounded-lg"
+              >
+                Switch to {isDark ? 'Light' : 'Dark'}
+              </button>
+            </div>
+
             {/* 1. Home */}
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2.5 text-sm font-semibold text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl"
+              className="block px-3 py-2.5 text-sm font-semibold text-charcoal-900 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] rounded-xl"
             >
               Home
             </Link>
 
-            {/* 2. Dynamic Categories Accordion */}
-            <div className="border-t border-[#30343A] pt-2 space-y-1.5">
+            {/* 2. Wholesale (B2B Bulk Portal) */}
+            <Link
+              href="/wholesale"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2.5 text-sm font-bold text-[#C9A96A] bg-champagne-50 dark:bg-[#1D2025] border border-[#C9A96A]/40 rounded-xl"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#C9A96A]" />
+                <span>Wholesale Store (Bulk Rates)</span>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-[#C9A96A] text-[#101114] rounded-full">
+                Min 12 pcs
+              </span>
+            </Link>
+
+            {/* 3. Dynamic Categories Accordion */}
+            <div className="border-t border-light-border dark:border-[#30343A] pt-2 space-y-1.5">
               <div
                 onClick={() => setMobileCategoriesOpen(!mobileCategoriesOpen)}
-                className="flex items-center justify-between px-3 py-2.5 text-sm font-bold text-[#C9A96A] hover:bg-[#1D2025] rounded-xl cursor-pointer"
+                className="flex items-center justify-between px-3 py-2.5 text-sm font-bold text-charcoal-800 dark:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] rounded-xl cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <Layers className="w-4 h-4" />
                   <span>Categories ({activeCategories.length})</span>
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 text-[#85888E] transition-transform duration-200 ${
+                  className={`w-4 h-4 text-charcoal-400 dark:text-[#85888E] transition-transform duration-200 ${
                     mobileCategoriesOpen ? 'rotate-180 text-[#C9A96A]' : ''
                   }`}
                 />
@@ -464,25 +549,22 @@ export const Navbar: React.FC = () => {
                     const isExpanded = expandedMobileCategory === cat.id;
 
                     return (
-                      <div key={cat.id} className="bg-[#1D2025] rounded-xl border border-[#30343A] overflow-hidden">
-                        {/* Two usable interactions: Category Name link (44px) + Chevron toggle (44px) */}
+                      <div key={cat.id} className="bg-light-elevated dark:bg-[#1D2025] rounded-xl border border-light-border dark:border-[#30343A] overflow-hidden">
                         <div className="flex items-center justify-between min-h-[44px]">
-                          {/* 1. Category Link (Navigates directly to /category/[slug]) */}
                           <Link
                             href={`/category/${cat.slug}`}
                             onClick={() => setMobileMenuOpen(false)}
-                            className="flex-1 py-3 px-3.5 font-bold text-xs text-[#F1F0EC] hover:text-[#C9A96A] flex items-center justify-between gap-1"
+                            className="flex-1 py-3 px-3.5 font-bold text-xs text-charcoal-900 dark:text-[#F1F0EC] hover:text-[#C9A96A] flex items-center justify-between gap-1"
                           >
                             <span>{cat.name}</span>
-                            <span className="text-[10px] text-[#85888E] font-normal">&rarr;</span>
+                            <span className="text-[10px] text-charcoal-400 dark:text-[#85888E] font-normal">&rarr;</span>
                           </Link>
 
-                          {/* 2. Subcategory Accordion Toggle Button (Expands subcategories without page jump) */}
                           {subs.length > 0 && (
                             <button
                               type="button"
                               onClick={() => setExpandedMobileCategory(isExpanded ? null : cat.id)}
-                              className="w-11 h-11 flex items-center justify-center text-[#85888E] hover:text-[#C9A96A] hover:bg-[#202329] border-l border-[#30343A]/60"
+                              className="w-11 h-11 flex items-center justify-center text-charcoal-400 dark:text-[#85888E] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#202329] border-l border-light-border dark:border-[#30343A]/60"
                               aria-label={`Toggle ${cat.name} subcategories`}
                             >
                               <ChevronDown
@@ -494,15 +576,14 @@ export const Navbar: React.FC = () => {
                           )}
                         </div>
 
-                        {/* Subcategories Accordion Content */}
                         {subs.length > 0 && isExpanded && (
-                          <div className="px-3.5 pb-3 pt-1 border-t border-[#30343A]/60 bg-[#17191D]/60 space-y-1 animate-in fade-in">
+                          <div className="px-3.5 pb-3 pt-1 border-t border-light-border dark:border-[#30343A]/60 bg-white dark:bg-[#17191D]/60 space-y-1 animate-in fade-in">
                             {subs.map((sub) => (
                               <Link
                                 key={sub.id}
                                 href={`/category/${cat.slug}/${sub.slug}`}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="block py-2 px-2 text-xs text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-lg transition-colors"
+                                className="block py-2 px-2 text-xs text-charcoal-600 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] rounded-lg transition-colors"
                               >
                                 &bull; {sub.name}
                               </Link>
@@ -516,35 +597,35 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* 3. Shop All Products */}
+            {/* 4. Shop All Products */}
             <Link
               href="/shop"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2.5 text-sm font-semibold text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl border-t border-[#30343A] pt-2"
+              className="block px-3 py-2.5 text-sm font-semibold text-charcoal-900 dark:text-[#F1F0EC] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] rounded-xl border-t border-light-border dark:border-[#30343A] pt-2"
             >
               Shop All Products
             </Link>
 
-            {/* 4. Customer Account / Sign In */}
-            <div className="pt-2 border-t border-[#30343A] space-y-1">
+            {/* 5. Customer Account / Sign In */}
+            <div className="pt-2 border-t border-light-border dark:border-[#30343A] space-y-1">
               <Link
                 href={user ? '/account' : '/login'}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-semibold text-[#C9A96A] hover:bg-[#1D2025] rounded-xl"
+                className="block px-3 py-2.5 text-sm font-semibold text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] rounded-xl"
               >
                 {user ? `My Account (${profile?.fullName ? profile.fullName.split(' ')[0] : 'Customer'})` : 'Sign In / Register'}
               </Link>
               <Link
                 href="/about"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-semibold text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl"
+                className="block px-3 py-2.5 text-sm font-semibold text-charcoal-600 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] rounded-xl"
               >
                 About Us
               </Link>
               <Link
                 href="/contact"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-semibold text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-[#1D2025] rounded-xl"
+                className="block px-3 py-2.5 text-sm font-semibold text-charcoal-600 dark:text-[#B4B5BA] hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#1D2025] rounded-xl"
               >
                 Contact Us
               </Link>

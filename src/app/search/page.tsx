@@ -37,46 +37,46 @@ function SearchContent() {
   }, [products, categories, subcategories, query]);
 
   return (
-    <div className="min-h-[85vh] py-12 bg-dark-bg text-gray-100">
+    <div className="min-h-[85vh] py-12 bg-light-bg dark:bg-dark-bg text-charcoal-900 dark:text-gray-100 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-gray-400 mb-6">
-          <Link href="/" className="hover:text-gold-400 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-charcoal-500 dark:text-gray-400 mb-6">
+          <Link href="/" className="hover:text-[#C9A96A] transition-colors">
             Home
           </Link>
-          <ChevronRight className="w-3 h-3 text-gray-600" />
-          <span className="font-semibold text-gray-200">Search Products</span>
+          <ChevronRight className="w-3 h-3 text-charcoal-400 dark:text-gray-600" />
+          <span className="font-semibold text-charcoal-900 dark:text-gray-200">Search Products</span>
         </div>
 
         {/* Search Header */}
-        <div className="border-b border-dark-border pb-6 mb-8 max-w-xl">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-100 mb-3 tracking-tight">
+        <div className="border-b border-light-border dark:border-dark-border pb-6 mb-8 max-w-xl">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-charcoal-900 dark:text-gray-100 mb-3 tracking-tight">
             Search Catalog
           </h1>
           <div className="relative">
             <input
               type="text"
-              placeholder="Search by product name, category, or SKU..."
+              placeholder="Search by product name, category, or style..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-dark-surface border border-dark-border rounded-xl text-xs text-gray-100 focus:outline-none focus:border-gold-500 shadow-card"
+              className="w-full pl-10 pr-4 py-3 bg-white dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-xl text-xs text-charcoal-900 dark:text-gray-100 focus:outline-none focus:border-[#C9A96A] shadow-sm dark:shadow-card"
             />
-            <Search className="w-4 h-4 text-gold-400 absolute left-3.5 top-3.5" />
+            <Search className="w-4 h-4 text-[#A07D38] dark:text-gold-400 absolute left-3.5 top-3.5" />
           </div>
         </div>
 
         {/* Results */}
         {matchingProducts.length === 0 ? (
-          <div className="bg-dark-surface rounded-2xl p-12 text-center border border-dark-border max-w-md mx-auto space-y-3 shadow-card">
-            <Search className="w-8 h-8 text-gray-500 mx-auto" />
-            <h3 className="text-base font-bold text-gray-200">No products found</h3>
-            <p className="text-xs text-gray-400">
+          <div className="bg-white dark:bg-dark-surface rounded-2xl p-12 text-center border border-light-border dark:border-dark-border max-w-md mx-auto space-y-3 shadow-sm dark:shadow-card">
+            <Search className="w-8 h-8 text-charcoal-400 dark:text-gray-500 mx-auto" />
+            <h3 className="text-base font-bold text-charcoal-900 dark:text-gray-200">No products found</h3>
+            <p className="text-xs text-charcoal-500 dark:text-gray-400">
               No items matched &quot;{query}&quot;. Try checking for spelling mistakes or explore our main catalog.
             </p>
             <div className="pt-2">
               <Link
                 href="/shop"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gold-500 hover:bg-gold-400 text-black rounded-xl text-xs font-bold shadow-glow-gold"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-champagne-500 hover:bg-champagne-400 text-black rounded-xl text-xs font-bold shadow-xs"
               >
                 <ShoppingBag className="w-4 h-4 stroke-[2.2]" />
                 <span>Browse All Products</span>
@@ -85,7 +85,7 @@ function SearchContent() {
           </div>
         ) : (
           <div>
-            <p className="text-xs font-medium text-gray-400 mb-6">
+            <p className="text-xs font-medium text-charcoal-500 dark:text-gray-400 mb-6">
               Found {matchingProducts.length} product{matchingProducts.length > 1 ? 's' : ''}
               {query && ` matching "${query}"`}
             </p>
@@ -103,7 +103,7 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center text-xs text-gray-400 bg-dark-bg min-h-[50vh]">Loading search...</div>}>
+    <Suspense fallback={<div className="p-12 text-center text-xs text-charcoal-500 dark:text-gray-400 bg-light-bg dark:bg-dark-bg min-h-[50vh]">Loading search...</div>}>
       <SearchContent />
     </Suspense>
   );

@@ -16,15 +16,23 @@ interface CartContextType {
   clearCart: () => void;
   totalQuantity: number;
   subtotal: number;
+  regularSubtotal: number;
+  wholesaleSubtotal: number;
+  totalSavings: number;
   deliveryFee: number;
   totalAmount: number;
   isFreeDeliveryUnlocked: boolean;
   piecesNeededForFreeDelivery: number;
+  hasWholesaleItems: boolean;
+  wholesaleQuantity: number;
+  isWholesaleMinimumMet: boolean;
+  wholesalePiecesNeeded: number;
+  wholesaleMinQty: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'arh_cart_items_v1';
+const CART_STORAGE_KEY = 'arh_cart_items_v2';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { settings } = useStore();
@@ -32,10 +40,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const wholesaleMinQty = settings.wholesale?.defaultMinQty || 12;
+
   // Load from local storage
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(CART_STORAGE_KEY);
+      const stored = localStorage.getItem(CART_STORAGE_KEY) || localStorage.getItem('arh_cart_items_v1');
       if (stored) {
         setItems(JSON.parse(stored));
       }
@@ -58,20 +68,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const toggleDrawer = () => setIsDrawerOpen((prev) => !prev);
 
   const addItem = (newItem: Omit<CartItem, 'id'>) => {
-    const id = `${newItem.productId}_${newItem.quality}_${newItem.sleeve}_${newItem.size}`;
+    const isWholesale = Boolean(newItem.isWholesale);
+    const id = `${newItem.productId}_${newItem.quality}_${newItem.sleeve}_${newItem.size}${isWholesale ? '_wholesale' : ''}`;
+    
+    // For wholesale items, permit higher order volume (up to 5,000)
+    const maxQty = isWholesale ? 5000 : (settings.shipping.maxOrderQty || 12);
+
     setItems((prevItems) => {
       const existingIndex = prevItems.findIndex((item) => item.id === id);
       if (existingIndex > -1) {
         const updated = [...prevItems];
-        const newQty = Math.min(settings.shipping.maxOrderQty, updated[existingIndex].quantity + newItem.quantity);
+        const newQty = Math.min(maxQty, updated[existingIndex].quantity + newItem.quantity);
         updated[existingIndex] = {
           ...updated[existingIndex],
           quantity: newQty,
           unitPrice: newItem.unitPrice,
+          regularPrice: newItem.regularPrice || updated[existingIndex].regularPrice,
+          wholesalePrice: newItem.wholesalePrice || updated[existingIndex].wholesalePrice,
+          isWholesale,
         };
         return updated;
       } else {
-        return [...prevItems, { ...newItem, id }];
+        return [...prevItems, { ...newItem, id, isWholesale }];
       }
     });
     setIsDrawerOpen(true);
@@ -82,9 +100,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       removeItem(id);
       return;
     }
-    const safeQty = Math.min(settings.shipping.maxOrderQty, quantity);
+    const item = items.find((it) => it.id === id);
+    const maxQty = item?.isWholesale ? 5000 : (settings.shipping.maxOrderQty || 12);
+    const safeQty = Math.min(maxQty, quantity);
+
     setItems((prevItems) =>
-      prevItems.map((item) => (item.id === id ? { ...item, quantity: safeQty } : item))
+      prevItems.map((it) => (it.id === id ? { ...it, quantity: safeQty } : it))
     );
   };
 
@@ -97,14 +118,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  const wholesaleItems = items.filter((item) => item.isWholesale);
+  const wholesaleQuantity = wholesaleItems.reduce((sum, item) => sum + item.quantity, 0);
+  const hasWholesaleItems = wholesaleItems.length > 0;
+  const isWholesaleMinimumMet = !hasWholesaleItems || wholesaleQuantity >= wholesaleMinQty;
+  const wholesalePiecesNeeded = Math.max(0, wholesaleMinQty - wholesaleQuantity);
+
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
+  const regularSubtotal = items.reduce((sum, item) => {
+    const regPrice = item.regularPrice || item.unitPrice;
+    return sum + regPrice * item.quantity;
+  }, 0);
+
+  const wholesaleSubtotal = wholesaleItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+
+  const totalSavings = Math.max(0, regularSubtotal - subtotal);
+
   // Delivery fee rules:
-  // totalQuantity >= 3 -> Free Delivery (Rs. 0)
-  // totalQuantity > 0 & < 3 -> Base Delivery Charge (Rs. 200)
-  // totalQuantity === 0 -> Rs. 0
+  // Wholesale orders get Free Delivery
+  // Retail totalQuantity >= 3 -> Free Delivery (Rs. 0)
+  // Retail totalQuantity > 0 & < 3 -> Base Delivery Charge (Rs. 200)
   const freeThreshold = settings.shipping.freeDeliveryThreshold; // 3
-  const isFreeDeliveryUnlocked = totalQuantity >= freeThreshold;
+  const isFreeDeliveryUnlocked = totalQuantity >= freeThreshold || hasWholesaleItems;
   const deliveryFee =
     totalQuantity === 0 ? 0 : isFreeDeliveryUnlocked ? 0 : settings.shipping.baseDeliveryCharge;
   const totalAmount = subtotal + deliveryFee;
@@ -124,10 +161,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart,
         totalQuantity,
         subtotal,
+        regularSubtotal,
+        wholesaleSubtotal,
+        totalSavings,
         deliveryFee,
         totalAmount,
         isFreeDeliveryUnlocked,
         piecesNeededForFreeDelivery,
+        hasWholesaleItems,
+        wholesaleQuantity,
+        isWholesaleMinimumMet,
+        wholesalePiecesNeeded,
+        wholesaleMinQty,
       }}
     >
       {children}
