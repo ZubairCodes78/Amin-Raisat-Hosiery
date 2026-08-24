@@ -98,7 +98,7 @@ export const BrandHeroSlider: React.FC = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative w-full select-none bg-[#101114]"
+      className="relative w-full select-none bg-light-bg dark:bg-[#11110F] transition-colors duration-200"
     >
       {/* Container with responsive margins so rounded edges are visible and framed naturally */}
       <div className="mx-auto w-full md:w-[calc(100%-48px)] max-w-[1240px] px-3 sm:px-4 md:px-0 pt-2.5 sm:pt-3 md:pt-4 pb-2 md:pb-3">
@@ -106,7 +106,7 @@ export const BrandHeroSlider: React.FC = () => {
         {/* ========================================================================= */}
         {/* 1. DESKTOP HERO VIEWPORT (Hidden on mobile < md) */}
         {/* ========================================================================= */}
-        <div className="hidden md:block relative w-full rounded-2xl lg:rounded-[20px] overflow-hidden border border-[#30343A]/70 shadow-elevation bg-[#17191D]">
+        <div className="hidden md:block relative w-full rounded-2xl lg:rounded-[20px] overflow-hidden border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-elevation bg-white dark:bg-[#151513] transition-colors duration-200">
           {/* Invisible natural aspect sizer ensuring 0px Cumulative Layout Shift (CLS) */}
           <Image
             src={activeDesktopSlide.desktopImage || '/slider 1.png'}
@@ -133,7 +133,7 @@ export const BrandHeroSlider: React.FC = () => {
               >
                 <Link
                   href={slide.link || slide.buttonLink || '/shop'}
-                  className="block w-full h-full cursor-pointer overflow-hidden rounded-2xl lg:rounded-[20px]"
+                  className="block w-full h-full cursor-pointer overflow-hidden rounded-2xl lg:rounded-[20px] bg-white dark:bg-[#151513]"
                 >
                   <Image
                     src={imageSrc}
@@ -152,7 +152,7 @@ export const BrandHeroSlider: React.FC = () => {
         {/* ========================================================================= */}
         {/* 2. MOBILE HERO VIEWPORT (Visible on mobile < md) */}
         {/* ========================================================================= */}
-        <div className="block md:hidden relative w-full rounded-xl sm:rounded-2xl overflow-hidden border border-[#30343A]/70 shadow-card bg-[#17191D]">
+        <div className="block md:hidden relative w-full rounded-xl sm:rounded-2xl overflow-hidden border border-light-border dark:border-[#34322D] shadow-xs dark:shadow-card bg-white dark:bg-[#151513] transition-colors duration-200">
           {/* Invisible natural mobile aspect sizer ensuring 0px Cumulative Layout Shift (CLS) */}
           <Image
             src={activeMobileSlide.mobileImage || activeMobileSlide.desktopImage || '/mobile slider 1.png'}
@@ -179,7 +179,7 @@ export const BrandHeroSlider: React.FC = () => {
               >
                 <Link
                   href={slide.link || slide.buttonLink || '/shop'}
-                  className="block w-full h-full cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl"
+                  className="block w-full h-full cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl bg-white dark:bg-[#151513]"
                 >
                   <Image
                     src={imageSrc}
