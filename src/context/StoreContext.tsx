@@ -48,13 +48,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const loadData = async () => {
     try {
-      const [prods, cats, subcats, sets, ords, revs, slides] = await Promise.all([
+      const [prods, cats, subcats, sets, slides] = await Promise.all([
         DataStore.getProducts(),
         DataStore.getCategories(),
         DataStore.getSubcategories(),
         DataStore.getSettings(),
-        DataStore.getOrders(),
-        DataStore.getReviews(),
         DataStore.getHeroSlides(),
       ]);
 
@@ -84,12 +82,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setCategories(catsWithCount);
       setSubcategories(subcatsWithCount);
       setSettings(sets);
-      setOrders(ords);
-      setReviews(revs);
       setHeroSlides(slides);
+      setIsLoading(false);
+
+      // Non-blocking background fetch for secondary/admin data
+      DataStore.getOrders().then((ords) => {
+        if (ords && ords.length > 0) setOrders(ords);
+      }).catch((err) => console.warn('Non-critical orders fetch notice:', err));
+
+      DataStore.getReviews().then((revs) => {
+        if (revs && revs.length > 0) setReviews(revs);
+      }).catch((err) => console.warn('Non-critical reviews fetch notice:', err));
     } catch (err) {
       console.error('Failed to load store data:', err);
-    } finally {
       setIsLoading(false);
     }
   };

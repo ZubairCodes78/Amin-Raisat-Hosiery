@@ -130,7 +130,12 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9]">Email Support</h3>
-                  <p className="text-xs text-charcoal-500 dark:text-[#8E8A80] truncate">{settings.email}</p>
+                  <a
+                    href={`mailto:${settings.email}`}
+                    className="text-xs text-charcoal-600 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] transition-colors truncate block font-medium"
+                  >
+                    {settings.email}
+                  </a>
                 </div>
               </div>
             </div>

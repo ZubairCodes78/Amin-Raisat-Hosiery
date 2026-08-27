@@ -106,19 +106,7 @@ export const BrandHeroSlider: React.FC = () => {
         {/* ========================================================================= */}
         {/* 1. DESKTOP HERO VIEWPORT (Hidden on mobile < md) */}
         {/* ========================================================================= */}
-        <div className="hidden md:block relative w-full rounded-2xl lg:rounded-[20px] overflow-hidden border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-elevation bg-white dark:bg-[#151513] transition-colors duration-200">
-          {/* Invisible natural aspect sizer ensuring 0px Cumulative Layout Shift (CLS) */}
-          <Image
-            src={activeDesktopSlide.desktopImage || '/slider 1.png'}
-            alt=""
-            aria-hidden
-            width={DESKTOP_BANNER_WIDTH}
-            height={DESKTOP_BANNER_HEIGHT}
-            sizes="(max-width: 1280px) 100vw, 1240px"
-            className="block w-full h-auto invisible pointer-events-none"
-            priority
-          />
-
+        <div className="hidden md:block relative w-full aspect-[1920/800] rounded-2xl lg:rounded-[20px] overflow-hidden border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-elevation bg-white dark:bg-[#151513] transition-colors duration-200">
           {desktopSlides.map((slide, idx) => {
             const isCurrent = (currentSlide % desktopSlides.length) === idx;
             const imageSrc = slide.desktopImage || `/slider ${idx + 1}.png`;
@@ -134,13 +122,17 @@ export const BrandHeroSlider: React.FC = () => {
                 <Link
                   href={slide.link || slide.buttonLink || '/shop'}
                   className="block w-full h-full cursor-pointer overflow-hidden rounded-2xl lg:rounded-[20px] bg-white dark:bg-[#151513]"
+                  tabIndex={isCurrent ? 0 : -1}
                 >
                   <Image
                     src={imageSrc}
                     alt={slide.title || `Amin Raisat Hosiery Campaign ${idx + 1}`}
                     fill
-                    priority={idx === 0}
+                    priority={false}
+                    fetchPriority={idx === 0 ? 'high' : 'auto'}
+                    loading={idx === 0 ? 'eager' : 'lazy'}
                     sizes="(max-width: 1280px) 100vw, 1240px"
+                    quality={85}
                     className="object-cover w-full h-full rounded-2xl lg:rounded-[20px]"
                   />
                 </Link>
@@ -152,19 +144,7 @@ export const BrandHeroSlider: React.FC = () => {
         {/* ========================================================================= */}
         {/* 2. MOBILE HERO VIEWPORT (Visible on mobile < md) */}
         {/* ========================================================================= */}
-        <div className="block md:hidden relative w-full rounded-xl sm:rounded-2xl overflow-hidden border border-light-border dark:border-[#34322D] shadow-xs dark:shadow-card bg-white dark:bg-[#151513] transition-colors duration-200">
-          {/* Invisible natural mobile aspect sizer ensuring 0px Cumulative Layout Shift (CLS) */}
-          <Image
-            src={activeMobileSlide.mobileImage || activeMobileSlide.desktopImage || '/mobile slider 1.png'}
-            alt=""
-            aria-hidden
-            width={MOBILE_BANNER_WIDTH}
-            height={MOBILE_BANNER_HEIGHT}
-            sizes="100vw"
-            className="block w-full h-auto invisible pointer-events-none"
-            priority
-          />
-
+        <div className="block md:hidden relative w-full aspect-[1080/1350] rounded-xl sm:rounded-2xl overflow-hidden border border-light-border dark:border-[#34322D] shadow-xs dark:shadow-card bg-white dark:bg-[#151513] transition-colors duration-200">
           {mobileSlides.map((slide, idx) => {
             const isCurrent = (currentSlide % mobileSlides.length) === idx;
             const imageSrc = slide.mobileImage || slide.desktopImage || `/mobile slider ${idx + 1}.png`;
@@ -180,13 +160,17 @@ export const BrandHeroSlider: React.FC = () => {
                 <Link
                   href={slide.link || slide.buttonLink || '/shop'}
                   className="block w-full h-full cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl bg-white dark:bg-[#151513]"
+                  tabIndex={isCurrent ? 0 : -1}
                 >
                   <Image
                     src={imageSrc}
                     alt={slide.title || `Amin Raisat Hosiery Mobile Banner ${idx + 1}`}
                     fill
                     priority={idx === 0}
-                    sizes="100vw"
+                    fetchPriority={idx === 0 ? 'high' : 'auto'}
+                    loading={idx === 0 ? 'eager' : 'lazy'}
+                    sizes="(max-width: 768px) 100vw, 1080px"
+                    quality={85}
                     className="object-cover w-full h-full rounded-xl sm:rounded-2xl"
                   />
                 </Link>

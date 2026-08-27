@@ -159,7 +159,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
               src={currentPhoto}
               alt={product.name}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              loading="lazy"
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 280px"
+              quality={80}
               className="object-contain object-center w-full h-full transition-transform duration-500 ease-out group-hover:scale-105"
               priority={false}
             />

@@ -174,7 +174,9 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                     src={item.url}
                     alt={item.alt || `${productName} thumbnail ${idx + 1}`}
                     fill
+                    loading="lazy"
                     sizes="90px"
+                    quality={75}
                     className="object-contain object-center w-full h-full"
                   />
                 </div>

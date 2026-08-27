@@ -65,7 +65,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   ownerName: 'Muhammad Amin',
   phone: '03018666075',
   whatsapp: '03018666075',
-  email: 'amingoldriasathosiery@gmail.com',
+  email: 'info@aminhosiery.com',
   address: 'Hosiery Market, Faisalabad, Pakistan',
   businessHours: 'Monday - Saturday: 9:00 AM - 9:00 PM',
   market: 'Pakistan',
