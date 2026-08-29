@@ -1,7 +1,7 @@
 import { CartItem, Order } from '@/types';
 
-export const STORE_WHATSAPP_NUMBER = '923018666075'; // 03018666075 in international format
-export const STORE_DISPLAY_PHONE = '03018666075';
+export const STORE_WHATSAPP_NUMBER = '923088666075'; // 03088666075 in international format
+export const STORE_DISPLAY_PHONE = '03088666075';
 export const STORE_EMAIL = 'info@aminhosiery.com';
 export const STORE_OWNER = 'Muhammad Amin';
 

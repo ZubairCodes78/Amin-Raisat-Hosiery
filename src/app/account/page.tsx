@@ -316,7 +316,7 @@ export default function AccountPage() {
                   <label className="block font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">WhatsApp Number</label>
                   <input
                     type="tel"
-                    placeholder="03018666075"
+                    placeholder="03088666075"
                     value={whatsappNumber}
                     onChange={(e) => setWhatsappNumber(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"

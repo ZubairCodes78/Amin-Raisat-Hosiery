@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- Amin Raisat Hosiery — Comprehensive Supabase Database Schema & Initial Seed
 -- Brand: Amin Raisat Hosiery
--- Owner: Muhammad Amin (Phone & WhatsApp: 03018666075, Email: info@aminhosiery.com)
+-- Owner: Muhammad Amin (Phone & WhatsApp: 03088666075, Email: info@aminhosiery.com)
 -- ==============================================================================
 
 -- 1. Enable UUID Extension
@@ -118,8 +118,8 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     brand_name TEXT NOT NULL DEFAULT 'Amin Raisat Hosiery',
     owner_name TEXT NOT NULL DEFAULT 'Muhammad Amin',
-    phone TEXT NOT NULL DEFAULT '03018666075',
-    whatsapp TEXT NOT NULL DEFAULT '03018666075',
+    phone TEXT NOT NULL DEFAULT '03088666075',
+    whatsapp TEXT NOT NULL DEFAULT '03088666075',
     email TEXT NOT NULL DEFAULT 'info@aminhosiery.com',
     market TEXT NOT NULL DEFAULT 'Pakistan',
     currency TEXT NOT NULL DEFAULT 'PKR',
@@ -597,8 +597,8 @@ VALUES (
     'b0000000-0000-0000-0000-000000000001',
     'Amin Raisat Hosiery',
     'Muhammad Amin',
-    '03018666075',
-    '03018666075',
+    '03088666075',
+    '03088666075',
     'info@aminhosiery.com',
     'Pakistan',
     'PKR',

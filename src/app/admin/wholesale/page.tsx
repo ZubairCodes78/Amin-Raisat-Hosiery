@@ -36,7 +36,7 @@ export default function AdminWholesalePage() {
     minQuantity: settings.wholesale?.minQuantity ?? settings.wholesale?.defaultMinQty ?? 12,
     defaultDiscountPercent: settings.wholesale?.defaultDiscountPercent ?? 18,
     freeDeliveryForWholesale: settings.wholesale?.freeDeliveryForWholesale ?? true,
-    inquiryWhatsApp: settings.wholesale?.inquiryWhatsApp || settings.whatsapp || '03018666075',
+    inquiryWhatsApp: settings.wholesale?.inquiryWhatsApp || settings.whatsapp || '03088666075',
     termsAndNotes:
       settings.wholesale?.termsAndNotes ||
       'Wholesale orders require a minimum of 12 pieces (1 dozen). 100% Free Nationwide Delivery across Pakistan. Cash on delivery and direct bank transfer available.',

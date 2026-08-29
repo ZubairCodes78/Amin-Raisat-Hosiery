@@ -133,7 +133,7 @@ async function runComprehensiveVerification() {
       .insert({
         order_number: testOrderNum,
         customer_name: 'Test Customer',
-        customer_phone: '03018666075',
+        customer_phone: '03088666075',
         customer_email: 'customer@example.com',
         address: 'Main Commercial Area, Gulberg III',
         city: 'Lahore',

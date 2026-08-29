@@ -198,7 +198,7 @@ async function runAdminFunctionalTests() {
       .insert({
         order_number: testOrdNum,
         customer_name: 'Zubair Admin Test',
-        customer_phone: '03018666075',
+        customer_phone: '03088666075',
         customer_email: 'zubair@example.com',
         address: 'Bazaar #3, Commercial Area',
         city: 'Faisalabad',
