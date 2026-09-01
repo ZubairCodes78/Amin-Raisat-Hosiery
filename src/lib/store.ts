@@ -20,7 +20,7 @@ import {
   INITIAL_SITE_SETTINGS,
   INITIAL_HERO_SLIDES,
 } from '@/data/initialData';
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase, isSupabaseConfigured, createAdminClient } from './supabase';
 
 const LOCAL_STORAGE_KEYS = {
   PRODUCTS: 'arh_products_v6',
@@ -174,6 +174,7 @@ export class DataStore {
     }
 
     if (isSupabaseConfigured()) {
+      const adminDb = createAdminClient();
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subcat.id);
       const payload: any = {
         category_id: subcat.categoryId,
@@ -189,7 +190,7 @@ export class DataStore {
         payload.id = subcat.id;
       }
 
-      const { error } = await supabase.from('subcategories').upsert(payload);
+      const { error } = await adminDb.from('subcategories').upsert(payload);
       if (error) {
         console.error('FULL SUPABASE SUBCATEGORY ERROR:', error);
         throw new Error(error.message);
@@ -221,7 +222,8 @@ export class DataStore {
     }
 
     if (isSupabaseConfigured()) {
-      const { error } = await supabase.from('subcategories').delete().eq('id', id);
+      const adminDb = createAdminClient();
+      const { error } = await adminDb.from('subcategories').delete().eq('id', id);
       if (error) {
         console.error('FULL SUPABASE DELETE SUBCATEGORY ERROR:', error);
         throw new Error(error.message);
@@ -322,6 +324,7 @@ export class DataStore {
     }
 
     if (isSupabaseConfigured()) {
+      const adminDb = createAdminClient();
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category.id);
       const payload: any = {
         name: category.name,
@@ -336,7 +339,7 @@ export class DataStore {
         payload.id = category.id;
       }
 
-      const { error } = await supabase.from('categories').upsert(payload);
+      const { error } = await adminDb.from('categories').upsert(payload);
       if (error) {
         console.error('FULL SUPABASE CATEGORY ERROR:', error);
         throw new Error(error.message);
@@ -368,7 +371,8 @@ export class DataStore {
     }
 
     if (isSupabaseConfigured()) {
-      const { error } = await supabase.from('categories').delete().eq('id', id);
+      const adminDb = createAdminClient();
+      const { error } = await adminDb.from('categories').delete().eq('id', id);
       if (error) {
         console.error('FULL SUPABASE DELETE CATEGORY ERROR:', error);
         throw new Error(error.message);
@@ -515,6 +519,7 @@ export class DataStore {
     }
 
     if (isSupabaseConfigured()) {
+      const adminDb = createAdminClient();
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.id);
       const productPayload: any = {
         category_id: product.categoryId || null,
@@ -536,7 +541,7 @@ export class DataStore {
         productPayload.id = product.id;
       }
 
-      const { data: savedProd, error: prodErr } = await supabase
+      const { data: savedProd, error: prodErr } = await adminDb
         .from('products')
         .upsert(productPayload)
         .select()
@@ -573,7 +578,8 @@ export class DataStore {
     }
 
     if (isSupabaseConfigured()) {
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      const adminDb = createAdminClient();
+      const { error } = await adminDb.from('products').delete().eq('id', id);
       if (error) {
         console.error('FULL SUPABASE DELETE ERROR:', error);
         throw new Error(error.message);
@@ -732,7 +738,8 @@ export class DataStore {
               is_wholesale: it.isWholesale ?? false,
               wholesale_price: it.wholesalePrice || null,
             }));
-            await supabase.from('order_items').insert(itemsPayload);
+            const adminDb = createAdminClient();
+            await adminDb.from('order_items').insert(itemsPayload);
           }
         }
       } catch (err) {
@@ -885,7 +892,8 @@ export class DataStore {
       if (isUuid) {
         payload.id = slide.id;
       }
-      const { error } = await supabase.from('hero_slides').upsert(payload);
+      const adminDb = createAdminClient();
+      const { error } = await adminDb.from('hero_slides').upsert(payload);
       if (error) {
         console.error('FULL SUPABASE HERO ERROR:', error);
         throw new Error(error.message);
@@ -917,7 +925,8 @@ export class DataStore {
     }
 
     if (isSupabaseConfigured()) {
-      const { error } = await supabase.from('hero_slides').delete().eq('id', id);
+      const adminDb = createAdminClient();
+      const { error } = await adminDb.from('hero_slides').delete().eq('id', id);
       if (error) {
         console.error('FULL SUPABASE DELETE HERO ERROR:', error);
         throw new Error(error.message);
@@ -933,8 +942,9 @@ export class DataStore {
 
     if (isSupabaseConfigured()) {
       try {
-        const { data: siteData } = await supabase.from('site_settings').select('*').limit(1).single();
-        const { data: shipData } = await supabase.from('shipping_settings').select('*').limit(1).single();
+        const adminDb = createAdminClient();
+        const { data: siteData } = await adminDb.from('site_settings').select('*').limit(1).single();
+        const { data: shipData } = await adminDb.from('shipping_settings').select('*').limit(1).single();
 
         if (siteData || shipData) {
           settings = {
@@ -1174,7 +1184,8 @@ export class DataStore {
   static async deleteReview(reviewId: string): Promise<void> {
     if (isSupabaseConfigured()) {
       try {
-        await supabase.from('reviews').delete().eq('id', reviewId);
+        const adminDb = createAdminClient();
+        await adminDb.from('reviews').delete().eq('id', reviewId);
       } catch (err) {
         console.warn('Supabase deleteReview error', err);
       }

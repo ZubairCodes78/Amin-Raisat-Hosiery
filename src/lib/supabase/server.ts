@@ -20,9 +20,7 @@ export function getRuntimeKeyInfo(): {
   serviceRoleKeyPresent: boolean;
   keyType: 'server-secret' | 'publishable' | 'anon' | 'missing';
 } {
-  const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const publishableKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -59,9 +57,7 @@ export const supabaseServer = createServerClient();
  * REMOVES fallbacks to publishable/anon keys for admin mutations.
  */
 export function createAdminClient(): SupabaseClient {
-  const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceKey || serviceKey.length < 20 || serviceKey.includes('PASTE_')) {
     throw new Error(
