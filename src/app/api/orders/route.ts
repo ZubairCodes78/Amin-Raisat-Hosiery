@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, isSupabaseConfigured } from '@/lib/supabase';
+import { supabaseServer, createAdminClient, isSupabaseConfigured } from '@/lib/supabase';
 import { INITIAL_SHIPPING_SETTINGS, INITIAL_PRODUCTS } from '@/data/initialData';
 
 export async function POST(req: Request) {
@@ -99,124 +99,112 @@ export async function POST(req: Request) {
       });
     });
 
-    // 3. Check for Wholesale Items and Validate Minimum Wholesale Quantities
-    const wholesaleItemsCount = items.filter((it: any) => it.isWholesale).reduce(
-      (sum: number, it: any) => sum + (Number(it.quantity) || 0),
-      0
-    );
-    const regularItemsCount = items.filter((it: any) => !it.isWholesale).reduce(
-      (sum: number, it: any) => sum + (Number(it.quantity) || 0),
-      0
-    );
-    const totalQty = wholesaleItemsCount + regularItemsCount;
-
-    const hasWholesale = wholesaleItemsCount > 0 || clientIsWholesale === true;
-
-    if (hasWholesale && wholesaleItemsCount > 0 && wholesaleItemsCount < wholesaleMinQty) {
-      return NextResponse.json(
-        { error: `Wholesale orders require a minimum of ${wholesaleMinQty} pieces. You currently have ${wholesaleItemsCount} wholesale pieces in your cart.` },
-        { status: 400 }
-      );
-    }
-
-    if (!hasWholesale && totalQty < minOrderQty) {
-      return NextResponse.json(
-        { error: `Minimum retail order quantity is ${minOrderQty} pieces.` },
-        { status: 400 }
-      );
-    }
-
-    // 4. Calculate Authoritative Prices and Verify Line Items
+    // 3. Authoritative verification of all items & compute subtotal
     let subtotal = 0;
     let totalSavings = 0;
+    let totalItemCount = 0;
 
-    const verifiedItems = items.map((it: any) => {
-      const qty = Math.max(1, Number(it.quantity) || 1);
-      const isItemWholesale = Boolean(it.isWholesale || (hasWholesale && wholesaleItemsCount >= wholesaleMinQty));
+    const verifiedItems = items.map((clientItem: any) => {
+      const qty = Math.max(1, Number(clientItem.quantity) || 1);
+      totalItemCount += qty;
 
-      // Match variant
-      let dbVar = dbVariants.find(
+      // Find variant in DB or in initial data
+      let variant = dbVariants.find(
         (v) =>
-          v.id === it.variantId ||
-          (v.quality === it.quality && v.sleeve === it.sleeve && v.size === it.size)
+          v.id === clientItem.variantId ||
+          (v.product_id === clientItem.productId &&
+            v.quality === clientItem.quality &&
+            v.sleeve === clientItem.sleeve &&
+            v.size === clientItem.size)
       );
 
-      let regularUnitPrice = 480;
-      let wholesaleUnitPrice = 390;
-      let tiers: any[] = [];
+      let unitPrice = 0;
+      let retailPrice = 0;
+      let wholesalePrice = 0;
+      let productName = clientItem.productName || 'Hosiery Product';
 
-      if (dbVar) {
-        regularUnitPrice = Number(dbVar.sale_price) || Number(dbVar.price) || 480;
-        wholesaleUnitPrice = Number(dbVar.wholesale_price) || Math.round(regularUnitPrice * 0.82);
-        if (Array.isArray(dbVar.wholesale_tiers)) {
-          tiers = dbVar.wholesale_tiers;
-        }
+      if (variant) {
+        retailPrice = Number(variant.sale_price) || Number(variant.price) || 480;
+        wholesalePrice = Number(variant.wholesale_price) || Math.round(retailPrice * 0.82);
       } else {
-        const fallbackVar = initialVariantsMap.get(it.variantId) || initialVariantsMap.get(`${it.productId}_${it.quality}_${it.sleeve}_${it.size}`);
-        if (fallbackVar) {
-          regularUnitPrice = Number(fallbackVar.salePrice) || Number(fallbackVar.price) || 480;
-          wholesaleUnitPrice = Number(fallbackVar.wholesalePrice) || Math.round(regularUnitPrice * 0.82);
-          if (Array.isArray(fallbackVar.wholesaleTiers)) {
-            tiers = fallbackVar.wholesaleTiers;
-          }
+        const initialVar =
+          initialVariantsMap.get(clientItem.variantId) ||
+          initialVariantsMap.get(`${clientItem.productId}_${clientItem.quality}_${clientItem.sleeve}_${clientItem.size}`);
+        if (initialVar) {
+          retailPrice = Number(initialVar.salePrice) || Number(initialVar.price) || 480;
+          wholesalePrice = Number(initialVar.wholesalePrice) || Math.round(retailPrice * 0.82);
+          productName = initialVar.productName || productName;
+        } else {
+          retailPrice = Number(clientItem.unitPrice) || 480;
+          wholesalePrice = Math.round(retailPrice * 0.82);
         }
       }
 
-      // Check tiered bulk pricing for wholesale
-      let finalUnitPrice = regularUnitPrice;
-      if (isItemWholesale) {
-        finalUnitPrice = wholesaleUnitPrice;
-        // Check if item quantity unlocks a higher tier
-        if (tiers && tiers.length > 0) {
-          for (const tier of tiers) {
-            if (qty >= tier.minQty && (!tier.maxQty || qty <= tier.maxQty)) {
-              if (tier.price) {
-                finalUnitPrice = Number(tier.price);
-              } else if (tier.discountPercent) {
-                finalUnitPrice = Math.round(regularUnitPrice * (1 - tier.discountPercent / 100));
-              }
-            }
-          }
-        }
-      }
+      // Check wholesale criteria
+      const isEligibleForWholesale = clientIsWholesale || totalItemCount >= wholesaleMinQty;
+      unitPrice = isEligibleForWholesale ? wholesalePrice : retailPrice;
 
-      const itemTotal = finalUnitPrice * qty;
-      const regularItemTotal = regularUnitPrice * qty;
-      if (isItemWholesale && regularItemTotal > itemTotal) {
-        totalSavings += regularItemTotal - itemTotal;
-      }
-
+      const itemTotal = unitPrice * qty;
+      const normalTotal = retailPrice * qty;
       subtotal += itemTotal;
+      if (normalTotal > itemTotal) {
+        totalSavings += normalTotal - itemTotal;
+      }
 
       return {
-        ...it,
-        isWholesale: isItemWholesale,
-        unitPrice: finalUnitPrice,
-        regularPrice: regularUnitPrice,
-        wholesalePrice: wholesaleUnitPrice,
+        productId: clientItem.productId || null,
+        variantId: variant?.id || clientItem.variantId || null,
+        productName,
+        quality: clientItem.quality || variant?.quality || 'High Quality',
+        sleeve: clientItem.sleeve || variant?.sleeve || 'Sleeveless',
+        size: clientItem.size || variant?.size || 'L',
+        unitPrice,
         quantity: qty,
         totalPrice: itemTotal,
+        image: clientItem.image || null,
       };
     });
 
-    // Delivery fee rule: Wholesale orders of 12+ pieces or retail 3+ pieces get FREE delivery
-    const isFreeDelivery = totalQty >= freeDeliveryThreshold || hasWholesale;
-    const deliveryFee = isFreeDelivery ? 0 : baseDeliveryCharge;
+    // Enforce MOQ check
+    if (totalItemCount < minOrderQty) {
+      return NextResponse.json(
+        {
+          error: `Minimum order quantity requirement not met. Minimum ${minOrderQty} pieces required per order.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Determine final delivery fee
+    const hasWholesale = totalItemCount >= wholesaleMinQty || clientIsWholesale;
+    let deliveryFee = baseDeliveryCharge;
+    if (subtotal >= freeDeliveryThreshold && !hasWholesale) {
+      deliveryFee = 0;
+    }
+
     const totalAmount = subtotal + deliveryFee;
+    const orderNumber = `ARH-${Date.now().toString().slice(-6)}`;
+    let orderId = `ord-${Date.now()}`;
 
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const orderNumber = `ARH-${new Date().getFullYear()}-${randomSuffix}`;
-    let orderId = `ord-${Date.now()}-${randomSuffix}`;
-
-    // 5. Save order to Supabase and Decrement Inventory
+    // 4. Save Order to Supabase Database
     if (isSupabaseConfigured()) {
       try {
+        let dbClient = supabaseServer;
+        try {
+          dbClient = createAdminClient();
+        } catch {
+          // Fallback to supabaseServer if service key not configured
+        }
+
         const orderPayload: any = {
           order_number: orderNumber,
+          user_id: userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
+            ? userId
+            : null,
           customer_name: cleanName,
           customer_phone: cleanPhone,
           customer_email: customerEmail?.trim() || null,
-          address: cleanAddress,
+          shipping_address: cleanAddress,
           city: cleanCity,
           province: province?.trim() || 'Punjab',
           order_notes: orderNotes?.trim() || null,
@@ -230,7 +218,7 @@ export async function POST(req: Request) {
           wholesale_discount: totalSavings,
         };
 
-        let { data: insertedOrder, error: ordErr } = await supabaseServer
+        let { data: insertedOrder, error: ordErr } = await dbClient
           .from('orders')
           .insert(orderPayload)
           .select()
@@ -239,7 +227,7 @@ export async function POST(req: Request) {
         if (ordErr && ordErr.code === 'PGRST204') {
           delete orderPayload.is_wholesale;
           delete orderPayload.wholesale_discount;
-          const retryRes = await supabaseServer
+          const retryRes = await dbClient
             .from('orders')
             .insert(orderPayload)
             .select()
@@ -253,12 +241,8 @@ export async function POST(req: Request) {
 
           const itemsPayload = verifiedItems.map((it: any) => ({
             order_id: insertedOrder.id,
-            product_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.productId)
-              ? it.productId
-              : null,
-            variant_id: it.variantId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.variantId)
-              ? it.variantId
-              : null,
+            product_id: it.productId,
+            variant_id: it.variantId,
             product_name: it.productName,
             quality: it.quality,
             sleeve: it.sleeve,
@@ -269,7 +253,7 @@ export async function POST(req: Request) {
             image_url: it.image || null,
           }));
 
-          const { error: itemsErr } = await supabaseServer.from('order_items').insert(itemsPayload);
+          const { error: itemsErr } = await dbClient.from('order_items').insert(itemsPayload);
           if (itemsErr) {
             console.error('FULL SUPABASE ORDER ITEMS INSERT ERROR:', itemsErr);
           }
@@ -281,7 +265,7 @@ export async function POST(req: Request) {
                 const targetVar = dbVariants.find((v) => v.id === item.variantId);
                 if (targetVar) {
                   const newStock = Math.max(0, (targetVar.stock || 0) - item.quantity);
-                  await supabaseServer
+                  await dbClient
                     .from('product_variants')
                     .update({ stock: newStock, updated_at: new Date().toISOString() })
                     .eq('id', item.variantId);

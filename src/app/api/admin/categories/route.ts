@@ -15,9 +15,14 @@ export async function GET() {
   }
 
   try {
+    let dbClient = supabaseServer;
+    try {
+      dbClient = createAdminClient();
+    } catch {}
+
     const [{ data: cats, error: cErr }, { data: subcats, error: sErr }] = await Promise.all([
-      supabaseServer.from('categories').select('*').order('display_order', { ascending: true }),
-      supabaseServer.from('subcategories').select('*').order('display_order', { ascending: true }),
+      dbClient.from('categories').select('*').order('display_order', { ascending: true }),
+      dbClient.from('subcategories').select('*').order('display_order', { ascending: true }),
     ]);
 
     if (cErr) {

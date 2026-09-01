@@ -15,7 +15,12 @@ export async function GET() {
   }
 
   try {
-    const { data: slides, error } = await supabaseServer
+    let dbClient = supabaseServer;
+    try {
+      dbClient = createAdminClient();
+    } catch {}
+
+    const { data: slides, error } = await dbClient
       .from('hero_slides')
       .select('*')
       .order('display_order', { ascending: true });

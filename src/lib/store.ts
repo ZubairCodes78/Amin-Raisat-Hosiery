@@ -20,7 +20,7 @@ import {
   INITIAL_SITE_SETTINGS,
   INITIAL_HERO_SLIDES,
 } from '@/data/initialData';
-import { supabaseBrowser, isSupabaseConfigured, createAdminClient } from './supabase';
+import { supabaseBrowser, supabaseServer, isSupabaseConfigured, createAdminClient } from './supabase';
 
 const LOCAL_STORAGE_KEYS = {
   PRODUCTS: 'arh_products_v6',
@@ -944,9 +944,9 @@ export class DataStore {
 
     if (isSupabaseConfigured()) {
       try {
-        const adminDb = createAdminClient();
-        const { data: siteData } = await adminDb.from('site_settings').select('*').limit(1).single();
-        const { data: shipData } = await adminDb.from('shipping_settings').select('*').limit(1).single();
+        const db = this.isClient() ? supabaseBrowser : supabaseServer;
+        const { data: siteData } = await db.from('site_settings').select('*').limit(1).single();
+        const { data: shipData } = await db.from('shipping_settings').select('*').limit(1).single();
 
         if (siteData || shipData) {
           settings = {

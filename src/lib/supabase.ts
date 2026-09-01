@@ -1,9 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+// Supabase client and server configuration for Amin Raisat Hosiery
+export * from './supabase/client';
+export * from './supabase/server';
 
-const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const rawKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const isValidHttpUrl = (url?: string): boolean => {
   if (!url) return false;
@@ -14,15 +17,6 @@ const isValidHttpUrl = (url?: string): boolean => {
     return false;
   }
 };
-
-const supabaseUrl = isValidHttpUrl(rawUrl)
-  ? rawUrl!
-  : 'https://placeholder-project.supabase.co';
-
-const supabaseKey =
-  rawKey && rawKey.length > 20 && !rawKey.includes('PASTE_')
-    ? rawKey
-    : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder';
 
 export const isSupabaseConfigured = (): boolean => {
   return (
@@ -35,10 +29,3 @@ export const isSupabaseConfigured = (): boolean => {
   );
 };
 
-// BROWSER CLIENT: Uses publishable/anon key for public reads and customer authentication
-// NEVER use this for admin mutations
-export const supabaseBrowser = createClient(supabaseUrl, supabaseKey);
-
-// Export structured client modules
-export * from './supabase/client';
-export * from './supabase/server';

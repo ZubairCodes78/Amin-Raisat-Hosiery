@@ -15,7 +15,12 @@ export async function GET() {
   }
 
   try {
-    const { data: prods, error } = await supabaseServer
+    let dbClient = supabaseServer;
+    try {
+      dbClient = createAdminClient();
+    } catch {}
+
+    const { data: prods, error } = await dbClient
       .from('products')
       .select('*, product_variants(*), product_media(*)')
       .order('created_at', { ascending: false });
@@ -95,39 +100,55 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Product name is required.' }, { status: 400 });
     }
 
-    const productId = isUuid(body.id) ? body.id : crypto.randomUUID();
+    // 1. Resolve authoritative Product ID (ensure existing products by slug/ID retain their UUID)
     const autoSlug = body.slug
       ? body.slug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')
       : body.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    // Normalize Category ID: Ensure valid UUID or null
+    let productId: string;
+    if (isUuid(body.id)) {
+      productId = body.id;
+    } else {
+      // Check if product exists in database by slug
+      const { data: existingBySlug } = await adminDb
+        .from('products')
+        .select('id')
+        .eq('slug', autoSlug)
+        .limit(1)
+        .maybeSingle();
+
+      productId = existingBySlug?.id || crypto.randomUUID();
+    }
+
+    // 2. Normalize Category ID: Ensure valid UUID or find by slug
     let targetCatId: string | null = null;
     if (isUuid(body.categoryId)) {
       targetCatId = body.categoryId;
     } else if (body.categoryId) {
-      // Find category by slug
+      const cleanSlug = body.categoryId.replace(/^cat-/, '');
       const { data: catData } = await adminDb
         .from('categories')
         .select('id')
-        .or(`slug.eq.${body.categoryId},id.eq.${body.categoryId}`)
+        .or(`slug.eq.${body.categoryId},slug.eq.${cleanSlug}`)
         .limit(1)
-        .single();
+        .maybeSingle();
       if (catData?.id) {
         targetCatId = catData.id;
       }
     }
 
-    // Normalize Subcategory ID
+    // 3. Normalize Subcategory ID: Ensure valid UUID or find by slug
     let targetSubcatId: string | null = null;
     if (body.subcategoryId && isUuid(body.subcategoryId)) {
       targetSubcatId = body.subcategoryId;
     } else if (body.subcategoryId) {
+      const cleanSubSlug = body.subcategoryId.replace(/^sub-men-|^sub-women-|^sub-kids-|^sub-/, '');
       const { data: subData } = await adminDb
         .from('subcategories')
         .select('id')
-        .or(`slug.eq.${body.subcategoryId},id.eq.${body.subcategoryId}`)
+        .or(`slug.eq.${body.subcategoryId},slug.eq.${cleanSubSlug}`)
         .limit(1)
-        .single();
+        .maybeSingle();
       if (subData?.id) {
         targetSubcatId = subData.id;
       }
@@ -373,3 +394,12 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: 'Failed to delete product from database.' }, { status: 500 });
   }
 }
+
+export async function PUT(req: Request) {
+  return POST(req);
+}
+
+export async function PATCH(req: Request) {
+  return POST(req);
+}
+
