@@ -41,48 +41,54 @@ export class DataStore {
   // 1. FILE UPLOADER (SUPABASE STORAGE BUCKET -> PUBLIC CDN URL)
   // ============================================================================
   static async uploadMediaFile(file: File, bucket = 'product-media'): Promise<string> {
-    if (isSupabaseConfigured()) {
-      try {
-        const fileExt = file.name.split('.').pop() || 'jpg';
-        const cleanName = file.name
-          .replace(/\.[^/.]+$/, '')
-          .replace(/[^a-zA-Z0-9_-]/g, '_')
-          .toLowerCase();
-        const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
-
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: true,
-          });
-
-        if (!error && data) {
-          const { data: publicUrlData } = supabase.storage
-            .from(bucket)
-            .getPublicUrl(fileName);
-          if (publicUrlData?.publicUrl) {
-            return publicUrlData.publicUrl;
-          }
-        } else if (error) {
-          console.warn('Supabase storage upload error:', error.message);
-        }
-      } catch (err) {
-        console.warn('Supabase storage upload exception, falling back to local reader:', err);
-      }
+    let targetBucket = bucket;
+    if (targetBucket === 'products' || targetBucket === 'arh_products_v6' || !targetBucket) {
+      targetBucket = 'product-media';
+    } else if (targetBucket === 'desktop-hero' || targetBucket === 'mobile-hero' || targetBucket === 'hero') {
+      targetBucket = 'hero-slides';
     }
 
-    // Offline / Local fallback: Convert file to Base64 Data URL
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        resolve(reader.result as string);
-      };
-      reader.onerror = (error) => {
-        reject(error);
-      };
-      reader.readAsDataURL(file);
-    });
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase Storage is not configured. Media upload requires an active Supabase connection.');
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop() || 'webp';
+      const cleanName = file.name
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '_')
+        .toLowerCase();
+      const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from(targetBucket)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (error) {
+        console.error(`Supabase storage upload error in bucket '${targetBucket}':`, error.message);
+        const lowerMsg = error.message.toLowerCase();
+        if (lowerMsg.includes('quota') || lowerMsg.includes('payload too large') || lowerMsg.includes('storage limit')) {
+          throw new Error('Storage limit reached. Please remove unused media from Supabase Storage or upgrade the storage plan.');
+        }
+        throw new Error(`Image upload failed: ${error.message}`);
+      }
+
+      if (data) {
+        const { data: publicUrlData } = supabase.storage
+          .from(targetBucket)
+          .getPublicUrl(fileName);
+        if (publicUrlData?.publicUrl) {
+          return publicUrlData.publicUrl;
+        }
+      }
+      throw new Error('Failed to retrieve public URL for uploaded media.');
+    } catch (err: any) {
+      console.error('Supabase storage upload exception:', err);
+      throw err instanceof Error ? err : new Error('Image upload failed. Please try again.');
+    }
   }
 
   // ============================================================================
@@ -375,6 +381,16 @@ export class DataStore {
     return products.find((p) => p.slug === slug || p.id === slug) || null;
   }
 
+  private static sanitizeProductsForLocalStorage(products: Product[]): Product[] {
+    return products.map((prod) => {
+      const sanitized = { ...prod };
+      if (Array.isArray(sanitized.media)) {
+        sanitized.media = sanitized.media.filter((m) => !m.url || !m.url.startsWith('data:image'));
+      }
+      return sanitized;
+    });
+  }
+
   static async saveProduct(product: Product): Promise<void> {
     if (isSupabaseConfigured()) {
       try {
@@ -456,7 +472,8 @@ export class DataStore {
       products.push(product);
     }
     if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+      const cleanProducts = this.sanitizeProductsForLocalStorage(products);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(cleanProducts));
     }
   }
 

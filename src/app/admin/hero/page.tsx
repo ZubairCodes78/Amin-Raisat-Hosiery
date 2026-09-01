@@ -18,6 +18,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
+import { optimizeImageForUpload } from '@/lib/imageOptimizer';
 
 export default function AdminHeroPage() {
   const { heroSlides, saveHeroSlide, deleteHeroSlide, uploadMediaFile } = useStore();
@@ -76,11 +77,25 @@ export default function AdminHeroPage() {
     if (!file) return;
     setIsUploading(true);
     try {
-      const url = await uploadMediaFile(file, activeTab === 'desktop' ? 'desktop-hero' : 'mobile-hero');
+      let fileToUpload = file;
+      try {
+        fileToUpload = await optimizeImageForUpload(file, { maxWidth: 1920, quality: 0.85 });
+      } catch (optErr) {
+        console.warn('Hero image optimization fallback:', optErr);
+      }
+      const url = await uploadMediaFile(fileToUpload, 'hero-slides');
+      if (url.startsWith('data:image')) {
+        throw new Error('Upload generated Base64 data.');
+      }
       setImage(url);
       showToast('Hero image uploaded to Supabase Storage!');
-    } catch (err) {
-      showToast('Failed to upload image. Please try again.');
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('Storage limit reached')) {
+        showToast('Storage limit reached. Please remove unused media from Supabase Storage or upgrade the storage plan.');
+      } else {
+        showToast('Failed to upload image. Please try again.');
+      }
     } finally {
       setIsUploading(false);
     }

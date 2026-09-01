@@ -30,6 +30,7 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
+import { optimizeImageForUpload } from '@/lib/imageOptimizer';
 
 function AdminProductsContent() {
   const router = useRouter();
@@ -561,12 +562,38 @@ function AdminProductsContent() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    if (uploadProgress === 'uploading') return;
+
     setUploadProgress('uploading');
     try {
       const newItems: ProductMedia[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const uploadedUrl = await uploadMediaFile(file, 'products');
+
+        // Deduplication check: prevent identical file uploads
+        const isDup = mediaList.some(
+          (m) => m.title === file.name || m.title === (uploadMediaTitle || file.name)
+        );
+        if (isDup) {
+          showNotice(`Skipped duplicate file: ${file.name}`, 'error');
+          continue;
+        }
+
+        // Optimize image client-side before upload (1600px max width, WebP format, 0.82 quality)
+        let fileToUpload = file;
+        try {
+          fileToUpload = await optimizeImageForUpload(file, { maxWidth: 1600, quality: 0.82 });
+        } catch (optErr: any) {
+          console.warn('Optimization notice, using original image:', optErr?.message);
+        }
+
+        // Upload to Supabase Storage bucket 'product-media'
+        const uploadedUrl = await uploadMediaFile(fileToUpload, 'product-media');
+
+        // Safety check: Never accept Base64 Data URLs
+        if (uploadedUrl.startsWith('data:image')) {
+          throw new Error('Image upload generated Base64 data. Supabase upload failed.');
+        }
 
         newItems.push({
           id: `media-upl-${Date.now()}-${i}`,
@@ -581,15 +608,24 @@ function AdminProductsContent() {
         });
       }
 
-      setMediaList((prev) => [...prev, ...newItems]);
-      setUploadProgress('uploaded');
-      showNotice(`Successfully uploaded ${files.length} photo(s) to storage.`);
+      if (newItems.length > 0) {
+        setMediaList((prev) => [...prev, ...newItems]);
+        setUploadProgress('uploaded');
+        showNotice(`Successfully uploaded ${newItems.length} photo(s) to storage.`);
+      } else {
+        setUploadProgress('idle');
+      }
       setUploadMediaTitle('');
       setTimeout(() => setUploadProgress('idle'), 3000);
-    } catch (err) {
+    } catch (err: any) {
       setUploadProgress('failed');
-      showNotice('Error uploading image to storage. Please try again.', 'error');
-      setTimeout(() => setUploadProgress('idle'), 4000);
+      const msg = err?.message || '';
+      if (msg.includes('Storage limit reached')) {
+        showNotice('Storage limit reached. Please remove unused media from Supabase Storage or upgrade the storage plan.', 'error');
+      } else {
+        showNotice(msg || 'Image upload failed. Please try again.', 'error');
+      }
+      setTimeout(() => setUploadProgress('idle'), 5000);
     } finally {
       e.target.value = '';
     }
