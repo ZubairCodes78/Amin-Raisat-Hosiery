@@ -88,41 +88,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    // DIAGNOSTIC: Log client initialization details
-    const serviceKeyPresent = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const serviceKeyLength = process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0;
-    const projectRefMatch = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('pqjpgexmupcuuqfzchhc') || false;
-    
-    console.log('[PRODUCT POST DIAGNOSTIC]', {
-      timestamp: new Date().toISOString(),
-      serviceKeyPresent,
-      serviceKeyLength,
-      projectRefMatch,
-      environment: process.env.NODE_ENV,
-      operation: 'createAdminClient()'
-    });
-
     const adminDb = createAdminClient();
-    
-    // DIAGNOSTIC: Test the admin client with a simple query to verify role
-    try {
-      const { data: roleTest, error: roleError } = await adminDb
-        .rpc('current_user') || await adminDb.auth.getUser();
-      console.log('[PRODUCT POST DIAGNOSTIC]', {
-        operation: 'role_verification',
-        authTestSuccess: !roleError,
-        authError: roleError?.message,
-        timestamp: new Date().toISOString()
-      });
-    } catch (e: any) {
-      console.log('[PRODUCT POST DIAGNOSTIC]', {
-        operation: 'role_verification',
-        authTestFailed: true,
-        error: e?.message,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
     const body: Product = await req.json();
 
     if (!body.name || !body.name.trim()) {
@@ -193,14 +159,6 @@ export async function POST(req: Request) {
     let savedProd: any = null;
     let prodErr: any = null;
 
-    // DIAGNOSTIC: Log database operation details
-    console.log('[PRODUCT POST DIAGNOSTIC]', {
-      operation: 'products.upsert',
-      payloadKeys: Object.keys(productPayload),
-      productId: productPayload.id,
-      timestamp: new Date().toISOString()
-    });
-
     const res1 = await adminDb
       .from('products')
       .upsert(productPayload)
@@ -209,17 +167,6 @@ export async function POST(req: Request) {
 
     savedProd = res1.data;
     prodErr = res1.error;
-
-    // DIAGNOSTIC: Log database operation result
-    console.log('[PRODUCT POST DIAGNOSTIC]', {
-      operation: 'products.upsert',
-      success: !prodErr,
-      errorCode: prodErr?.code,
-      errorMessage: prodErr?.message,
-      errorDetails: prodErr?.details,
-      errorHint: prodErr?.hint,
-      timestamp: new Date().toISOString()
-    });
 
     if (prodErr && prodErr.code === 'PGRST204') {
       // Omit optional wholesale columns and retry

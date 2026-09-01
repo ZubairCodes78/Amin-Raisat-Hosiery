@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { supabaseBrowser, isSupabaseConfigured } from '@/lib/supabase';
 import { CustomerProfile, CustomerAddress } from '@/types';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseBrowser
         .from('customer_profiles')
         .select('*')
         .eq('id', userId)
@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Sync fallback name to database if DB was unpopulated
         if (!hasValidDbName && fallbackName?.trim() && fallbackName.trim() !== 'Customer') {
-          await supabase
+          await supabaseBrowser
             .from('customer_profiles')
             .update({ full_name: fallbackName.trim(), updated_at: new Date().toISOString() })
             .eq('id', userId);
@@ -84,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           full_name: cleanFallback,
           email: userEmail || '',
         };
-        await supabase.from('customer_profiles').upsert(initialProfile);
+        await supabaseBrowser.from('customer_profiles').upsert(initialProfile);
         setProfile({
           id: userId,
           fullName: cleanFallback,
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseBrowser
         .from('customer_addresses')
         .select('*')
         .eq('user_id', userId)
@@ -150,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
@@ -171,7 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (_event, newSession) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -201,7 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: 'Database authentication is currently in demo mode.' };
     }
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
@@ -263,7 +263,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await supabaseBrowser.auth.signUp({
         email: cleanEmail,
         password,
         options: {
@@ -298,7 +298,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(newProfile);
 
         // Upsert exact full name into customer_profiles table
-        await supabase.from('customer_profiles').upsert({
+        await supabaseBrowser.from('customer_profiles').upsert({
           id: data.user.id,
           full_name: cleanName,
           phone: cleanPhone || null,
@@ -324,7 +324,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: 'Password reset requires active Supabase email configuration.' };
     }
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error } = await supabaseBrowser.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/account`,
       });
       if (error) {
@@ -340,7 +340,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     if (isSupabaseConfigured()) {
       try {
-        await supabase.auth.signOut();
+        await supabaseBrowser.auth.signOut();
       } catch (err) {
         console.warn('Sign out exception:', err);
       }
@@ -370,7 +370,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (updates.whatsappNumber !== undefined) payload.phone = updates.whatsappNumber.trim();
       if (updates.email !== undefined) payload.email = updates.email.trim();
 
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from('customer_profiles')
         .update(payload)
         .eq('id', user.id);
@@ -410,13 +410,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       if (addressData.isDefault) {
-        await supabase
+        await supabaseBrowser
           .from('customer_addresses')
           .update({ is_default: false })
           .eq('user_id', user.id);
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseBrowser
         .from('customer_addresses')
         .insert({
           user_id: user.id,
@@ -483,7 +483,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       if (updates.isDefault) {
-        await supabase
+        await supabaseBrowser
           .from('customer_addresses')
           .update({ is_default: false })
           .eq('user_id', user.id);
@@ -500,7 +500,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (updates.postalCode !== undefined) payload.postal_code = updates.postalCode;
       if (updates.isDefault !== undefined) payload.is_default = updates.isDefault;
 
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from('customer_addresses')
         .update(payload)
         .eq('id', id)
@@ -526,7 +526,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from('customer_addresses')
         .delete()
         .eq('id', id)

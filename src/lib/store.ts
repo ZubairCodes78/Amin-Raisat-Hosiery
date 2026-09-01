@@ -20,7 +20,7 @@ import {
   INITIAL_SITE_SETTINGS,
   INITIAL_HERO_SLIDES,
 } from '@/data/initialData';
-import { supabase, isSupabaseConfigured, createAdminClient } from './supabase';
+import { supabaseBrowser, isSupabaseConfigured, createAdminClient } from './supabase';
 
 const LOCAL_STORAGE_KEYS = {
   PRODUCTS: 'arh_products_v6',
@@ -60,7 +60,7 @@ export class DataStore {
         .toLowerCase();
       const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
 
-      const { data, error } = await supabase.storage
+      const { data, error } = await supabaseBrowser.storage
         .from(targetBucket)
         .upload(fileName, file, {
           cacheControl: '3600',
@@ -77,7 +77,7 @@ export class DataStore {
       }
 
       if (data) {
-        const { data: publicUrlData } = supabase.storage
+        const { data: publicUrlData } = supabaseBrowser.storage
           .from(targetBucket)
           .getPublicUrl(fileName);
         if (publicUrlData?.publicUrl) {
@@ -97,7 +97,7 @@ export class DataStore {
   static async getSubcategories(): Promise<Subcategory[]> {
     if (isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseBrowser
           .from('subcategories')
           .select('*')
           .order('display_order', { ascending: true });
@@ -238,7 +238,7 @@ export class DataStore {
 
     if (isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseBrowser
           .from('categories')
           .select('*')
           .order('display_order', { ascending: true });
@@ -388,7 +388,7 @@ export class DataStore {
 
     if (isSupabaseConfigured()) {
       try {
-        const { data: prods, error } = await supabase
+        const { data: prods, error } = await supabaseBrowser
           .from('products')
           .select('*, product_variants(*), product_media(*)')
           .order('created_at', { ascending: false });
@@ -593,7 +593,7 @@ export class DataStore {
   static async getOrders(): Promise<Order[]> {
     if (isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseBrowser
           .from('orders')
           .select('*, order_items(*)')
           .order('created_at', { ascending: false });
@@ -691,7 +691,8 @@ export class DataStore {
 
     if (isSupabaseConfigured()) {
       try {
-        const { data: insertedOrder, error: orderErr } = await supabase
+        const adminDb = createAdminClient();
+        const { data: insertedOrder, error: orderErr } = await adminDb
           .from('orders')
           .insert({
             order_number: orderNumber,
@@ -759,7 +760,8 @@ export class DataStore {
   static async updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
     if (isSupabaseConfigured()) {
       try {
-        await supabase
+        const adminDb = createAdminClient();
+        await adminDb
           .from('orders')
           .update({ status, updated_at: new Date().toISOString() })
           .or(`id.eq.${orderId},order_number.eq.${orderId}`);
@@ -784,7 +786,7 @@ export class DataStore {
   static async getHeroSlides(deviceType?: 'desktop' | 'mobile'): Promise<HeroSlide[]> {
     if (isSupabaseConfigured()) {
       try {
-        let query = supabase.from('hero_slides').select('*').order('display_order', { ascending: true });
+        let query = supabaseBrowser.from('hero_slides').select('*').order('display_order', { ascending: true });
         if (deviceType) {
           query = query.eq('device_type', deviceType);
         }
@@ -990,7 +992,8 @@ export class DataStore {
 
   static async updateSettings(settings: SiteSettings): Promise<void> {
     if (isSupabaseConfigured()) {
-      const { error: siteErr } = await supabase
+      const adminDb = createAdminClient();
+      const { error: siteErr } = await adminDb
         .from('site_settings')
         .update({
           brand_name: settings.brandName,
@@ -1014,7 +1017,7 @@ export class DataStore {
         console.error('FULL SUPABASE SITE SETTINGS ERROR:', siteErr);
       }
 
-      const { error: shipErr } = await supabase
+      const { error: shipErr } = await adminDb
         .from('shipping_settings')
         .update({
           min_order_qty: settings.shipping.minOrderQty,
@@ -1041,7 +1044,7 @@ export class DataStore {
   static async getReviews(): Promise<ProductReview[]> {
     if (isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseBrowser
           .from('reviews')
           .select('*')
           .order('created_at', { ascending: false });
@@ -1105,7 +1108,7 @@ export class DataStore {
 
     if (isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseBrowser
           .from('reviews')
           .insert({
             product_id: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(review.productId)
@@ -1140,7 +1143,8 @@ export class DataStore {
   static async updateReviewApproval(reviewId: string, isApproved: boolean): Promise<void> {
     if (isSupabaseConfigured()) {
       try {
-        await supabase
+        const adminDb = createAdminClient();
+        await adminDb
           .from('reviews')
           .update({ is_approved: isApproved })
           .eq('id', reviewId);
@@ -1221,7 +1225,7 @@ export class DataStore {
 
     if (profiles.length === 0 && isSupabaseConfigured()) {
       try {
-        const { data: profData, error: profErr } = await supabase
+        const { data: profData, error: profErr } = await supabaseBrowser
           .from('customer_profiles')
           .select('*')
           .order('created_at', { ascending: false });
@@ -1246,7 +1250,7 @@ export class DataStore {
           }));
         }
 
-        const { data: addrData, error: addrErr } = await supabase
+        const { data: addrData, error: addrErr } = await supabaseBrowser
           .from('customer_addresses')
           .select('*');
 

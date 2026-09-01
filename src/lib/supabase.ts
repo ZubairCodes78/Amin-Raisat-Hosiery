@@ -35,6 +35,10 @@ export const isSupabaseConfigured = (): boolean => {
   );
 };
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// BROWSER CLIENT: Uses publishable/anon key for public reads and customer authentication
+// NEVER use this for admin mutations
+export const supabaseBrowser = createClient(supabaseUrl, supabaseKey);
+
+// Export structured client modules
 export * from './supabase/client';
 export * from './supabase/server';
