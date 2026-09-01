@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, isSupabaseConfigured } from '@/lib/supabase';
+import { supabaseServer, createAdminClient, isSupabaseConfigured } from '@/lib/supabase';
 import { Category, Subcategory } from '@/types';
 import { INITIAL_CATEGORIES, INITIAL_SUBCATEGORIES } from '@/data/initialData';
 import crypto from 'crypto';
@@ -61,6 +61,7 @@ export async function POST(req: Request) {
   }
 
   try {
+    const adminDb = createAdminClient();
     const body = await req.json();
     const { type, data } = body;
 
@@ -86,7 +87,7 @@ export async function POST(req: Request) {
         updated_at: new Date().toISOString(),
       };
 
-      const { data: savedCat, error } = await supabaseServer
+      const { data: savedCat, error } = await adminDb
         .from('categories')
         .upsert(payload)
         .select()
@@ -114,7 +115,7 @@ export async function POST(req: Request) {
       // Ensure parent category ID is valid UUID
       let targetCatId = sub.categoryId;
       if (!isUuid(targetCatId)) {
-        const { data: catRecord } = await supabaseServer
+        const { data: catRecord } = await adminDb
           .from('categories')
           .select('id')
           .or(`slug.eq.${sub.categoryId},id.eq.${sub.categoryId}`)
@@ -137,7 +138,7 @@ export async function POST(req: Request) {
         updated_at: new Date().toISOString(),
       };
 
-      const { data: savedSub, error } = await supabaseServer
+      const { data: savedSub, error } = await adminDb
         .from('subcategories')
         .upsert(payload)
         .select()
@@ -164,6 +165,7 @@ export async function DELETE(req: Request) {
   }
 
   try {
+    const adminDb = createAdminClient();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     const type = searchParams.get('type') || 'category';
@@ -173,7 +175,7 @@ export async function DELETE(req: Request) {
     }
 
     const table = type === 'subcategory' ? 'subcategories' : 'categories';
-    const { error } = await supabaseServer.from(table).delete().eq('id', id);
+    const { error } = await adminDb.from(table).delete().eq('id', id);
 
     if (error) {
       console.error(`FULL SUPABASE ${table} DELETE ERROR:`, error);

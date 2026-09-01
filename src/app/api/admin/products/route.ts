@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, isSupabaseConfigured } from '@/lib/supabase';
+import { supabaseServer, createAdminClient, isSupabaseConfigured } from '@/lib/supabase';
 import { Product, ProductVariant, ProductMedia } from '@/types';
 import { INITIAL_PRODUCTS } from '@/data/initialData';
 import crypto from 'crypto';
@@ -88,6 +88,7 @@ export async function POST(req: Request) {
   }
 
   try {
+    const adminDb = createAdminClient();
     const body: Product = await req.json();
 
     if (!body.name || !body.name.trim()) {
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
       targetCatId = body.categoryId;
     } else if (body.categoryId) {
       // Find category by slug
-      const { data: catData } = await supabaseServer
+      const { data: catData } = await adminDb
         .from('categories')
         .select('id')
         .or(`slug.eq.${body.categoryId},id.eq.${body.categoryId}`)
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
     if (body.subcategoryId && isUuid(body.subcategoryId)) {
       targetSubcatId = body.subcategoryId;
     } else if (body.subcategoryId) {
-      const { data: subData } = await supabaseServer
+      const { data: subData } = await adminDb
         .from('subcategories')
         .select('id')
         .or(`slug.eq.${body.subcategoryId},id.eq.${body.subcategoryId}`)
@@ -158,7 +159,7 @@ export async function POST(req: Request) {
     let savedProd: any = null;
     let prodErr: any = null;
 
-    const res1 = await supabaseServer
+    const res1 = await adminDb
       .from('products')
       .upsert(productPayload)
       .select()
@@ -172,7 +173,7 @@ export async function POST(req: Request) {
       delete productPayload.is_wholesale_enabled;
       delete productPayload.wholesale_min_qty;
 
-      const res2 = await supabaseServer
+      const res2 = await adminDb
         .from('products')
         .upsert(productPayload)
         .select()
@@ -197,7 +198,7 @@ export async function POST(req: Request) {
     const confirmedProdId = savedProd.id;
 
     // 1. Manage Variants atomically
-    await supabaseServer.from('product_variants').delete().eq('product_id', confirmedProdId);
+    await adminDb.from('product_variants').delete().eq('product_id', confirmedProdId);
 
     let savedVariants: any[] = [];
     if (body.variants && body.variants.length > 0) {
@@ -227,14 +228,14 @@ export async function POST(req: Request) {
           return item;
         });
 
-      let { data: insertedVars, error: varErr } = await supabaseServer
+      let { data: insertedVars, error: varErr } = await adminDb
         .from('product_variants')
         .insert(buildVariantsPayload(true))
         .select();
 
       if (varErr && varErr.code === 'PGRST204') {
         // Retry without optional wholesale columns
-        const retryRes = await supabaseServer
+        const retryRes = await adminDb
           .from('product_variants')
           .insert(buildVariantsPayload(false))
           .select();
@@ -258,7 +259,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Manage Media atomically
-    await supabaseServer.from('product_media').delete().eq('product_id', confirmedProdId);
+    await adminDb.from('product_media').delete().eq('product_id', confirmedProdId);
 
     let savedMedia: any[] = [];
     if (body.media && body.media.length > 0) {
@@ -274,7 +275,7 @@ export async function POST(req: Request) {
         variant_sleeve: m.variantSleeve || null,
       }));
 
-      const { data: insertedMedia, error: mediaErr } = await supabaseServer
+      const { data: insertedMedia, error: mediaErr } = await adminDb
         .from('product_media')
         .insert(mediaPayload)
         .select();
@@ -351,6 +352,7 @@ export async function DELETE(req: Request) {
   }
 
   try {
+    const adminDb = createAdminClient();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -358,7 +360,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Product ID is required for deletion.' }, { status: 400 });
     }
 
-    const { error } = await supabaseServer.from('products').delete().eq('id', id);
+    const { error } = await adminDb.from('products').delete().eq('id', id);
 
     if (error) {
       console.error('FULL SUPABASE PRODUCT DELETE ERROR:', error);

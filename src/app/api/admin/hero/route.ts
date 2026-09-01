@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, isSupabaseConfigured } from '@/lib/supabase';
+import { supabaseServer, createAdminClient, isSupabaseConfigured } from '@/lib/supabase';
 import { HeroSlide } from '@/types';
 import { INITIAL_HERO_SLIDES } from '@/data/initialData';
 import crypto from 'crypto';
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
   }
 
   try {
+    const adminDb = createAdminClient();
     const slide: HeroSlide = await req.json();
 
     if (!slide.desktopImage) {
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    const { data: savedSlide, error } = await supabaseServer
+    const { data: savedSlide, error } = await adminDb
       .from('hero_slides')
       .upsert(payload)
       .select()
@@ -96,6 +97,7 @@ export async function DELETE(req: Request) {
   }
 
   try {
+    const adminDb = createAdminClient();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -103,7 +105,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Hero Slide ID is required for deletion.' }, { status: 400 });
     }
 
-    const { error } = await supabaseServer.from('hero_slides').delete().eq('id', id);
+    const { error } = await adminDb.from('hero_slides').delete().eq('id', id);
 
     if (error) {
       console.error('FULL SUPABASE HERO DELETE ERROR:', error);
