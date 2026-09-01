@@ -462,31 +462,31 @@ CREATE POLICY "Allow public delete order_items" ON public.order_items FOR DELETE
 
 -- 4.3 Public/Admin Full Operations for Store Management
 DROP POLICY IF EXISTS "Allow full operations categories" ON public.categories;
-CREATE POLICY "Allow full operations categories" ON public.categories FOR ALL USING (true);
+CREATE POLICY "Allow full operations categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow full operations subcategories" ON public.subcategories;
-CREATE POLICY "Allow full operations subcategories" ON public.subcategories FOR ALL USING (true);
+CREATE POLICY "Allow full operations subcategories" ON public.subcategories FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow full operations products" ON public.products;
-CREATE POLICY "Allow full operations products" ON public.products FOR ALL USING (true);
+CREATE POLICY "Allow full operations products" ON public.products FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow full operations product_variants" ON public.product_variants;
-CREATE POLICY "Allow full operations product_variants" ON public.product_variants FOR ALL USING (true);
+CREATE POLICY "Allow full operations product_variants" ON public.product_variants FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow full operations product_media" ON public.product_media;
-CREATE POLICY "Allow full operations product_media" ON public.product_media FOR ALL USING (true);
+CREATE POLICY "Allow full operations product_media" ON public.product_media FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow full operations hero_slides" ON public.hero_slides;
-CREATE POLICY "Allow full operations hero_slides" ON public.hero_slides FOR ALL USING (true);
+CREATE POLICY "Allow full operations hero_slides" ON public.hero_slides FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow full operations shipping_settings" ON public.shipping_settings;
-CREATE POLICY "Allow full operations shipping_settings" ON public.shipping_settings FOR ALL USING (true);
+CREATE POLICY "Allow full operations shipping_settings" ON public.shipping_settings FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow full operations site_settings" ON public.site_settings;
-CREATE POLICY "Allow full operations site_settings" ON public.site_settings FOR ALL USING (true);
+CREATE POLICY "Allow full operations site_settings" ON public.site_settings FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow full operations reviews" ON public.reviews;
-CREATE POLICY "Allow full operations reviews" ON public.reviews FOR ALL USING (true);
+CREATE POLICY "Allow full operations reviews" ON public.reviews FOR ALL USING (true) WITH CHECK (true);
 
 -- 4.4 Schema and Table Role Authorizations
 GRANT USAGE ON SCHEMA public TO anon, authenticated;

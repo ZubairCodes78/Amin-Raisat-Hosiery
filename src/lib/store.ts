@@ -133,54 +133,99 @@ export class DataStore {
   }
 
   static async saveSubcategory(subcat: Subcategory): Promise<void> {
-    if (isSupabaseConfigured()) {
+    if (this.isClient()) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subcat.id);
-        const payload: any = {
-          category_id: subcat.categoryId,
-          name: subcat.name,
-          slug: subcat.slug,
-          description: subcat.description || '',
-          image_url: subcat.image,
-          is_active: subcat.isActive,
-          display_order: subcat.displayOrder,
-          updated_at: new Date().toISOString(),
-        };
-        if (isUuid) {
-          payload.id = subcat.id;
+        const res = await fetch('/api/admin/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'subcategory', data: subcat }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          const errMsg = data?.error || 'Failed to save subcategory in database.';
+          console.error('FULL SUPABASE SUBCATEGORY SAVE ERROR:', data);
+          throw new Error(errMsg);
         }
 
-        await supabase.from('subcategories').upsert(payload);
-      } catch (err) {
-        console.warn('Supabase saveSubcategory error', err);
+        const savedSub: Subcategory = {
+          id: data.subcategory.id,
+          categoryId: data.subcategory.category_id,
+          name: data.subcategory.name,
+          slug: data.subcategory.slug,
+          description: data.subcategory.description || '',
+          image: data.subcategory.image_url,
+          isActive: data.subcategory.is_active ?? true,
+          displayOrder: data.subcategory.display_order || 0,
+        };
+
+        const subcategories = await this.getSubcategories();
+        const index = subcategories.findIndex((s) => s.id === savedSub.id || s.id === subcat.id);
+        if (index !== -1) {
+          subcategories[index] = savedSub;
+        } else {
+          subcategories.push(savedSub);
+        }
+        localStorage.setItem(LOCAL_STORAGE_KEYS.SUBCATEGORIES, JSON.stringify(subcategories));
+        return;
+      } catch (err: any) {
+        console.error('DataStore.saveSubcategory error:', err);
+        throw err instanceof Error ? err : new Error('Failed to save subcategory to database');
       }
     }
 
-    const subcategories = await this.getSubcategories();
-    const index = subcategories.findIndex((s) => s.id === subcat.id);
-    if (index !== -1) {
-      subcategories[index] = subcat;
-    } else {
-      subcategories.push(subcat);
-    }
-    if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.SUBCATEGORIES, JSON.stringify(subcategories));
+    if (isSupabaseConfigured()) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subcat.id);
+      const payload: any = {
+        category_id: subcat.categoryId,
+        name: subcat.name,
+        slug: subcat.slug,
+        description: subcat.description || '',
+        image_url: subcat.image,
+        is_active: subcat.isActive,
+        display_order: subcat.displayOrder,
+        updated_at: new Date().toISOString(),
+      };
+      if (isUuid) {
+        payload.id = subcat.id;
+      }
+
+      const { error } = await supabase.from('subcategories').upsert(payload);
+      if (error) {
+        console.error('FULL SUPABASE SUBCATEGORY ERROR:', error);
+        throw new Error(error.message);
+      }
     }
   }
 
   static async deleteSubcategory(id: string): Promise<void> {
-    if (isSupabaseConfigured()) {
+    if (this.isClient()) {
       try {
-        await supabase.from('subcategories').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase deleteSubcategory error', err);
+        const res = await fetch(`/api/admin/categories?id=${encodeURIComponent(id)}&type=subcategory`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          const errMsg = data?.error || 'Failed to delete subcategory from database.';
+          console.error('FULL SUPABASE SUBCATEGORY DELETE ERROR:', data);
+          throw new Error(errMsg);
+        }
+
+        const subcategories = await this.getSubcategories();
+        const filtered = subcategories.filter((s) => s.id !== id);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.SUBCATEGORIES, JSON.stringify(filtered));
+        return;
+      } catch (err: any) {
+        console.error('DataStore.deleteSubcategory error:', err);
+        throw err instanceof Error ? err : new Error('Failed to delete subcategory from database.');
       }
     }
 
-    const subcategories = await this.getSubcategories();
-    const filtered = subcategories.filter((s) => s.id !== id);
-    if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.SUBCATEGORIES, JSON.stringify(filtered));
+    if (isSupabaseConfigured()) {
+      const { error } = await supabase.from('subcategories').delete().eq('id', id);
+      if (error) {
+        console.error('FULL SUPABASE DELETE SUBCATEGORY ERROR:', error);
+        throw new Error(error.message);
+      }
     }
   }
 
@@ -237,53 +282,97 @@ export class DataStore {
   }
 
   static async saveCategory(category: Category): Promise<void> {
-    if (isSupabaseConfigured()) {
+    if (this.isClient()) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category.id);
-        const payload: any = {
-          name: category.name,
-          slug: category.slug,
-          description: category.description || '',
-          image_url: category.image,
-          is_active: category.isActive,
-          display_order: category.displayOrder,
-          updated_at: new Date().toISOString(),
-        };
-        if (isUuid) {
-          payload.id = category.id;
+        const res = await fetch('/api/admin/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'category', data: category }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          const errMsg = data?.error || 'Failed to save category in database.';
+          console.error('FULL SUPABASE CATEGORY SAVE ERROR:', data);
+          throw new Error(errMsg);
         }
 
-        await supabase.from('categories').upsert(payload);
-      } catch (err) {
-        console.warn('Supabase saveCategory error', err);
+        const savedCat: Category = {
+          id: data.category.id,
+          name: data.category.name,
+          slug: data.category.slug,
+          description: data.category.description || '',
+          image: data.category.image_url,
+          isActive: data.category.is_active ?? true,
+          displayOrder: data.category.display_order || 0,
+        };
+
+        const categories = await this.getCategories();
+        const index = categories.findIndex((c) => c.id === savedCat.id || c.id === category.id);
+        if (index !== -1) {
+          categories[index] = savedCat;
+        } else {
+          categories.push(savedCat);
+        }
+        localStorage.setItem(LOCAL_STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+        return;
+      } catch (err: any) {
+        console.error('DataStore.saveCategory error:', err);
+        throw err instanceof Error ? err : new Error('Failed to save category to database');
       }
     }
 
-    const categories = await this.getCategories();
-    const index = categories.findIndex((c) => c.id === category.id);
-    if (index !== -1) {
-      categories[index] = category;
-    } else {
-      categories.push(category);
-    }
-    if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+    if (isSupabaseConfigured()) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category.id);
+      const payload: any = {
+        name: category.name,
+        slug: category.slug,
+        description: category.description || '',
+        image_url: category.image,
+        is_active: category.isActive,
+        display_order: category.displayOrder,
+        updated_at: new Date().toISOString(),
+      };
+      if (isUuid) {
+        payload.id = category.id;
+      }
+
+      const { error } = await supabase.from('categories').upsert(payload);
+      if (error) {
+        console.error('FULL SUPABASE CATEGORY ERROR:', error);
+        throw new Error(error.message);
+      }
     }
   }
 
   static async deleteCategory(id: string): Promise<void> {
-    if (isSupabaseConfigured()) {
+    if (this.isClient()) {
       try {
-        await supabase.from('categories').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase deleteCategory error', err);
+        const res = await fetch(`/api/admin/categories?id=${encodeURIComponent(id)}&type=category`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          const errMsg = data?.error || 'Failed to delete category from database.';
+          console.error('FULL SUPABASE CATEGORY DELETE ERROR:', data);
+          throw new Error(errMsg);
+        }
+
+        const categories = await this.getCategories();
+        const filtered = categories.filter((c) => c.id !== id);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
+        return;
+      } catch (err: any) {
+        console.error('DataStore.deleteCategory error:', err);
+        throw err instanceof Error ? err : new Error('Failed to delete category from database.');
       }
     }
 
-    const categories = await this.getCategories();
-    const filtered = categories.filter((c) => c.id !== id);
-    if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
+    if (isSupabaseConfigured()) {
+      const { error } = await supabase.from('categories').delete().eq('id', id);
+      if (error) {
+        console.error('FULL SUPABASE DELETE CATEGORY ERROR:', error);
+        throw new Error(error.message);
+      }
     }
   }
 
@@ -392,104 +481,103 @@ export class DataStore {
   }
 
   static async saveProduct(product: Product): Promise<void> {
-    if (isSupabaseConfigured()) {
+    if (this.isClient()) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.id);
-        const productPayload: any = {
-          category_id: product.categoryId || null,
-          subcategory_id: product.subcategoryId || null,
-          name: product.name,
-          slug: product.slug,
-          subtitle: product.subtitle || '',
-          description: product.description || '',
-          features: product.features || [],
-          quality_comparison: product.qualityComparison || {},
-          care_instructions: product.careInstructions || [],
-          shipping_info: product.shippingInfo || '',
-          is_published: product.isPublished,
-          is_wholesale_enabled: product.isWholesaleEnabled ?? true,
-          wholesale_min_qty: product.wholesaleMinQty || 12,
-          updated_at: new Date().toISOString(),
-        };
-        if (isUuid) {
-          productPayload.id = product.id;
+        const res = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(product),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          const errMsg = data?.error || 'Failed to save product in database.';
+          console.error('FULL SUPABASE / DB PRODUCT SAVE ERROR:', data);
+          throw new Error(errMsg);
         }
 
-        const { data: savedProd, error: prodErr } = await supabase
-          .from('products')
-          .upsert(productPayload)
-          .select()
-          .single();
-
-        if (!prodErr && savedProd) {
-          const targetProdId = savedProd.id;
-
-          // Delete existing variants and insert fresh
-          await supabase.from('product_variants').delete().eq('product_id', targetProdId);
-          if (product.variants && product.variants.length > 0) {
-            const variantsPayload = product.variants.map((v) => ({
-              product_id: targetProdId,
-              quality: v.quality,
-              sleeve: v.sleeve,
-              size: v.size,
-              price: Number(v.price) || 0,
-              sale_price: v.salePrice ? Number(v.salePrice) : null,
-              wholesale_price: v.wholesalePrice ? Number(v.wholesalePrice) : Math.round((Number(v.price) || 480) * 0.82),
-              wholesale_tiers: v.wholesaleTiers || [],
-              stock: Number(v.stock) || 0,
-              sku: v.sku || '',
-              is_available: v.isAvailable,
-            }));
-            await supabase.from('product_variants').insert(variantsPayload);
-          }
-
-          // Delete existing media and insert fresh
-          await supabase.from('product_media').delete().eq('product_id', targetProdId);
-          if (product.media && product.media.length > 0) {
-            const mediaPayload = product.media.map((m, idx) => ({
-              product_id: targetProdId,
-              media_type: m.type || 'photo',
-              url: m.url,
-              alt_text: m.alt || `${product.name} photo`,
-              title: m.title || '',
-              display_order: m.displayOrder ?? idx + 1,
-              variant_quality: m.variantQuality || null,
-              variant_sleeve: m.variantSleeve || null,
-            }));
-            await supabase.from('product_media').insert(mediaPayload);
-          }
+        const savedProduct: Product = data.product;
+        const products = await this.getProducts();
+        const index = products.findIndex((p) => p.id === savedProduct.id || p.id === product.id);
+        if (index !== -1) {
+          products[index] = savedProduct;
+        } else {
+          products.unshift(savedProduct);
         }
-      } catch (err) {
-        console.warn('Supabase saveProduct error', err);
+
+        const cleanProducts = this.sanitizeProductsForLocalStorage(products);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(cleanProducts));
+        return;
+      } catch (err: any) {
+        console.error('DataStore.saveProduct error:', err);
+        throw err instanceof Error ? err : new Error('Failed to save product to database');
       }
     }
 
-    const products = await this.getProducts();
-    const index = products.findIndex((p) => p.id === product.id);
-    if (index !== -1) {
-      products[index] = product;
-    } else {
-      products.push(product);
-    }
-    if (this.isClient()) {
-      const cleanProducts = this.sanitizeProductsForLocalStorage(products);
-      localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(cleanProducts));
+    if (isSupabaseConfigured()) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.id);
+      const productPayload: any = {
+        category_id: product.categoryId || null,
+        subcategory_id: product.subcategoryId || null,
+        name: product.name,
+        slug: product.slug,
+        subtitle: product.subtitle || '',
+        description: product.description || '',
+        features: product.features || [],
+        quality_comparison: product.qualityComparison || {},
+        care_instructions: product.careInstructions || [],
+        shipping_info: product.shippingInfo || '',
+        is_published: product.isPublished,
+        is_wholesale_enabled: product.isWholesaleEnabled ?? true,
+        wholesale_min_qty: product.wholesaleMinQty || 12,
+        updated_at: new Date().toISOString(),
+      };
+      if (isUuid) {
+        productPayload.id = product.id;
+      }
+
+      const { data: savedProd, error: prodErr } = await supabase
+        .from('products')
+        .upsert(productPayload)
+        .select()
+        .single();
+
+      if (prodErr || !savedProd) {
+        console.error('FULL SUPABASE PRODUCT ERROR:', prodErr);
+        throw new Error(prodErr?.message || 'Database Product save failed.');
+      }
     }
   }
 
   static async deleteProduct(id: string): Promise<void> {
-    if (isSupabaseConfigured()) {
+    if (this.isClient()) {
       try {
-        await supabase.from('products').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase deleteProduct error', err);
+        const res = await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          const errMsg = data?.error || 'Failed to delete product from database.';
+          console.error('FULL SUPABASE / DB PRODUCT DELETE ERROR:', data);
+          throw new Error(errMsg);
+        }
+
+        const products = await this.getProducts();
+        const filtered = products.filter((p) => p.id !== id);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
+        return;
+      } catch (err: any) {
+        console.error('DataStore.deleteProduct error:', err);
+        throw err instanceof Error ? err : new Error('Failed to delete product from database.');
       }
     }
 
-    const products = await this.getProducts();
-    const filtered = products.filter((p) => p.id !== id);
-    if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
+    if (isSupabaseConfigured()) {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) {
+        console.error('FULL SUPABASE DELETE ERROR:', error);
+        throw new Error(error.message);
+      }
     }
   }
 
@@ -738,55 +826,102 @@ export class DataStore {
   }
 
   static async saveHeroSlide(slide: HeroSlide): Promise<void> {
-    if (isSupabaseConfigured()) {
+    if (this.isClient()) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slide.id);
-        const payload: any = {
-          device_type: slide.deviceType || 'desktop',
-          desktop_image: slide.desktopImage,
-          mobile_image: slide.mobileImage || slide.desktopImage,
-          title: slide.title || null,
-          subtitle: slide.subtitle || null,
-          link: slide.link || slide.buttonLink || '/shop',
-          button_text: slide.buttonText || 'Shop Now',
-          display_order: slide.displayOrder || 0,
-          is_active: slide.isActive ?? true,
-          updated_at: new Date().toISOString(),
-        };
-        if (isUuid) {
-          payload.id = slide.id;
+        const res = await fetch('/api/admin/hero', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(slide),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          const errMsg = data?.error || 'Failed to save hero slide in database.';
+          console.error('FULL SUPABASE HERO SAVE ERROR:', data);
+          throw new Error(errMsg);
         }
-        await supabase.from('hero_slides').upsert(payload);
-      } catch (err) {
-        console.warn('Supabase saveHeroSlide error', err);
+
+        const savedSlide: HeroSlide = {
+          id: data.slide.id,
+          deviceType: data.slide.device_type || 'desktop',
+          desktopImage: data.slide.desktop_image,
+          mobileImage: data.slide.mobile_image || data.slide.desktop_image,
+          title: data.slide.title || undefined,
+          subtitle: data.slide.subtitle || undefined,
+          link: data.slide.link || '/shop',
+          buttonText: data.slide.button_text || 'Shop Now',
+          displayOrder: data.slide.display_order || 0,
+          isActive: data.slide.is_active ?? true,
+        };
+
+        const slides = await this.getHeroSlides();
+        const index = slides.findIndex((s) => s.id === savedSlide.id || s.id === slide.id);
+        if (index !== -1) {
+          slides[index] = savedSlide;
+        } else {
+          slides.push(savedSlide);
+        }
+        localStorage.setItem(LOCAL_STORAGE_KEYS.HERO_SLIDES, JSON.stringify(slides));
+        return;
+      } catch (err: any) {
+        console.error('DataStore.saveHeroSlide error:', err);
+        throw err instanceof Error ? err : new Error('Failed to save hero slide to database');
       }
     }
 
-    const slides = await this.getHeroSlides();
-    const index = slides.findIndex((s) => s.id === slide.id);
-    if (index !== -1) {
-      slides[index] = slide;
-    } else {
-      slides.push(slide);
-    }
-    if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.HERO_SLIDES, JSON.stringify(slides));
+    if (isSupabaseConfigured()) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slide.id);
+      const payload: any = {
+        device_type: slide.deviceType || 'desktop',
+        desktop_image: slide.desktopImage,
+        mobile_image: slide.mobileImage || slide.desktopImage,
+        title: slide.title || null,
+        subtitle: slide.subtitle || null,
+        link: slide.link || slide.buttonLink || '/shop',
+        button_text: slide.buttonText || 'Shop Now',
+        display_order: slide.displayOrder || 0,
+        is_active: slide.isActive ?? true,
+        updated_at: new Date().toISOString(),
+      };
+      if (isUuid) {
+        payload.id = slide.id;
+      }
+      const { error } = await supabase.from('hero_slides').upsert(payload);
+      if (error) {
+        console.error('FULL SUPABASE HERO ERROR:', error);
+        throw new Error(error.message);
+      }
     }
   }
 
   static async deleteHeroSlide(id: string): Promise<void> {
-    if (isSupabaseConfigured()) {
+    if (this.isClient()) {
       try {
-        await supabase.from('hero_slides').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase deleteHeroSlide error', err);
+        const res = await fetch(`/api/admin/hero?id=${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          const errMsg = data?.error || 'Failed to delete hero slide from database.';
+          console.error('FULL SUPABASE HERO DELETE ERROR:', data);
+          throw new Error(errMsg);
+        }
+
+        const slides = await this.getHeroSlides();
+        const filtered = slides.filter((s) => s.id !== id);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.HERO_SLIDES, JSON.stringify(filtered));
+        return;
+      } catch (err: any) {
+        console.error('DataStore.deleteHeroSlide error:', err);
+        throw err instanceof Error ? err : new Error('Failed to delete hero slide from database.');
       }
     }
 
-    const slides = await this.getHeroSlides();
-    const filtered = slides.filter((s) => s.id !== id);
-    if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.HERO_SLIDES, JSON.stringify(filtered));
+    if (isSupabaseConfigured()) {
+      const { error } = await supabase.from('hero_slides').delete().eq('id', id);
+      if (error) {
+        console.error('FULL SUPABASE DELETE HERO ERROR:', error);
+        throw new Error(error.message);
+      }
     }
   }
 
@@ -845,39 +980,43 @@ export class DataStore {
 
   static async updateSettings(settings: SiteSettings): Promise<void> {
     if (isSupabaseConfigured()) {
-      try {
-        await supabase
-          .from('site_settings')
-          .update({
-            brand_name: settings.brandName,
-            owner_name: settings.ownerName,
-            phone: settings.phone,
-            whatsapp: settings.whatsapp,
-            email: settings.email,
-            market: settings.market,
-            currency: settings.currency,
-            bank_name: settings.bankDetails.bankName,
-            account_title: settings.bankDetails.accountTitle,
-            account_number: settings.bankDetails.accountNumber,
-            iban: settings.bankDetails.iban,
-            is_store_open: settings.isStoreOpen,
-            announcement_text: settings.announcementText,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', 'b0000000-0000-0000-0000-000000000001');
+      const { error: siteErr } = await supabase
+        .from('site_settings')
+        .update({
+          brand_name: settings.brandName,
+          owner_name: settings.ownerName,
+          phone: settings.phone,
+          whatsapp: settings.whatsapp,
+          email: settings.email,
+          market: settings.market,
+          currency: settings.currency,
+          bank_name: settings.bankDetails.bankName,
+          account_title: settings.bankDetails.accountTitle,
+          account_number: settings.bankDetails.accountNumber,
+          iban: settings.bankDetails.iban,
+          is_store_open: settings.isStoreOpen,
+          announcement_text: settings.announcementText,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', 'b0000000-0000-0000-0000-000000000001');
 
-        await supabase
-          .from('shipping_settings')
-          .update({
-            min_order_qty: settings.shipping.minOrderQty,
-            max_order_qty: settings.shipping.maxOrderQty,
-            base_delivery_charge: settings.shipping.baseDeliveryCharge,
-            free_delivery_threshold: settings.shipping.freeDeliveryThreshold,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', 'a0000000-0000-0000-0000-000000000001');
-      } catch (err) {
-        console.warn('Supabase updateSettings error', err);
+      if (siteErr) {
+        console.error('FULL SUPABASE SITE SETTINGS ERROR:', siteErr);
+      }
+
+      const { error: shipErr } = await supabase
+        .from('shipping_settings')
+        .update({
+          min_order_qty: settings.shipping.minOrderQty,
+          max_order_qty: settings.shipping.maxOrderQty,
+          base_delivery_charge: settings.shipping.baseDeliveryCharge,
+          free_delivery_threshold: settings.shipping.freeDeliveryThreshold,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', 'a0000000-0000-0000-0000-000000000001');
+
+      if (shipErr) {
+        console.error('FULL SUPABASE SHIPPING SETTINGS ERROR:', shipErr);
       }
     }
 

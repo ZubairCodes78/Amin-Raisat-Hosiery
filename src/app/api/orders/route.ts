@@ -211,28 +211,42 @@ export async function POST(req: Request) {
     // 5. Save order to Supabase and Decrement Inventory
     if (isSupabaseConfigured()) {
       try {
-        const { data: insertedOrder, error: ordErr } = await supabaseServer
+        const orderPayload: any = {
+          order_number: orderNumber,
+          customer_name: cleanName,
+          customer_phone: cleanPhone,
+          customer_email: customerEmail?.trim() || null,
+          address: cleanAddress,
+          city: cleanCity,
+          province: province?.trim() || 'Punjab',
+          order_notes: orderNotes?.trim() || null,
+          subtotal: subtotal,
+          delivery_fee: deliveryFee,
+          total_amount: totalAmount,
+          payment_method: paymentMethod || 'cod',
+          payment_reference: paymentReference || null,
+          status: 'Pending',
+          is_wholesale: hasWholesale,
+          wholesale_discount: totalSavings,
+        };
+
+        let { data: insertedOrder, error: ordErr } = await supabaseServer
           .from('orders')
-          .insert({
-            order_number: orderNumber,
-            customer_name: cleanName,
-            customer_phone: cleanPhone,
-            customer_email: customerEmail?.trim() || null,
-            address: cleanAddress,
-            city: cleanCity,
-            province: province?.trim() || 'Punjab',
-            order_notes: orderNotes?.trim() || null,
-            subtotal: subtotal,
-            delivery_fee: deliveryFee,
-            total_amount: totalAmount,
-            payment_method: paymentMethod || 'cod',
-            payment_reference: paymentReference || null,
-            status: 'Pending',
-            is_wholesale: hasWholesale,
-            wholesale_discount: totalSavings,
-          })
+          .insert(orderPayload)
           .select()
           .single();
+
+        if (ordErr && ordErr.code === 'PGRST204') {
+          delete orderPayload.is_wholesale;
+          delete orderPayload.wholesale_discount;
+          const retryRes = await supabaseServer
+            .from('orders')
+            .insert(orderPayload)
+            .select()
+            .single();
+          insertedOrder = retryRes.data;
+          ordErr = retryRes.error;
+        }
 
         if (!ordErr && insertedOrder) {
           orderId = insertedOrder.id;
@@ -253,11 +267,12 @@ export async function POST(req: Request) {
             quantity: it.quantity,
             total_price: it.totalPrice,
             image_url: it.image || null,
-            is_wholesale: it.isWholesale ?? false,
-            wholesale_price: it.wholesalePrice || null,
           }));
 
-          await supabaseServer.from('order_items').insert(itemsPayload);
+          const { error: itemsErr } = await supabaseServer.from('order_items').insert(itemsPayload);
+          if (itemsErr) {
+            console.error('FULL SUPABASE ORDER ITEMS INSERT ERROR:', itemsErr);
+          }
 
           // Decrement stock in product_variants safely
           for (const item of verifiedItems) {

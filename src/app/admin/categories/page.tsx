@@ -132,9 +132,9 @@ export default function AdminCategoriesPage() {
       await saveCategory(editingCategory as Category);
       setIsCategoryModalOpen(false);
       setEditingCategory(null);
-      showToast('Category saved successfully to Supabase!');
-    } catch (err) {
-      showToast('Error saving category.');
+      showToast('Category saved successfully!');
+    } catch (err: any) {
+      showToast(err?.message || 'Error saving category.');
     }
   };
 
@@ -147,9 +147,9 @@ export default function AdminCategoriesPage() {
       await saveSubcategory(editingSubcategory as Subcategory);
       setIsSubcategoryModalOpen(false);
       setEditingSubcategory(null);
-      showToast('Subcategory saved successfully to Supabase!');
-    } catch (err) {
-      showToast('Error saving subcategory.');
+      showToast('Subcategory saved successfully!');
+    } catch (err: any) {
+      showToast(err?.message || 'Error saving subcategory.');
     }
   };
 
@@ -158,8 +158,8 @@ export default function AdminCategoriesPage() {
     try {
       await saveCategory({ ...cat, isActive: !cat.isActive });
       showToast(`Category "${cat.name}" status updated.`);
-    } catch (err) {
-      showToast('Failed to update category status.');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to update category status.');
     }
   };
 
@@ -167,8 +167,8 @@ export default function AdminCategoriesPage() {
     try {
       await saveSubcategory({ ...sub, isActive: !sub.isActive });
       showToast(`Subcategory "${sub.name}" status updated.`);
-    } catch (err) {
-      showToast('Failed to update subcategory status.');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to update subcategory status.');
     }
   };
 
