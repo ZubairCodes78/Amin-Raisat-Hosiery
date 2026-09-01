@@ -201,28 +201,46 @@ export async function POST(req: Request) {
 
     let savedVariants: any[] = [];
     if (body.variants && body.variants.length > 0) {
-      const variantsPayload = body.variants.map((v) => ({
-        id: isUuid(v.id) ? v.id : crypto.randomUUID(),
-        product_id: confirmedProdId,
-        quality: v.quality || 'High Quality',
-        sleeve: v.sleeve || 'Sleeveless',
-        size: v.size || 'L',
-        price: Number(v.price) || 0,
-        sale_price: v.salePrice ? Number(v.salePrice) : null,
-        wholesale_price: v.wholesalePrice
-          ? Number(v.wholesalePrice)
-          : Math.round((Number(v.price) || 480) * 0.82),
-        wholesale_tiers: v.wholesaleTiers || [],
-        stock: Number(v.stock) || 0,
-        sku: v.sku || '',
-        is_available: v.isAvailable ?? true,
-        updated_at: new Date().toISOString(),
-      }));
+      const buildVariantsPayload = (includeWholesale: boolean) =>
+        body.variants.map((v) => {
+          const item: any = {
+            id: isUuid(v.id) ? v.id : crypto.randomUUID(),
+            product_id: confirmedProdId,
+            quality: v.quality || 'High Quality',
+            sleeve: v.sleeve || 'Sleeveless',
+            size: v.size || 'L',
+            price: Number(v.price) || 0,
+            sale_price: v.salePrice ? Number(v.salePrice) : null,
+            stock: Number(v.stock) || 0,
+            sku: v.sku || '',
+            is_available: v.isAvailable ?? true,
+            updated_at: new Date().toISOString(),
+          };
+          if (includeWholesale) {
+            if (v.wholesalePrice !== undefined) {
+              item.wholesale_price = Number(v.wholesalePrice);
+            }
+            if (v.wholesaleTiers !== undefined) {
+              item.wholesale_tiers = v.wholesaleTiers;
+            }
+          }
+          return item;
+        });
 
-      const { data: insertedVars, error: varErr } = await supabaseServer
+      let { data: insertedVars, error: varErr } = await supabaseServer
         .from('product_variants')
-        .insert(variantsPayload)
+        .insert(buildVariantsPayload(true))
         .select();
+
+      if (varErr && varErr.code === 'PGRST204') {
+        // Retry without optional wholesale columns
+        const retryRes = await supabaseServer
+          .from('product_variants')
+          .insert(buildVariantsPayload(false))
+          .select();
+        insertedVars = retryRes.data;
+        varErr = retryRes.error;
+      }
 
       if (varErr) {
         console.error('FULL SUPABASE VARIANT INSERT ERROR:', varErr);
