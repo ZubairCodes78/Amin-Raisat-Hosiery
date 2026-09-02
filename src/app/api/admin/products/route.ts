@@ -14,6 +14,16 @@ const isUuid = (id?: string): boolean => {
 
 async function ensureBaseProductsSeeded(adminDb: any) {
   try {
+    // 1. Guard against re-seeding if catalog was already initialized in the past (intentional deletion guard)
+    const { data: markerFiles } = await adminDb.storage
+      .from('product-media')
+      .list('_system', { search: 'catalog_initialized.marker' });
+
+    if (markerFiles && markerFiles.length > 0) {
+      // Catalog has already been seeded in the past; any 0-count is an intentional deletion. Do not recreate.
+      return;
+    }
+
     const { count, error } = await adminDb
       .from('products')
       .select('*', { count: 'exact', head: true });
@@ -114,6 +124,18 @@ async function ensureBaseProductsSeeded(adminDb: any) {
           await adminDb.from('product_media').insert(mediaPayload);
         }
       }
+
+      // 3. Mark catalog as permanently initialized in Supabase storage
+      try {
+        await adminDb.storage
+          .from('product-media')
+          .upload('_system/catalog_initialized.marker', Buffer.from(`INITIALIZED_${Date.now()}`), {
+            upsert: true,
+          });
+      } catch (markErr) {
+        console.warn('Could not write storage initialization marker:', markErr);
+      }
+
       console.log('Baseline products seeded successfully.');
     }
   } catch (seedErr) {
