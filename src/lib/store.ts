@@ -384,9 +384,25 @@ export class DataStore {
   // 3. PRODUCTS CRUD (MULTI-PRODUCT CATALOG WITH VARIANTS & MEDIA)
   // ============================================================================
   static async getProducts(): Promise<Product[]> {
-    let products: Product[] = INITIAL_PRODUCTS;
+    let products: Product[] = [];
 
-    if (isSupabaseConfigured()) {
+    // 1. Client-side authoritative fetch through server API route
+    if (this.isClient()) {
+      try {
+        const res = await fetch('/api/admin/products', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.products) && data.products.length > 0) {
+            products = data.products;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('API /api/admin/products fetch notice, falling back to direct Supabase client:', apiErr);
+      }
+    }
+
+    // 2. Direct Supabase Client fallback (for server components or offline/direct query)
+    if (products.length === 0 && isSupabaseConfigured()) {
       try {
         const { data: prods, error } = await supabaseBrowser
           .from('products')
@@ -447,17 +463,23 @@ export class DataStore {
       } catch (err) {
         console.warn('Supabase fetch failed, fallback to local store', err);
       }
-    } else if (this.isClient()) {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.PRODUCTS);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            products = parsed;
-          }
-        } catch {}
-      } else {
-        localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+    }
+
+    // 3. Fallback only if Supabase is completely unconfigured
+    if (products.length === 0 && !isSupabaseConfigured()) {
+      if (this.isClient()) {
+        const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.PRODUCTS);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              products = parsed;
+            }
+          } catch {}
+        }
+      }
+      if (products.length === 0) {
+        products = INITIAL_PRODUCTS;
       }
     }
 
@@ -499,18 +521,6 @@ export class DataStore {
           console.error('FULL SUPABASE / DB PRODUCT SAVE ERROR:', data);
           throw new Error(errMsg);
         }
-
-        const savedProduct: Product = data.product;
-        const products = await this.getProducts();
-        const index = products.findIndex((p) => p.id === savedProduct.id || p.id === product.id);
-        if (index !== -1) {
-          products[index] = savedProduct;
-        } else {
-          products.unshift(savedProduct);
-        }
-
-        const cleanProducts = this.sanitizeProductsForLocalStorage(products);
-        localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(cleanProducts));
         return;
       } catch (err: any) {
         console.error('DataStore.saveProduct error:', err);
@@ -566,10 +576,6 @@ export class DataStore {
           console.error('FULL SUPABASE / DB PRODUCT DELETE ERROR:', data);
           throw new Error(errMsg);
         }
-
-        const products = await this.getProducts();
-        const filtered = products.filter((p) => p.id !== id);
-        localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
         return;
       } catch (err: any) {
         console.error('DataStore.deleteProduct error:', err);

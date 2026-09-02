@@ -4,10 +4,122 @@ import { Product, ProductVariant, ProductMedia } from '@/types';
 import { INITIAL_PRODUCTS } from '@/data/initialData';
 import crypto from 'crypto';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const isUuid = (id?: string): boolean => {
   if (!id) return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 };
+
+async function ensureBaseProductsSeeded(adminDb: any) {
+  try {
+    const { count, error } = await adminDb
+      .from('products')
+      .select('*', { count: 'exact', head: true });
+
+    if (!error && (count === 0 || count === null)) {
+      console.log('Seeding baseline products into Supabase PostgreSQL...');
+
+      // 1. Resolve Category ID for Men
+      const { data: menCat } = await adminDb
+        .from('categories')
+        .select('id')
+        .or('slug.eq.men,slug.eq.cat-men')
+        .limit(1)
+        .maybeSingle();
+
+      const defaultCatId = menCat?.id || 'c0000000-0000-0000-0000-000000000001';
+
+      // 2. Resolve Subcategory ID for Vests
+      const { data: vestSubcat } = await adminDb
+        .from('subcategories')
+        .select('id')
+        .or('slug.eq.vests,slug.eq.sub-men-vests')
+        .limit(1)
+        .maybeSingle();
+
+      const defaultSubcatId = vestSubcat?.id || 'e0000000-0000-0000-0000-000000000001';
+
+      for (const prod of INITIAL_PRODUCTS) {
+        const prodPayload: any = {
+          id: prod.id,
+          category_id: defaultCatId,
+          subcategory_id: defaultSubcatId,
+          name: prod.name,
+          slug: prod.slug,
+          subtitle: prod.subtitle || '',
+          description: prod.description || '',
+          features: prod.features || [],
+          quality_comparison: prod.qualityComparison || {},
+          care_instructions: prod.careInstructions || [],
+          shipping_info: prod.shippingInfo || '',
+          is_published: prod.isPublished ?? true,
+          is_wholesale_enabled: prod.isWholesaleEnabled ?? true,
+          wholesale_min_qty: prod.wholesaleMinQty || 12,
+          created_at: prod.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error: pErr } = await adminDb.from('products').upsert(prodPayload);
+        if (pErr) {
+          console.error(`Failed to seed product ${prod.slug}:`, pErr.message);
+          continue;
+        }
+
+        // Seed variants
+        if (prod.variants && prod.variants.length > 0) {
+          const varPayload = prod.variants.map((v) => ({
+            id: isUuid(v.id) ? v.id : crypto.randomUUID(),
+            product_id: prod.id,
+            quality: v.quality || 'High Quality',
+            sleeve: v.sleeve || 'Sleeveless',
+            size: v.size || 'L',
+            price: Number(v.price) || 0,
+            sale_price: v.salePrice ? Number(v.salePrice) : null,
+            wholesale_price: v.wholesalePrice ? Number(v.wholesalePrice) : Math.round((Number(v.price) || 480) * 0.82),
+            wholesale_tiers: v.wholesaleTiers || undefined,
+            stock: Number(v.stock) || 0,
+            sku: v.sku || '',
+            is_available: v.isAvailable ?? true,
+            updated_at: new Date().toISOString(),
+          }));
+          await adminDb.from('product_variants').delete().eq('product_id', prod.id);
+          const { error: vErr } = await adminDb.from('product_variants').insert(varPayload);
+          if (vErr && vErr.code === 'PGRST204') {
+            const cleanVars = varPayload.map((item: any) => {
+              const copy = { ...item };
+              delete copy.wholesale_price;
+              delete copy.wholesale_tiers;
+              return copy;
+            });
+            await adminDb.from('product_variants').insert(cleanVars);
+          }
+        }
+
+        // Seed media
+        if (prod.media && prod.media.length > 0) {
+          const mediaPayload = prod.media.map((m, idx) => ({
+            id: isUuid(m.id) ? m.id : crypto.randomUUID(),
+            product_id: prod.id,
+            media_type: m.type || 'photo',
+            url: m.url,
+            alt_text: m.alt || `${prod.name} photo`,
+            title: m.title || '',
+            display_order: m.displayOrder ?? idx + 1,
+            variant_quality: m.variantQuality || null,
+            variant_sleeve: m.variantSleeve || null,
+          }));
+          await adminDb.from('product_media').delete().eq('product_id', prod.id);
+          await adminDb.from('product_media').insert(mediaPayload);
+        }
+      }
+      console.log('Baseline products seeded successfully.');
+    }
+  } catch (seedErr) {
+    console.error('ensureBaseProductsSeeded error:', seedErr);
+  }
+}
 
 export async function GET() {
   if (!isSupabaseConfigured()) {
@@ -16,9 +128,16 @@ export async function GET() {
 
   try {
     let dbClient = supabaseServer;
+    let adminDb: any = null;
     try {
-      dbClient = createAdminClient();
+      adminDb = createAdminClient();
+      dbClient = adminDb;
     } catch {}
+
+    // Auto-seed baseline products if DB is empty
+    if (adminDb) {
+      await ensureBaseProductsSeeded(adminDb);
+    }
 
     const { data: prods, error } = await dbClient
       .from('products')

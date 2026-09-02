@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { supabaseServer, isSupabaseConfigured } from '@/lib/supabase';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES, INITIAL_SITE_SETTINGS } from '@/data/initialData';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   if (isSupabaseConfigured()) {
     try {
@@ -28,3 +31,4 @@ export async function GET() {
     settings: INITIAL_SITE_SETTINGS,
   });
 }
+
