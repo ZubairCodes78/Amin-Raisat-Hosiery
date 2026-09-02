@@ -139,26 +139,35 @@ export const Navbar: React.FC = () => {
             : 'bg-white/98 border-[#E5E5E0] py-1'
         }`}
       >
-        <div className="mx-auto w-full md:w-[calc(100%-48px)] max-w-[1240px] px-3 sm:px-6 md:px-0">
-          <div className="flex items-center justify-between h-16 sm:h-18 md:h-20 lg:h-22">
+        <div className="mx-auto w-full max-w-[1280px] px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20">
             
             {/* ================================================================= */}
-            {/* MOBILE NAVBAR ROW (md:hidden)                                     */}
-            {/* Logo is absolutely centered to the header — immune to icon count  */}
+            {/* MOBILE / TABLET NAVBAR ROW (lg:hidden)                           */}
+            {/* Clean, standard flex layout: Logo on left, actions on right        */}
             {/* ================================================================= */}
-            <div className="relative flex items-center w-full md:hidden min-h-[56px]">
+            <div className="flex items-center justify-between w-full lg:hidden min-h-[56px]">
 
-              {/* Left group: Hamburger + Theme Toggle */}
-              <div className="flex items-center gap-1 flex-shrink-0 z-10">
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="w-10 h-10 flex items-center justify-center text-charcoal-800 dark:text-[#F4F1E9] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] active:scale-95 rounded-xl transition-colors"
-                  aria-label="Toggle navigation menu"
-                >
-                  {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
+              {/* Left: Brand Logo */}
+              <Link
+                href="/"
+                className="flex items-center py-1 group flex-shrink-0"
+                aria-label="Amin Raisat Hosiery Home"
+              >
+                <div className="relative w-[112px] xs:w-[126px] sm:w-[144px] h-8 sm:h-9 overflow-hidden flex-shrink-0 transition-transform duration-200 group-hover:scale-[1.02]">
+                  <Image
+                    src={logoSrc}
+                    alt="Amin Raisat Hosiery"
+                    fill
+                    sizes="(max-width: 640px) 130px, 160px"
+                    className="object-contain object-left"
+                    priority
+                  />
+                </div>
+              </Link>
 
+              {/* Right: Clean compact action area (Theme, Search, Cart, Menu) */}
+              <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                 {/* Mobile Theme Toggle */}
                 <button
                   type="button"
@@ -173,40 +182,6 @@ export const Navbar: React.FC = () => {
                     <Moon className="w-4 h-4 text-charcoal-700 hover:-rotate-12 transition-transform duration-300" />
                   )}
                 </button>
-              </div>
-
-              {/* Center: Logo — offset 8px left of exact 50% for visual balance */}
-              <Link
-                href="/"
-                className="absolute flex items-center justify-center py-0.5 group z-0"
-                style={{ left: '50%', transform: 'translateX(calc(-50% - 8px))', pointerEvents: 'auto' }}
-              >
-                <div className="relative w-[110px] xs:w-[122px] sm:w-[136px] h-9 xs:h-10 sm:h-10 overflow-hidden flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-[1.02]">
-                  <Image
-                    src={logoSrc}
-                    alt="Amin Raisat Hosiery"
-                    fill
-                    sizes="(max-width: 640px) 136px, 160px"
-                    className="object-contain object-center"
-                    priority
-                  />
-                </div>
-              </Link>
-
-              {/* Right group: WhatsApp + Search + Account + Cart */}
-              <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 justify-end ml-auto z-10">
-                {/* Mobile Header WhatsApp Button */}
-                <a
-                  href={WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  id="mobile-header-whatsapp-btn"
-                  className="w-9 h-9 flex items-center justify-center text-[#25D366] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors"
-                  aria-label={`Order on WhatsApp (${DISPLAY_WHATSAPP_NUMBER})`}
-                  title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
-                >
-                  <WhatsAppIcon size={18} className="text-[#25D366] fill-current" />
-                </a>
 
                 {/* Search Trigger */}
                 <button
@@ -222,16 +197,6 @@ export const Navbar: React.FC = () => {
                   <Search className="w-[18px] h-[18px]" />
                 </button>
 
-                {/* Customer Account Button */}
-                <Link
-                  href={user ? '/account' : '/login'}
-                  className="w-9 h-9 flex items-center justify-center text-charcoal-700 dark:text-[#F4F1E9] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl transition-colors"
-                  aria-label="Customer Account"
-                  title={user ? 'My Account' : 'Sign In'}
-                >
-                  <User className="w-[18px] h-[18px]" />
-                </Link>
-
                 {/* Shopping Cart Button */}
                 <button
                   type="button"
@@ -246,13 +211,23 @@ export const Navbar: React.FC = () => {
                     </span>
                   )}
                 </button>
+
+                {/* Hamburger Menu Trigger */}
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="w-9 h-9 flex items-center justify-center text-charcoal-800 dark:text-[#F4F1E9] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] active:scale-95 rounded-xl transition-colors"
+                  aria-label="Toggle navigation menu"
+                >
+                  {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 
             {/* ========================================================================= */}
-            {/* DESKTOP NAVBAR (hidden md:flex) */}
+            {/* DESKTOP NAVBAR (hidden lg:flex) */}
             {/* ========================================================================= */}
-            <div className="hidden md:flex items-center justify-between w-full">
+            <div className="hidden lg:flex items-center justify-between w-full">
               {/* Desktop Header Logo */}
               <div className="flex items-center">
                 <Link href="/" className="flex items-center group py-0.5">
@@ -425,20 +400,6 @@ export const Navbar: React.FC = () => {
                   >
                     Contact
                   </Link>
-
-                  {/* Wholesale Navigation WhatsApp CTA */}
-                  <a
-                    href={WHATSAPP_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    id="desktop-wholesale-whatsapp-cta"
-                    className="px-2.5 py-1.5 text-xs font-bold tracking-wide transition-colors rounded-lg bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5"
-                    title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
-                    aria-label={`Order on WhatsApp (${DISPLAY_WHATSAPP_NUMBER})`}
-                  >
-                    <WhatsAppIcon size={14} className="text-[#25D366] fill-current flex-shrink-0" />
-                    <span className="font-mono text-[11px] font-bold">{DISPLAY_WHATSAPP_NUMBER}</span>
-                  </a>
 
                   {/* 6. BACK TO RETAIL */}
                   <Link
@@ -616,19 +577,6 @@ export const Navbar: React.FC = () => {
                     Contact
                   </Link>
 
-                  {/* Desktop Navigation WhatsApp CTA */}
-                  <a
-                    href={WHATSAPP_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    id="desktop-nav-whatsapp-cta"
-                    className="px-2.5 py-1.5 text-xs font-bold tracking-wide transition-colors rounded-lg bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5"
-                    title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
-                    aria-label={`Order on WhatsApp (${DISPLAY_WHATSAPP_NUMBER})`}
-                  >
-                    <WhatsAppIcon size={14} className="text-[#25D366] fill-current flex-shrink-0" />
-                    <span className="font-mono text-[11px] font-bold">{DISPLAY_WHATSAPP_NUMBER}</span>
-                  </a>
                 </div>
               )}
 
@@ -675,18 +623,6 @@ export const Navbar: React.FC = () => {
                     {user ? (profile?.fullName ? profile.fullName.split(' ')[0] : 'Account') : 'Sign In'}
                   </span>
                 </Link>
-
-                {/* Desktop Header Email Link */}
-                <a
-                  href={EMAIL_URL}
-                  id="desktop-header-email-link"
-                  className="hidden xl:flex h-9 lg:h-10 px-2.5 text-charcoal-600 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl transition-colors items-center gap-1.5 text-[11px] font-medium"
-                  aria-label={`Email ${BUSINESS_EMAIL}`}
-                  title={`Email: ${BUSINESS_EMAIL}`}
-                >
-                  <Mail className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A] flex-shrink-0" />
-                  <span>{BUSINESS_EMAIL}</span>
-                </a>
 
                 {/* Shopping Cart Drawer Trigger */}
                 <button
@@ -746,7 +682,7 @@ export const Navbar: React.FC = () => {
         {/* MOBILE NAVIGATION DRAWER */}
         {/* ========================================================================= */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-light-border dark:border-[#34322D] bg-white dark:bg-[#191917] px-4 pt-3 pb-6 space-y-2 shadow-elevation max-h-[85vh] overflow-y-auto">
+          <div className="lg:hidden border-t border-light-border dark:border-[#34322D] bg-white dark:bg-[#191917] px-4 pt-3 pb-6 space-y-2 shadow-elevation max-h-[85vh] overflow-y-auto">
             {/* Theme Toggle Bar inside Mobile Drawer */}
             <div className="flex items-center justify-between p-3 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] mb-2">
               <span className="text-xs font-semibold text-charcoal-700 dark:text-[#F4F1E9] flex items-center gap-2">

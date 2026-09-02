@@ -29,7 +29,7 @@ export const AnnouncementMarquee: React.FC = () => {
     },
     {
       icon: PhoneCall,
-      text: `WhatsApp Orders & Inquiries: ${settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}`,
+      text: 'Official WhatsApp Ordering & 24/7 Customer Support Across Pakistan',
     },
   ];
 
