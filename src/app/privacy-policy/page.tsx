@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
 import { ChevronRight } from 'lucide-react';
+import { DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL } from '@/lib/whatsapp';
 
 export default function PrivacyPolicyPage() {
   const { settings } = useStore();
@@ -62,7 +63,7 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-2">
             <h2 className="text-base font-bold text-charcoal-900 dark:text-[#F4F1E9]">4. Contacting Us Regarding Your Data</h2>
             <p>
-              For any questions regarding your privacy or to update your saved contact details, please email us at <strong className="text-[#B89555] dark:text-[#C9A96A]">{settings.email}</strong> or message us on WhatsApp at <strong className="text-[#B89555] dark:text-[#C9A96A]">{settings.whatsapp}</strong>.
+              For any questions regarding your privacy or to update your saved contact details, please email us at <a href={`mailto:${settings?.email || BUSINESS_EMAIL}`} className="font-semibold text-[#B89555] dark:text-[#C9A96A] hover:underline">{settings?.email || BUSINESS_EMAIL}</a> or message us on WhatsApp at <strong className="text-[#B89555] dark:text-[#C9A96A]">{settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}</strong>.
             </p>
           </section>
         </div>

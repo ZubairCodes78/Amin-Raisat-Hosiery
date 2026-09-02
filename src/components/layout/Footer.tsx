@@ -7,7 +7,7 @@ import { useStore } from '@/context/StoreContext';
 import { useTheme } from '@/context/ThemeContext';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { Phone, Mail, MapPin } from 'lucide-react';
-import { WHATSAPP_URL, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
+import { WHATSAPP_URL, DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL } from '@/lib/whatsapp';
 
 export const Footer: React.FC = () => {
   const { settings, categories } = useStore();
@@ -114,11 +114,12 @@ export const Footer: React.FC = () => {
               </li>
               <li className="text-left">
                 <a
-                  href={`mailto:${settings.email}`}
+                  href={`mailto:${settings?.email || BUSINESS_EMAIL}`}
+                  id="footer-email-link"
                   className="text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] transition-colors inline-flex items-center gap-2 py-0.5 break-all"
                 >
                   <Mail className="w-3.5 h-3.5 text-charcoal-400 dark:text-[#8E8A80] flex-shrink-0" />
-                  <span>{settings.email}</span>
+                  <span>{settings?.email || BUSINESS_EMAIL}</span>
                 </a>
               </li>
               <li className="text-left">

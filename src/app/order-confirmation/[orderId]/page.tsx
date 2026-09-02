@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { CheckCircle2, ArrowRight, Home } from 'lucide-react';
-import { createOrderReceiptWhatsAppMessage, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
+import { createOrderReceiptWhatsAppMessage, DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL } from '@/lib/whatsapp';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 
 export default function OrderConfirmationPage() {
@@ -177,6 +177,18 @@ export default function OrderConfirmationPage() {
             </div>
           </div>
         </div>
+
+        {/* Support Help Note */}
+        <p className="text-center text-xs text-charcoal-500 dark:text-[#8E8A80]">
+          Need help with your order or tracking? Contact us on WhatsApp or email{' '}
+          <a
+            href={`mailto:${settings?.email || BUSINESS_EMAIL}`}
+            id="order-confirmation-email-link"
+            className="font-semibold text-[#B89555] dark:text-[#C9A96A] hover:underline"
+          >
+            {settings?.email || BUSINESS_EMAIL}
+          </a>.
+        </p>
 
         {/* Back navigation */}
         <div className="text-center pt-2">

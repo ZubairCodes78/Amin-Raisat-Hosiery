@@ -1,5 +1,5 @@
 import { Category, Subcategory, Product, SiteSettings, ShippingSettings, HeroSlide } from '@/types';
-import { DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
+import { DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL } from '@/lib/whatsapp';
 
 export const INITIAL_HERO_SLIDES: HeroSlide[] = [
   // Desktop Slides
@@ -66,7 +66,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   ownerName: 'Muhammad Amin',
   phone: DISPLAY_WHATSAPP_NUMBER,
   whatsapp: DISPLAY_WHATSAPP_NUMBER,
-  email: 'info@aminhosiery.com',
+  email: BUSINESS_EMAIL,
   address: 'Hosiery Market, Faisalabad, Pakistan',
   businessHours: 'Monday - Saturday: 9:00 AM - 9:00 PM',
   market: 'Pakistan',

@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingBag, Menu, X, Search, ChevronDown, User, Layers, Sun, Moon } from 'lucide-react';
+import { ShoppingBag, Menu, X, Search, ChevronDown, User, Layers, Sun, Moon, Mail } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
-import { WHATSAPP_URL, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
+import { WHATSAPP_URL, DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL, EMAIL_URL } from '@/lib/whatsapp';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
@@ -688,6 +688,18 @@ export const Navbar: React.FC = () => {
                   <span>{DISPLAY_WHATSAPP_NUMBER}</span>
                 </a>
 
+                {/* Desktop Header Email Link */}
+                <a
+                  href={EMAIL_URL}
+                  id="desktop-header-email-link"
+                  className="hidden 2xl:flex h-9 lg:h-10 px-2.5 text-charcoal-600 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl transition-colors items-center gap-1.5 text-[11px] font-medium"
+                  aria-label={`Email ${BUSINESS_EMAIL}`}
+                  title={`Email: ${BUSINESS_EMAIL}`}
+                >
+                  <Mail className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A] flex-shrink-0" />
+                  <span>{BUSINESS_EMAIL}</span>
+                </a>
+
                 {/* Shopping Cart Drawer Trigger */}
                 <button
                   type="button"
@@ -1011,6 +1023,23 @@ export const Navbar: React.FC = () => {
                   <span>WhatsApp Orders</span>
                 </div>
                 <span className="font-mono text-[11px] font-semibold">{DISPLAY_WHATSAPP_NUMBER}</span>
+              </a>
+            </div>
+
+            {/* 7. Mobile Menu Email CTA */}
+            <div className="pt-2 border-t border-light-border dark:border-[#34322D]">
+              <a
+                href={EMAIL_URL}
+                id="mobile-menu-email-cta"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-700 dark:text-[#B8B3A8] font-bold text-xs hover:text-[#B89555] dark:hover:text-[#C9A96A] transition-colors"
+                aria-label={`Email ${BUSINESS_EMAIL}`}
+              >
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A] flex-shrink-0" />
+                  <span>Support Email</span>
+                </div>
+                <span className="font-mono text-[11px] font-normal">{BUSINESS_EMAIL}</span>
               </a>
             </div>
           </div>

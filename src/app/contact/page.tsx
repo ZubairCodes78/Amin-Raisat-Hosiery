@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
 import { ChevronRight, Phone, Mail, Check, Package } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
-import { getWhatsAppUrl, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
+import { getWhatsAppUrl, DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL } from '@/lib/whatsapp';
 
 export default function ContactPage() {
   const { settings } = useStore();
@@ -133,10 +133,11 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9]">Email Support</h3>
                   <a
-                    href={`mailto:${settings.email}`}
+                    href={`mailto:${settings?.email || BUSINESS_EMAIL}`}
+                    id="contact-email-link"
                     className="text-xs text-charcoal-600 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] transition-colors truncate block font-medium"
                   >
-                    {settings.email}
+                    {settings?.email || BUSINESS_EMAIL}
                   </a>
                 </div>
               </div>

@@ -3,9 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
-import { ChevronRight, ShieldCheck, Truck, Phone, Package } from 'lucide-react';
+import { ChevronRight, ShieldCheck, Truck, Phone, Package, Mail } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
-import { getWhatsAppUrl, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
+import { getWhatsAppUrl, DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL, EMAIL_URL } from '@/lib/whatsapp';
 
 export default function AboutPage() {
   const { settings } = useStore();
@@ -111,6 +111,15 @@ export default function AboutPage() {
                 <Package className="w-4 h-4" />
                 <span>Wholesale Catalog</span>
               </Link>
+              <a
+                href={EMAIL_URL}
+                id="about-email-btn"
+                className="inline-flex items-center gap-2 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition-all active:scale-[0.99]"
+                aria-label={`Email ${BUSINESS_EMAIL}`}
+              >
+                <Mail className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+                <span>{BUSINESS_EMAIL}</span>
+              </a>
             </div>
           </section>
         </div>
