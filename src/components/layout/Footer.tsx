@@ -7,7 +7,7 @@ import { useStore } from '@/context/StoreContext';
 import { useTheme } from '@/context/ThemeContext';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { Phone, Mail, MapPin } from 'lucide-react';
-import { WHATSAPP_URL, DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL } from '@/lib/whatsapp';
+import { WHATSAPP_URL, DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL, getWhatsAppUrl } from '@/lib/whatsapp';
 
 export const Footer: React.FC = () => {
   const { settings, categories } = useStore();
@@ -92,7 +92,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5 text-xs text-left">
               <li className="text-left">
                 <a
-                  href={settings?.whatsapp ? `https://wa.me/92${settings.whatsapp.replace(/^0/, '').replace(/[\s-]/g, '')}` : WHATSAPP_URL}
+                  href={getWhatsAppUrl(settings?.whatsapp)}
                   target="_blank"
                   rel="noopener noreferrer"
                   id="footer-whatsapp-link"

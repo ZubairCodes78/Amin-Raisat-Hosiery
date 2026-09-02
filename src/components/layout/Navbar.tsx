@@ -432,11 +432,12 @@ export const Navbar: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     id="desktop-wholesale-whatsapp-cta"
-                    className="px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40 flex items-center gap-1"
+                    className="px-2.5 py-1.5 text-xs font-bold tracking-wide transition-colors rounded-lg bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5"
                     title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
+                    aria-label={`Order on WhatsApp (${DISPLAY_WHATSAPP_NUMBER})`}
                   >
-                    <WhatsAppIcon size={13} className="text-[#25D366] fill-current flex-shrink-0" />
-                    <span>WhatsApp</span>
+                    <WhatsAppIcon size={14} className="text-[#25D366] fill-current flex-shrink-0" />
+                    <span className="font-mono text-[11px] font-bold">{DISPLAY_WHATSAPP_NUMBER}</span>
                   </a>
 
                   {/* 6. BACK TO RETAIL */}
@@ -621,11 +622,12 @@ export const Navbar: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     id="desktop-nav-whatsapp-cta"
-                    className="px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40 flex items-center gap-1"
+                    className="px-2.5 py-1.5 text-xs font-bold tracking-wide transition-colors rounded-lg bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-1.5"
                     title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
+                    aria-label={`Order on WhatsApp (${DISPLAY_WHATSAPP_NUMBER})`}
                   >
-                    <WhatsAppIcon size={13} className="text-[#25D366] fill-current flex-shrink-0" />
-                    <span>WhatsApp</span>
+                    <WhatsAppIcon size={14} className="text-[#25D366] fill-current flex-shrink-0" />
+                    <span className="font-mono text-[11px] font-bold">{DISPLAY_WHATSAPP_NUMBER}</span>
                   </a>
                 </div>
               )}
@@ -678,7 +680,7 @@ export const Navbar: React.FC = () => {
                 <a
                   href={EMAIL_URL}
                   id="desktop-header-email-link"
-                  className="hidden 2xl:flex h-9 lg:h-10 px-2.5 text-charcoal-600 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl transition-colors items-center gap-1.5 text-[11px] font-medium"
+                  className="hidden xl:flex h-9 lg:h-10 px-2.5 text-charcoal-600 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl transition-colors items-center gap-1.5 text-[11px] font-medium"
                   aria-label={`Email ${BUSINESS_EMAIL}`}
                   title={`Email: ${BUSINESS_EMAIL}`}
                 >

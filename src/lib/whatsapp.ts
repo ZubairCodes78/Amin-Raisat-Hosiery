@@ -4,14 +4,16 @@ import { CartItem, Order } from '@/types';
 // CENTRALIZED WHATSAPP & STORE CONTACT CONFIGURATION
 // =============================================================================
 export const WHATSAPP_NUMBER = '923088666075';
-export const DISPLAY_WHATSAPP_NUMBER = '03088666075';
+export const WHATSAPP_DISPLAY_NUMBER = '03088666075';
+export const DISPLAY_WHATSAPP_NUMBER = WHATSAPP_DISPLAY_NUMBER;
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
 
 export const STORE_WHATSAPP_NUMBER = WHATSAPP_NUMBER; // 03088666075 in international format
-export const STORE_DISPLAY_PHONE = DISPLAY_WHATSAPP_NUMBER;
+export const STORE_DISPLAY_PHONE = WHATSAPP_DISPLAY_NUMBER;
 export const BUSINESS_EMAIL = 'info@aminhosiery.com';
 export const STORE_EMAIL = BUSINESS_EMAIL;
-export const EMAIL_URL = `mailto:${BUSINESS_EMAIL}`;
+export const BUSINESS_EMAIL_URL = `mailto:${BUSINESS_EMAIL}`;
+export const EMAIL_URL = BUSINESS_EMAIL_URL;
 export const STORE_OWNER = 'Muhammad Amin';
 
 export function getWhatsAppUrl(customWhatsApp?: string, message?: string): string {

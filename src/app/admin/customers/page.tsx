@@ -21,6 +21,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
+import { formatWhatsAppNumber } from '@/lib/whatsapp';
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
@@ -187,9 +188,9 @@ export default function AdminCustomersPage() {
                 </thead>
                 <tbody className="divide-y divide-light-border dark:divide-[#34322D] font-medium text-charcoal-700 dark:text-[#B8B3A8]">
                   {filteredCustomers.map((cust) => {
-                    const cleanPhone = cust.phone ? cust.phone.replace(/^0/, '').replace(/[\s-]/g, '') : '';
-                    const whatsappLink = cleanPhone
-                      ? `https://wa.me/92${cleanPhone}?text=${encodeURIComponent(
+                    const targetPhone = cust.phone ? formatWhatsAppNumber(cust.phone) : null;
+                    const whatsappLink = targetPhone
+                      ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(
                           `Assalam-o-Alaikum ${cust.fullName}, this is Amin Raisat Hosiery.`
                         )}`
                       : null;

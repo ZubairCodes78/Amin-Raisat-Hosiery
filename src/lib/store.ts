@@ -936,6 +936,18 @@ export class DataStore {
     }
   }
 
+  private static sanitizeContactSettings(raw: SiteSettings): SiteSettings {
+    const isOldPhone = (p?: string) => !p || p.includes('03018666075') || p.includes('923018666075');
+    const isOldEmail = (e?: string) => !e || e.includes('amingoldriasathosiery') || e.includes('gmail.com');
+
+    return {
+      ...raw,
+      phone: isOldPhone(raw.phone) ? INITIAL_SITE_SETTINGS.phone : raw.phone,
+      whatsapp: isOldPhone(raw.whatsapp) ? INITIAL_SITE_SETTINGS.whatsapp : raw.whatsapp,
+      email: isOldEmail(raw.email) ? INITIAL_SITE_SETTINGS.email : raw.email,
+    };
+  }
+
   // ============================================================================
   // 6. SITE SETTINGS & SHIPPING BUSINESS RULES
   // ============================================================================
@@ -981,13 +993,19 @@ export class DataStore {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.SETTINGS);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          settings = JSON.parse(stored);
         } catch {}
       }
-      localStorage.setItem(LOCAL_STORAGE_KEYS.SETTINGS, JSON.stringify(INITIAL_SITE_SETTINGS));
     }
 
-    return settings;
+    const sanitized = this.sanitizeContactSettings(settings);
+    if (this.isClient()) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.SETTINGS, JSON.stringify(sanitized));
+      } catch {}
+    }
+
+    return sanitized;
   }
 
   static async updateSettings(settings: SiteSettings): Promise<void> {

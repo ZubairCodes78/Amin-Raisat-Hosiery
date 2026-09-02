@@ -4,7 +4,7 @@ import React from 'react';
 import { useStore } from '@/context/StoreContext';
 import { useCart } from '@/context/CartContext';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
-import { WHATSAPP_URL, WHATSAPP_NUMBER, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
+import { WHATSAPP_URL, WHATSAPP_NUMBER, DISPLAY_WHATSAPP_NUMBER, getWhatsAppUrl } from '@/lib/whatsapp';
 
 export const WhatsAppFloating: React.FC = () => {
   const { settings } = useStore();
@@ -16,10 +16,7 @@ export const WhatsAppFloating: React.FC = () => {
   }
 
   // Exact target URL: https://wa.me/923088666075 (or derived from site settings if custom)
-  const cleanNumber = settings?.whatsapp
-    ? '92' + settings.whatsapp.replace(/^0/, '').replace(/\D/g, '')
-    : WHATSAPP_NUMBER;
-  const targetUrl = `https://wa.me/${cleanNumber}`;
+  const targetUrl = getWhatsAppUrl(settings?.whatsapp);
   const displayPhone = settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER;
 
   return (

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
+import { formatWhatsAppNumber } from '@/lib/whatsapp';
 
 const ALL_STATUSES: OrderStatus[] = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'];
 
@@ -212,8 +213,8 @@ export default function AdminOrdersPage() {
                 </thead>
                 <tbody className="divide-y divide-light-border dark:divide-[#282723] font-medium text-charcoal-700 dark:text-[#B8B3A8]">
                   {filteredOrders.map((ord) => {
-                    const cleanPhone = ord.customerPhone.replace(/^0/, '').replace(/[\s-]/g, '');
-                    const whatsappLink = `https://wa.me/92${cleanPhone}?text=${encodeURIComponent(
+                    const targetPhone = formatWhatsAppNumber(ord.customerPhone);
+                    const whatsappLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(
                       `Assalam-o-Alaikum ${ord.customerName}, this is Amin Raisat Hosiery regarding your Order #${ord.orderNumber}.`
                     )}`;
 
@@ -311,8 +312,8 @@ export default function AdminOrdersPage() {
             {/* Mobile Stacked Cards View (md:hidden) */}
             <div className="md:hidden divide-y divide-light-border dark:divide-[#282723] p-3 space-y-3">
               {filteredOrders.map((ord) => {
-                const cleanPhone = ord.customerPhone.replace(/^0/, '').replace(/[\s-]/g, '');
-                const whatsappLink = `https://wa.me/92${cleanPhone}?text=${encodeURIComponent(
+                const targetPhone = formatWhatsAppNumber(ord.customerPhone);
+                const whatsappLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(
                   `Assalam-o-Alaikum ${ord.customerName}, this is Amin Raisat Hosiery regarding your Order #${ord.orderNumber}.`
                 )}`;
 
