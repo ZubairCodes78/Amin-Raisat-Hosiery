@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { X, Trash2, Plus, Minus, ShoppingBag, Truck, ArrowRight, AlertCircle, Package } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
-import { createCartWhatsAppMessage } from '@/lib/whatsapp';
+import { createCartWhatsAppMessage, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { CartItem } from '@/types';
 
@@ -84,7 +84,7 @@ export const CartDrawer: React.FC = () => {
   const isRetailMinMet = totalQuantity >= minRetailQty;
   const canCheckout = hasWholesaleItems ? isWholesaleMinimumMet : isRetailMinMet;
   const freeThreshold = settings.shipping?.freeDeliveryThreshold || 3;
-  const whatsappUrl = createCartWhatsAppMessage(items, subtotal, deliveryFee, totalAmount, settings.whatsapp);
+  const whatsappUrl = createCartWhatsAppMessage(items, subtotal, deliveryFee, totalAmount, settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden select-none" aria-labelledby="cart-drawer-title" role="dialog" aria-modal="true">
@@ -448,6 +448,7 @@ export const CartDrawer: React.FC = () => {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  id="cart-drawer-whatsapp-btn"
                   className="w-full min-h-[40px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs bg-[#25D366] hover:bg-[#1EBE5D] text-white transition-all shadow-xs active:scale-[0.99]"
                 >
                   <WhatsAppIcon size={16} className="text-white fill-current" />

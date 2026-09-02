@@ -7,6 +7,7 @@ import { useStore } from '@/context/StoreContext';
 import { useTheme } from '@/context/ThemeContext';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { Phone, Mail, MapPin } from 'lucide-react';
+import { WHATSAPP_URL, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 export const Footer: React.FC = () => {
   const { settings, categories } = useStore();
@@ -91,22 +92,24 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5 text-xs text-left">
               <li className="text-left">
                 <a
-                  href={`https://wa.me/92${settings.whatsapp.replace(/^0/, '').replace(/[\s-]/g, '')}`}
+                  href={settings?.whatsapp ? `https://wa.me/92${settings.whatsapp.replace(/^0/, '').replace(/[\s-]/g, '')}` : WHATSAPP_URL}
                   target="_blank"
                   rel="noopener noreferrer"
+                  id="footer-whatsapp-link"
                   className="hover:text-[#25D366] transition-colors inline-flex items-center gap-2 text-charcoal-900 dark:text-[#F4F1E9] font-medium py-0.5"
                 >
                   <WhatsAppIcon size={14} className="text-[#25D366] fill-current flex-shrink-0" />
-                  <span>WhatsApp: {settings.whatsapp}</span>
+                  <span>WhatsApp: {settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}</span>
                 </a>
               </li>
               <li className="text-left">
                 <a
-                  href={`tel:${settings.phone || settings.whatsapp}`}
+                  href={`tel:${settings?.phone || settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}`}
+                  id="footer-phone-link"
                   className="text-charcoal-600 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] transition-colors inline-flex items-center gap-2 py-0.5"
                 >
                   <Phone className="w-3.5 h-3.5 text-charcoal-400 dark:text-[#8E8A80] flex-shrink-0" />
-                  <span>Call: {settings.phone || settings.whatsapp}</span>
+                  <span>Call: {settings?.phone || settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}</span>
                 </a>
               </li>
               <li className="text-left">

@@ -10,6 +10,7 @@ import { ProductCard } from '@/components/product/ProductCard';
 import { useStore } from '@/context/StoreContext';
 import { ArrowRight, ShoppingBag, PackageCheck } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
+import { getWhatsAppUrl, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 export default function HomePage() {
   const { products, settings } = useStore();
@@ -115,15 +116,17 @@ export default function HomePage() {
           </p>
           <div className="pt-2 flex justify-center">
             <a
-              href={`https://wa.me/92${settings.whatsapp.replace(/^0/, '')}?text=${encodeURIComponent(
+              href={getWhatsAppUrl(
+                settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER,
                 'Assalam-o-Alaikum Amin Raisat Hosiery, I want to inquire about placing an order.'
-              )}`}
+              )}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold text-xs py-3.5 px-7 rounded-xl shadow-xs transition-all"
+              id="homepage-whatsapp-cta"
+              className="inline-flex items-center gap-2.5 bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold text-xs py-3.5 px-7 rounded-xl shadow-xs transition-all active:scale-[0.99]"
             >
               <WhatsAppIcon size={18} className="text-white fill-current" />
-              <span>Chat on WhatsApp ({settings.whatsapp})</span>
+              <span>Chat on WhatsApp ({settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER})</span>
             </a>
           </div>
         </div>

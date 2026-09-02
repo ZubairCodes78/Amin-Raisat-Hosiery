@@ -6,6 +6,7 @@ import { useStore } from '@/context/StoreContext';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Truck, ShieldCheck, PackageCheck, Headphones, ArrowRight, Filter, Search, Layers } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
+import { getWhatsAppUrl, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 export default function WholesalePage() {
   const { products, categories, settings } = useStore();
@@ -49,9 +50,10 @@ export default function WholesalePage() {
     });
   }, [products, selectedCategory, selectedQuality, searchQuery]);
 
-  const whatsappInquiryUrl = `https://wa.me/92${settings.whatsapp.replace(/^0/, '').replace(/[\s-]/g, '')}?text=${encodeURIComponent(
+  const whatsappInquiryUrl = getWhatsAppUrl(
+    settings.whatsapp || DISPLAY_WHATSAPP_NUMBER,
     'Hello Amin Raisat Hosiery! I am interested in placing a wholesale/B2B order for cotton vests. Please share wholesale details.'
-  )}`;
+  );
 
   return (
     <div className="min-h-screen bg-light-bg dark:bg-[#11110F] text-charcoal-900 dark:text-[#F4F1E9] transition-colors duration-200">

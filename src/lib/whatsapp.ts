@@ -1,12 +1,25 @@
 import { CartItem, Order } from '@/types';
 
-export const STORE_WHATSAPP_NUMBER = '923088666075'; // 03088666075 in international format
-export const STORE_DISPLAY_PHONE = '03088666075';
+// =============================================================================
+// CENTRALIZED WHATSAPP & STORE CONTACT CONFIGURATION
+// =============================================================================
+export const WHATSAPP_NUMBER = '923088666075';
+export const DISPLAY_WHATSAPP_NUMBER = '03088666075';
+export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
+
+export const STORE_WHATSAPP_NUMBER = WHATSAPP_NUMBER; // 03088666075 in international format
+export const STORE_DISPLAY_PHONE = DISPLAY_WHATSAPP_NUMBER;
 export const STORE_EMAIL = 'info@aminhosiery.com';
 export const STORE_OWNER = 'Muhammad Amin';
 
+export function getWhatsAppUrl(customWhatsApp?: string, message?: string): string {
+  const target = customWhatsApp ? formatWhatsAppNumber(customWhatsApp) : WHATSAPP_NUMBER;
+  if (!message) return `https://wa.me/${target}`;
+  return `https://wa.me/${target}?text=${encodeURIComponent(message)}`;
+}
+
 export function formatWhatsAppNumber(phone?: string): string {
-  if (!phone) return STORE_WHATSAPP_NUMBER;
+  if (!phone) return WHATSAPP_NUMBER;
   const clean = phone.replace(/[^0-9]/g, '');
   if (clean.startsWith('92')) return clean;
   if (clean.startsWith('0')) return `92${clean.slice(1)}`;

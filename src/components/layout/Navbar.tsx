@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { ShoppingBag, Menu, X, Search, ChevronDown, User, Layers, Sun, Moon } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
+import { WHATSAPP_URL, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
 import { useAuth } from '@/context/AuthContext';
@@ -191,8 +193,21 @@ export const Navbar: React.FC = () => {
                 </div>
               </Link>
 
-              {/* Right group: Search + Account + Cart */}
+              {/* Right group: WhatsApp + Search + Account + Cart */}
               <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 justify-end ml-auto z-10">
+                {/* Mobile Header WhatsApp Button */}
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  id="mobile-header-whatsapp-btn"
+                  className="w-9 h-9 flex items-center justify-center text-[#25D366] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors"
+                  aria-label={`Order on WhatsApp (${DISPLAY_WHATSAPP_NUMBER})`}
+                  title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
+                >
+                  <WhatsAppIcon size={18} className="text-[#25D366] fill-current" />
+                </a>
+
                 {/* Search Trigger */}
                 <button
                   type="button"
@@ -411,6 +426,19 @@ export const Navbar: React.FC = () => {
                     Contact
                   </Link>
 
+                  {/* Wholesale Navigation WhatsApp CTA */}
+                  <a
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    id="desktop-wholesale-whatsapp-cta"
+                    className="px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40 flex items-center gap-1"
+                    title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
+                  >
+                    <WhatsAppIcon size={13} className="text-[#25D366] fill-current flex-shrink-0" />
+                    <span>WhatsApp</span>
+                  </a>
+
                   {/* 6. BACK TO RETAIL */}
                   <Link
                     href="/"
@@ -586,6 +614,19 @@ export const Navbar: React.FC = () => {
                   >
                     Contact
                   </Link>
+
+                  {/* Desktop Navigation WhatsApp CTA */}
+                  <a
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    id="desktop-nav-whatsapp-cta"
+                    className="px-2.5 py-1.5 text-xs font-bold tracking-wide uppercase transition-colors rounded-lg text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40 flex items-center gap-1"
+                    title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
+                  >
+                    <WhatsAppIcon size={13} className="text-[#25D366] fill-current flex-shrink-0" />
+                    <span>WhatsApp</span>
+                  </a>
                 </div>
               )}
 
@@ -632,6 +673,20 @@ export const Navbar: React.FC = () => {
                     {user ? (profile?.fullName ? profile.fullName.split(' ')[0] : 'Account') : 'Sign In'}
                   </span>
                 </Link>
+
+                {/* Desktop Header WhatsApp Button */}
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  id="desktop-header-whatsapp-btn"
+                  className="hidden xl:flex h-9 lg:h-10 px-3 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-xl transition-colors items-center gap-1.5 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-bold"
+                  aria-label={`Order on WhatsApp ${DISPLAY_WHATSAPP_NUMBER}`}
+                  title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
+                >
+                  <WhatsAppIcon size={15} className="text-[#25D366] fill-current flex-shrink-0" />
+                  <span>{DISPLAY_WHATSAPP_NUMBER}</span>
+                </a>
 
                 {/* Shopping Cart Drawer Trigger */}
                 <button
@@ -938,6 +993,25 @@ export const Navbar: React.FC = () => {
               >
                 Contact Us
               </Link>
+            </div>
+
+            {/* 6. Mobile Menu WhatsApp CTA */}
+            <div className="pt-2 border-t border-light-border dark:border-[#34322D]">
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                id="mobile-menu-whatsapp-cta"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400 font-bold text-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
+                aria-label={`Chat on WhatsApp ${DISPLAY_WHATSAPP_NUMBER}`}
+              >
+                <div className="flex items-center gap-2">
+                  <WhatsAppIcon size={16} className="text-[#25D366] fill-current flex-shrink-0" />
+                  <span>WhatsApp Orders</span>
+                </div>
+                <span className="font-mono text-[11px] font-semibold">{DISPLAY_WHATSAPP_NUMBER}</span>
+              </a>
             </div>
           </div>
         )}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
 import { ChevronRight, ShieldCheck, Truck, Phone, Package } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
+import { getWhatsAppUrl, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 export default function AboutPage() {
   const { settings } = useStore();
@@ -94,13 +95,14 @@ export default function AboutPage() {
             </p>
             <div className="pt-2 flex flex-wrap gap-3">
               <a
-                href={`https://wa.me/92${settings.whatsapp.replace(/^0/, '')}`}
+                href={getWhatsAppUrl(settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition-all"
+                id="about-whatsapp-btn"
+                className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition-all active:scale-[0.99]"
               >
                 <WhatsAppIcon size={14} className="text-white fill-current" />
-                <span>WhatsApp ({settings.whatsapp})</span>
+                <span>WhatsApp ({settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER})</span>
               </a>
               <Link
                 href="/wholesale"

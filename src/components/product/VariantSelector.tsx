@@ -7,7 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
 import { ShoppingBag, Truck, HelpCircle, X, ShieldAlert, Zap, Check } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
-import { createProductWhatsAppMessage } from '@/lib/whatsapp';
+import { createProductWhatsAppMessage, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 interface VariantSelectorProps {
   product: Product;
@@ -218,7 +218,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
     quantity,
     effectiveUnitPrice,
     totalPrice,
-    settings.whatsapp
+    settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER
   );
 
   return (
@@ -560,6 +560,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
+            id="product-whatsapp-order-btn"
             className="w-full min-h-[44px] sm:min-h-[46px] py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm bg-[#25D366] hover:bg-[#1EBE5D] text-white shadow-xs transition-all flex items-center justify-center gap-2"
           >
             <WhatsAppIcon size={16} className="text-white fill-current" />

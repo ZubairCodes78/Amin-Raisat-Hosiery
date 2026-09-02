@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
 import { ChevronRight, Phone, Mail, Check, Package } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
+import { getWhatsAppUrl, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 export default function ContactPage() {
   const { settings } = useStore();
@@ -19,7 +20,7 @@ export default function ContactPage() {
 
     // Send via WhatsApp direct link
     const text = `Assalam-o-Alaikum Amin Raisat Hosiery,\nName: ${name}\nPhone: ${phone}\nMessage: ${message}`;
-    const url = `https://wa.me/92${settings.whatsapp.replace(/^0/, '')}?text=${encodeURIComponent(text)}`;
+    const url = getWhatsAppUrl(settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER, text);
     window.open(url, '_blank');
 
     setIsSent(true);
@@ -68,16 +69,17 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9]">WhatsApp (Fastest)</h3>
-                  <p className="text-xs text-[#B89555] dark:text-[#C9A96A] font-bold">{settings.whatsapp}</p>
+                  <p className="text-xs text-[#B89555] dark:text-[#C9A96A] font-bold">{settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}</p>
                 </div>
               </div>
               <p className="text-xs text-charcoal-500 dark:text-[#8E8A80] leading-relaxed font-normal">
                 Direct chat with owner Muhammad Amin for immediate order assistance, sizing recommendations, or custom wholesale quotes.
               </p>
               <a
-                href={`https://wa.me/92${settings.whatsapp.replace(/^0/, '')}`}
+                href={getWhatsAppUrl(settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER)}
                 target="_blank"
                 rel="noopener noreferrer"
+                id="contact-whatsapp-link"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline pt-1"
               >
                 <span>Open WhatsApp Chat &rarr;</span>
@@ -114,7 +116,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9]">Direct Phone Call</h3>
-                  <p className="text-xs text-charcoal-700 dark:text-[#B8B3A8] font-bold">{settings.phone}</p>
+                  <p className="text-xs text-charcoal-700 dark:text-[#B8B3A8] font-bold">{settings?.phone || settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}</p>
                 </div>
               </div>
               <p className="text-xs text-charcoal-500 dark:text-[#8E8A80] leading-relaxed font-normal">

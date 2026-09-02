@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck, AlertCircle, Package } from 'lucide-react';
-import { createCartWhatsAppMessage } from '@/lib/whatsapp';
+import { createCartWhatsAppMessage, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { CartItem } from '@/types';
 
@@ -45,7 +45,7 @@ export default function CartPage() {
   const isRetailMinMet = totalQuantity >= minRetailQty;
   const canProceed = hasWholesaleItems ? isWholesaleMinimumMet : isRetailMinMet;
   const freeThreshold = settings.shipping.freeDeliveryThreshold || 3;
-  const whatsappUrl = createCartWhatsAppMessage(items, subtotal, deliveryFee, totalAmount, settings.whatsapp);
+  const whatsappUrl = createCartWhatsAppMessage(items, subtotal, deliveryFee, totalAmount, settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER);
 
   if (items.length === 0) {
     return (
@@ -328,6 +328,7 @@ export default function CartPage() {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  id="cart-page-whatsapp-btn"
                   className="w-full py-3 bg-white dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#262521] text-charcoal-900 dark:text-[#F4F1E9] border border-light-border dark:border-[#34322D] font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-colors shadow-2xs"
                 >
                   <WhatsAppIcon size={16} className="text-[#25D366] fill-current" />

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { CheckCircle2, ArrowRight, Home } from 'lucide-react';
-import { createOrderReceiptWhatsAppMessage } from '@/lib/whatsapp';
+import { createOrderReceiptWhatsAppMessage, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 
 export default function OrderConfirmationPage() {
@@ -32,7 +32,7 @@ export default function OrderConfirmationPage() {
     );
   }
 
-  const whatsappUrl = createOrderReceiptWhatsAppMessage(order);
+  const whatsappUrl = createOrderReceiptWhatsAppMessage(order, settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER);
 
   return (
     <div className="py-12 bg-light-bg dark:bg-[#11110F] min-h-[85vh] text-charcoal-900 dark:text-[#F4F1E9] transition-colors duration-200">
@@ -75,10 +75,11 @@ export default function OrderConfirmationPage() {
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
+              id="order-confirmation-whatsapp-btn"
               className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold text-xs py-3.5 px-6 rounded-xl shadow-xs transition-all w-full sm:w-auto"
             >
               <WhatsAppIcon size={16} className="text-white fill-current" />
-              <span>Share Confirmation on WhatsApp ({settings.whatsapp})</span>
+              <span>Share Confirmation on WhatsApp ({settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER})</span>
             </a>
           </div>
         </div>

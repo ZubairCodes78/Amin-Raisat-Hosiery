@@ -10,6 +10,7 @@ import { QualityComparison } from '@/components/product/QualityComparison';
 import { ProductReviews } from '@/components/product/ProductReviews';
 import { SleeveType, ProductSize } from '@/types';
 import { ChevronRight, Star, ChevronDown, ChevronUp } from 'lucide-react';
+import { DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -282,7 +283,7 @@ export default function ProductDetailPage() {
                         'We offer a 7-day hassle-free exchange policy for any manufacturing defect or sizing mismatch. Product must remain unwashed and unworn.'}
                     </p>
                     <p className="mt-1 font-semibold text-[#96763D] dark:text-[#C9A96A]">
-                      To initiate an exchange, message us directly on WhatsApp ({settings.whatsapp}).
+                      To initiate an exchange, message us directly on WhatsApp ({settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}).
                     </p>
                   </div>
                 )}

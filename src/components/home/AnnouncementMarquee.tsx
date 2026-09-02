@@ -3,6 +3,7 @@
 import React from 'react';
 import { Truck, ShieldCheck, PhoneCall, CheckCircle } from 'lucide-react';
 import { useStore } from '@/context/StoreContext';
+import { DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 export const AnnouncementMarquee: React.FC = () => {
   const { settings } = useStore();
@@ -28,7 +29,7 @@ export const AnnouncementMarquee: React.FC = () => {
     },
     {
       icon: PhoneCall,
-      text: `WhatsApp Orders & Inquiries: ${settings.whatsapp}`,
+      text: `WhatsApp Orders & Inquiries: ${settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}`,
     },
   ];
 

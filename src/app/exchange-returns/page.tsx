@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
 import { ChevronRight, RefreshCw } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
+import { getWhatsAppUrl, DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 export default function ExchangeReturnsPage() {
   const { settings } = useStore();
@@ -59,7 +60,7 @@ export default function ExchangeReturnsPage() {
             <h3 className="font-bold text-charcoal-900 dark:text-[#F4F1E9] text-sm">How to Request an Exchange</h3>
             <ol className="space-y-2 pl-4 list-decimal text-charcoal-700 dark:text-[#B8B3A8]">
               <li>
-                Take a quick photo of the item and message our official WhatsApp support at <strong className="text-[#B89555] dark:text-[#C9A96A]">{settings.whatsapp}</strong> with your <strong>Order Number</strong>.
+                Take a quick photo of the item and message our official WhatsApp support at <strong className="text-[#B89555] dark:text-[#C9A96A]">{settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER}</strong> with your <strong>Order Number</strong>.
               </li>
               <li>
                 Let Muhammad Amin know your desired replacement size or construction option.
@@ -73,15 +74,17 @@ export default function ExchangeReturnsPage() {
           {/* CTA with Official WhatsAppIcon */}
           <div className="pt-4">
             <a
-              href={`https://wa.me/92${settings.whatsapp.replace(/^0/, '')}?text=${encodeURIComponent(
+              href={getWhatsAppUrl(
+                settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER,
                 'Assalam-o-Alaikum Amin Raisat Hosiery, I would like to request an exchange for my order.'
-              )}`}
+              )}
               target="_blank"
               rel="noopener noreferrer"
+              id="exchange-whatsapp-btn"
               className="inline-flex items-center gap-2 py-3.5 px-6 bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold rounded-xl text-xs transition-all shadow-xs"
             >
               <WhatsAppIcon size={16} className="text-white fill-current" />
-              <span>Initiate Exchange on WhatsApp ({settings.whatsapp})</span>
+              <span>Initiate Exchange on WhatsApp ({settings?.whatsapp || DISPLAY_WHATSAPP_NUMBER})</span>
             </a>
           </div>
         </div>

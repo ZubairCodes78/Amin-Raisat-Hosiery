@@ -1,4 +1,5 @@
 import { Category, Subcategory, Product, SiteSettings, ShippingSettings, HeroSlide } from '@/types';
+import { DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
 
 export const INITIAL_HERO_SLIDES: HeroSlide[] = [
   // Desktop Slides
@@ -63,8 +64,8 @@ export const INITIAL_SHIPPING_SETTINGS: ShippingSettings = {
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
   brandName: 'Amin Raisat Hosiery',
   ownerName: 'Muhammad Amin',
-  phone: '03088666075',
-  whatsapp: '03088666075',
+  phone: DISPLAY_WHATSAPP_NUMBER,
+  whatsapp: DISPLAY_WHATSAPP_NUMBER,
   email: 'info@aminhosiery.com',
   address: 'Hosiery Market, Faisalabad, Pakistan',
   businessHours: 'Monday - Saturday: 9:00 AM - 9:00 PM',
@@ -76,7 +77,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
     accountTitle: 'Muhammad Amin',
     accountNumber: '01010101010101',
     iban: 'PK00MEZN0000000000000000',
-    instructions: 'Please transfer the exact total amount and send a screenshot of the payment receipt to our WhatsApp (03088666075) with your Order ID.',
+    instructions: `Please transfer the exact total amount and send a screenshot of the payment receipt to our WhatsApp (${DISPLAY_WHATSAPP_NUMBER}) with your Order ID.`,
   },
   isStoreOpen: true,
   isCodEnabled: true,
