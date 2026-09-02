@@ -674,20 +674,6 @@ export const Navbar: React.FC = () => {
                   </span>
                 </Link>
 
-                {/* Desktop Header WhatsApp Button */}
-                <a
-                  href={WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  id="desktop-header-whatsapp-btn"
-                  className="hidden xl:flex h-9 lg:h-10 px-3 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-xl transition-colors items-center gap-1.5 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-bold"
-                  aria-label={`Order on WhatsApp ${DISPLAY_WHATSAPP_NUMBER}`}
-                  title={`WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
-                >
-                  <WhatsAppIcon size={15} className="text-[#25D366] fill-current flex-shrink-0" />
-                  <span>{DISPLAY_WHATSAPP_NUMBER}</span>
-                </a>
-
                 {/* Desktop Header Email Link */}
                 <a
                   href={EMAIL_URL}
