@@ -392,8 +392,16 @@ export class DataStore {
         const res = await fetch('/api/admin/products', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data.products) && data.products.length > 0) {
+          // Trust the API response as authoritative. Do NOT filter out empty arrays —
+          // an empty array means the database genuinely has 0 products.
+          if (Array.isArray(data.products)) {
             products = data.products;
+            // Return immediately — the API response is the single source of truth.
+            const allReviews = await this.getReviews();
+            return products.map((prod) => ({
+              ...prod,
+              reviews: allReviews.filter((r) => r.productId === prod.id && r.isApproved),
+            }));
           }
         }
       } catch (apiErr) {

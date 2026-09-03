@@ -18,175 +18,19 @@ const MEDIA_STORAGE_MAP: Record<string, string> = {
   '/images/products/sleevless low.jpeg': 'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/original_products/sleevless_low.jpeg',
 };
 
-async function ensureBaseProductsSeeded(adminDb: any, forceRestore = false) {
-  try {
-    // Check if the 2 official baseline products exist
-    const { data: existingBase } = await adminDb
-      .from('products')
-      .select('id, slug')
-      .in('id', ['f0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002']);
 
-    const hasBothBaseProducts = existingBase && existingBase.length === 2;
 
-    if (!forceRestore) {
-      if (hasBothBaseProducts) {
-        return;
-      }
-
-      // Check if intentional deletion marker exists AND products count is 0
-      const { data: markerFiles } = await adminDb.storage
-        .from('product-media')
-        .list('_system', { search: 'catalog_initialized.marker' });
-
-      const { count } = await adminDb
-        .from('products')
-        .select('*', { count: 'exact', head: true });
-
-      if (markerFiles && markerFiles.length > 0 && count === 0) {
-        // Intentionally wiped by admin
-        return;
-      }
-    }
-
-    console.log('Restoring baseline original products into Supabase PostgreSQL...');
-
-    // Clean up any non-standard placeholder products with matching slugs
-    await adminDb
-      .from('products')
-      .delete()
-      .or('slug.eq.mens-vest-high-quality,slug.eq.mens-vest-standard-quality')
-      .not('id', 'in', '("f0000000-0000-0000-0000-000000000001","f0000000-0000-0000-0000-000000000002")');
-
-    // 1. Resolve Category ID for Men
-    const { data: menCat } = await adminDb
-      .from('categories')
-      .select('id')
-      .or('slug.eq.men,slug.eq.cat-men')
-      .limit(1)
-      .maybeSingle();
-
-    const defaultCatId = menCat?.id || 'c0000000-0000-0000-0000-000000000001';
-
-    // 2. Resolve Subcategory ID for Vests
-    const { data: vestSubcat } = await adminDb
-      .from('subcategories')
-      .select('id')
-      .or('slug.eq.vests,slug.eq.sub-men-vests')
-      .limit(1)
-      .maybeSingle();
-
-    const defaultSubcatId = vestSubcat?.id || 'e0000000-0000-0000-0000-000000000001';
-
-    for (const prod of INITIAL_PRODUCTS) {
-      const prodPayload: any = {
-        id: prod.id,
-        category_id: defaultCatId,
-        subcategory_id: defaultSubcatId,
-        name: prod.name,
-        slug: prod.slug,
-        subtitle: prod.subtitle || '',
-        description: prod.description || '',
-        features: prod.features || [],
-        quality_comparison: prod.qualityComparison || {},
-        care_instructions: prod.careInstructions || [],
-        shipping_info: prod.shippingInfo || '',
-        is_published: prod.isPublished ?? true,
-        is_wholesale_enabled: prod.isWholesaleEnabled ?? true,
-        wholesale_min_qty: prod.wholesaleMinQty || 12,
-        created_at: prod.createdAt || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: pErr } = await adminDb.from('products').upsert(prodPayload);
-      if (pErr) {
-        console.error(`Failed to seed product ${prod.slug}:`, pErr.message);
-        continue;
-      }
-
-      // Seed variants
-      if (prod.variants && prod.variants.length > 0) {
-        const varPayload = prod.variants.map((v) => ({
-          id: isUuid(v.id) ? v.id : crypto.randomUUID(),
-          product_id: prod.id,
-          quality: v.quality || 'High Quality',
-          sleeve: v.sleeve || 'Sleeveless',
-          size: v.size || 'L',
-          price: Number(v.price) || 0,
-          sale_price: v.salePrice ? Number(v.salePrice) : null,
-          wholesale_price: v.wholesalePrice ? Number(v.wholesalePrice) : Math.round((Number(v.price) || 480) * 0.82),
-          wholesale_tiers: v.wholesaleTiers || undefined,
-          stock: Number(v.stock) || 0,
-          sku: v.sku || '',
-          is_available: v.isAvailable ?? true,
-          updated_at: new Date().toISOString(),
-        }));
-        await adminDb.from('product_variants').delete().eq('product_id', prod.id);
-        const { error: vErr } = await adminDb.from('product_variants').insert(varPayload);
-        if (vErr && vErr.code === 'PGRST204') {
-          const cleanVars = varPayload.map((item: any) => {
-            const copy = { ...item };
-            delete copy.wholesale_price;
-            delete copy.wholesale_tiers;
-            return copy;
-          });
-          await adminDb.from('product_variants').insert(cleanVars);
-        }
-      }
-
-      // Seed media with persistent Supabase Storage CDN URLs
-      if (prod.media && prod.media.length > 0) {
-        const mediaPayload = prod.media.map((m, idx) => ({
-          id: isUuid(m.id) ? m.id : crypto.randomUUID(),
-          product_id: prod.id,
-          media_type: m.type || 'photo',
-          url: MEDIA_STORAGE_MAP[m.url] || m.url,
-          alt_text: m.alt || `${prod.name} photo`,
-          title: m.title || '',
-          display_order: m.displayOrder ?? idx + 1,
-          variant_quality: m.variantQuality || null,
-          variant_sleeve: m.variantSleeve || null,
-        }));
-        await adminDb.from('product_media').delete().eq('product_id', prod.id);
-        await adminDb.from('product_media').insert(mediaPayload);
-      }
-    }
-
-    // 3. Mark catalog as permanently initialized in Supabase storage
-    try {
-      await adminDb.storage
-        .from('product-media')
-        .upload('_system/catalog_initialized.marker', Buffer.from(`INITIALIZED_${Date.now()}`), {
-          upsert: true,
-        });
-    } catch (markErr) {
-      console.warn('Could not write storage initialization marker:', markErr);
-    }
-
-    console.log('Baseline products seeded successfully.');
-  } catch (seedErr) {
-    console.error('ensureBaseProductsSeeded error:', seedErr);
-  }
-}
-
-export async function GET(req: Request) {
+export async function GET() {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ products: INITIAL_PRODUCTS });
   }
 
   try {
     let dbClient = supabaseServer;
-    let adminDb: any = null;
     try {
-      adminDb = createAdminClient();
-      dbClient = adminDb;
-    } catch {}
-
-    const url = new URL(req.url);
-    const forceRestore = url.searchParams.get('restore') === 'true';
-
-    // Auto-seed baseline products if missing or forceRestore requested
-    if (adminDb) {
-      await ensureBaseProductsSeeded(adminDb, forceRestore);
+      dbClient = createAdminClient();
+    } catch {
+      // No service role key — use server client (publishable key)
     }
 
     const { data: prods, error } = await dbClient
