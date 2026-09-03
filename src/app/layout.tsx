@@ -5,6 +5,11 @@ import { AuthProvider } from '@/context/AuthContext';
 import { StoreProvider } from '@/context/StoreContext';
 import { CartProvider } from '@/context/CartContext';
 import { PublicLayoutShell } from '@/components/layout/PublicLayoutShell';
+import { DataStore } from '@/lib/store';
+import { Product } from '@/types';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://aminraisathosiery.com'),
@@ -38,11 +43,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let initialProducts: Product[] = [];
+  try {
+    initialProducts = await DataStore.getProducts();
+  } catch (err) {
+    console.warn('RootLayout initial products fetch notice:', err);
+  }
+
   return (
     <html lang="en" suppressHydrationWarning className="light">
       <head>
@@ -69,7 +81,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-light-bg dark:bg-dark-bg text-light-text dark:text-gray-100 antialiased selection:bg-gold-500 selection:text-black">
         <ThemeProvider>
           <AuthProvider>
-            <StoreProvider>
+            <StoreProvider initialProducts={initialProducts}>
               <CartProvider>
                 <PublicLayoutShell>{children}</PublicLayoutShell>
               </CartProvider>

@@ -396,6 +396,9 @@ export class DataStore {
           // an empty array means the database genuinely has 0 products.
           if (Array.isArray(data.products)) {
             products = data.products;
+            try {
+              localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+            } catch {}
             // Return immediately — the API response is the single source of truth.
             const allReviews = await this.getReviews();
             return products.map((prod) => ({
@@ -412,7 +415,8 @@ export class DataStore {
     // 2. Direct Supabase Client fallback (for server components or offline/direct query)
     if (products.length === 0 && isSupabaseConfigured()) {
       try {
-        const { data: prods, error } = await supabaseBrowser
+        const db = this.isClient() ? supabaseBrowser : supabaseServer;
+        const { data: prods, error } = await db
           .from('products')
           .select('*, product_variants(*), product_media(*)')
           .order('created_at', { ascending: false });
@@ -529,6 +533,20 @@ export class DataStore {
           console.error('FULL SUPABASE / DB PRODUCT SAVE ERROR:', data);
           throw new Error(errMsg);
         }
+        if (data.product) {
+          try {
+            const rawStored = localStorage.getItem(LOCAL_STORAGE_KEYS.PRODUCTS);
+            const currentProds: Product[] = rawStored ? JSON.parse(rawStored) : [];
+            const idx = currentProds.findIndex((p) => p.id === data.product.id || p.slug === data.product.slug);
+            let nextProds: Product[];
+            if (idx !== -1) {
+              nextProds = currentProds.map((p, i) => (i === idx ? data.product : p));
+            } else {
+              nextProds = [data.product, ...currentProds];
+            }
+            localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(nextProds));
+          } catch {}
+        }
         return;
       } catch (err: any) {
         console.error('DataStore.saveProduct error:', err);
@@ -584,6 +602,14 @@ export class DataStore {
           console.error('FULL SUPABASE / DB PRODUCT DELETE ERROR:', data);
           throw new Error(errMsg);
         }
+        try {
+          const rawStored = localStorage.getItem(LOCAL_STORAGE_KEYS.PRODUCTS);
+          if (rawStored) {
+            const currentProds: Product[] = JSON.parse(rawStored);
+            const filtered = currentProds.filter((p) => p.id !== id && p.slug !== id);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
+          }
+        } catch {}
         return;
       } catch (err: any) {
         console.error('DataStore.deleteProduct error:', err);

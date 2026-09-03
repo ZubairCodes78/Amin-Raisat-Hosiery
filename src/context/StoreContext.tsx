@@ -36,8 +36,27 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+interface StoreProviderProps {
+  children: React.ReactNode;
+  initialProducts?: Product[];
+}
+
+export const StoreProvider: React.FC<StoreProviderProps> = ({ children, initialProducts }) => {
+  const [products, setProducts] = useState<Product[]>(() => {
+    if (initialProducts && initialProducts.length > 0) {
+      return initialProducts;
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('arh_products_v6');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return INITIAL_PRODUCTS;
+  });
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [subcategories, setSubcategories] = useState<Subcategory[]>(INITIAL_SUBCATEGORIES);
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
@@ -45,6 +64,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>(INITIAL_HERO_SLIDES);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (initialProducts && initialProducts.length > 0) {
+      setProducts(initialProducts);
+    }
+  }, [initialProducts]);
 
   const loadData = async () => {
     try {
