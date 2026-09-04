@@ -27,7 +27,10 @@ interface StoreContextType {
   saveHeroSlide: (slide: HeroSlide) => Promise<void>;
   deleteHeroSlide: (id: string) => Promise<void>;
   uploadMediaFile: (file: File, folder?: string) => Promise<string>;
-  submitReview: (review: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>) => Promise<ProductReview>;
+  submitReview: (
+    review: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>,
+    token?: string
+  ) => Promise<ProductReview>;
   approveReview: (id: string, isApproved: boolean) => Promise<void>;
   deleteReview: (id: string) => Promise<void>;
   updateSettings: (newSettings: SiteSettings) => Promise<void>;
@@ -179,8 +182,11 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children, initialP
     return await DataStore.uploadMediaFile(file, folder);
   };
 
-  const submitReview = async (reviewData: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>) => {
-    const rev = await DataStore.submitReview(reviewData);
+  const submitReview = async (
+    reviewData: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>,
+    token?: string
+  ) => {
+    const rev = await DataStore.submitReview(reviewData, token);
     await loadData();
     return rev;
   };

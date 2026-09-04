@@ -75,6 +75,8 @@ export interface ProductMedia {
 export interface ProductReview {
   id: string;
   productId: string;
+  userId?: string;
+  orderId?: string;
   customerName: string;
   customerCity?: string;
   rating: number;

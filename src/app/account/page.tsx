@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useStore } from '@/context/StoreContext';
-import { CustomerAddress } from '@/types';
+import { CustomerAddress, Order, OrderItem } from '@/types';
 import {
   User,
   MapPin,
@@ -19,6 +19,11 @@ import {
   Mail,
   Home,
   Briefcase,
+  Star,
+  MessageSquare,
+  X,
+  Loader2,
+  ExternalLink,
 } from 'lucide-react';
 
 const PAKISTAN_PROVINCES = [
@@ -33,10 +38,10 @@ const PAKISTAN_PROVINCES = [
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, profile, addresses, signOut, updateProfile, saveAddress, deleteAddress, isLoading } = useAuth();
-  const { orders } = useStore();
+  const { user, session, profile, addresses, signOut, updateProfile, saveAddress, deleteAddress, isLoading } = useAuth();
+  const { orders, reviews, submitReview, refreshData } = useStore();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'addresses' | 'orders'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'addresses' | 'orders' | 'reviews'>('profile');
 
   // Profile Edit State
   const [fullName, setFullName] = useState(profile?.fullName || '');
@@ -57,8 +62,19 @@ export default function AccountPage() {
   const [addrLoading, setAddrLoading] = useState(false);
   const [addrError, setAddrError] = useState('');
 
+  // Review Modal State (For Delivered Orders)
+  const [reviewTarget, setReviewTarget] = useState<{
+    order: Order;
+    item: OrderItem;
+  } | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+
   // Sync profile fields on load
-  React.useEffect(() => {
+  useEffect(() => {
     if (profile) {
       setFullName(profile.fullName || '');
       setPhone(profile.phone || '');
@@ -85,7 +101,7 @@ export default function AccountPage() {
         </div>
         <h1 className="text-2xl font-extrabold text-charcoal-900 dark:text-[#F4F1E9]">Customer Sign In Required</h1>
         <p className="text-xs text-charcoal-600 dark:text-[#8E8A80] max-w-sm">
-          Please sign in or create an account to view your saved addresses and order history.
+          Please sign in or create an account to view your orders and review delivered garments.
         </p>
         <div className="flex gap-3 pt-2">
           <Link
@@ -111,6 +127,13 @@ export default function AccountPage() {
       (user?.id && o.userId === user.id) ||
       (user?.email && o.customerEmail?.toLowerCase() === user.email.toLowerCase()) ||
       (profile?.phone && o.customerPhone === profile.phone)
+  );
+
+  // Reviews submitted by this customer
+  const customerReviews = reviews.filter(
+    (r) =>
+      (r.userId && r.userId === user.id) ||
+      (profile?.fullName && r.customerName && r.customerName.toLowerCase() === profile.fullName.toLowerCase())
   );
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -165,6 +188,52 @@ export default function AccountPage() {
       }
     } finally {
       setAddrLoading(false);
+    }
+  };
+
+  const openReviewModal = (order: Order, item: OrderItem) => {
+    setReviewTarget({ order, item });
+    setReviewRating(5);
+    setReviewComment('');
+    setReviewError('');
+    setReviewSuccess(false);
+  };
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewTarget) return;
+
+    setReviewError('');
+    if (!reviewComment.trim()) {
+      setReviewError('Please write your review feedback.');
+      return;
+    }
+
+    try {
+      setReviewSubmitting(true);
+      await submitReview(
+        {
+          productId: reviewTarget.item.productId || reviewTarget.order.id,
+          orderId: reviewTarget.order.id,
+          customerName: profile?.fullName || user.user_metadata?.full_name || 'Verified Customer',
+          customerCity: reviewTarget.order.city || addresses.find((a) => a.isDefault)?.city || undefined,
+          rating: reviewRating,
+          comment: reviewComment.trim(),
+        },
+        session?.access_token
+      );
+
+      setReviewSuccess(true);
+      await refreshData();
+
+      setTimeout(() => {
+        setReviewTarget(null);
+        setReviewSuccess(false);
+      }, 1800);
+    } catch (err: any) {
+      setReviewError(err?.message || 'Failed to submit review.');
+    } finally {
+      setReviewSubmitting(false);
     }
   };
 
@@ -253,7 +322,20 @@ export default function AccountPage() {
             }`}
           >
             <Package className="w-4 h-4" />
-            <span>Orders ({customerOrders.length})</span>
+            <span>My Orders ({customerOrders.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('reviews')}
+            className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'reviews'
+                ? 'bg-champagne-500 text-charcoal-950 shadow-xs'
+                : 'text-charcoal-600 dark:text-[#8E8A80] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D]'
+            }`}
+          >
+            <Star className="w-4 h-4" />
+            <span>My Reviews ({customerReviews.length})</span>
           </button>
         </div>
 
@@ -300,37 +382,37 @@ export default function AccountPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    placeholder="03001234567"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">WhatsApp Number</label>
-                  <input
-                    type="tel"
-                    placeholder="03088666075"
-                    value={whatsappNumber}
-                    onChange={(e) => setWhatsappNumber(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
-                  />
-                </div>
+              <div>
+                <label className="block font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  placeholder="03001234567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
+                />
               </div>
 
-              <button
-                type="submit"
-                disabled={isUpdatingProfile}
-                className="py-2.5 px-6 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 font-bold text-xs rounded-xl shadow-xs transition-all disabled:opacity-50"
-              >
-                {isUpdatingProfile ? 'Saving...' : 'Update Profile'}
-              </button>
+              <div>
+                <label className="block font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">WhatsApp Number (Optional)</label>
+                <input
+                  type="tel"
+                  placeholder="03001234567"
+                  value={whatsappNumber}
+                  onChange={(e) => setWhatsappNumber(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isUpdatingProfile}
+                  className="py-2.5 px-5 bg-champagne-500 text-charcoal-950 rounded-xl font-bold hover:bg-champagne-400 transition-colors shadow-xs"
+                >
+                  {isUpdatingProfile ? 'Saving Changes...' : 'Save Profile'}
+                </button>
+              </div>
             </form>
           </div>
         )}
@@ -339,13 +421,13 @@ export default function AccountPage() {
         {activeTab === 'addresses' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-charcoal-900 dark:text-[#F4F1E9]">Saved Delivery Addresses</h2>
+              <h2 className="text-lg font-bold text-charcoal-900 dark:text-[#F4F1E9]">Saved Delivery Addresses</h2>
               <button
                 type="button"
                 onClick={() => setIsAddingAddress(true)}
-                className="py-2.5 px-4 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs"
+                className="py-2 px-4 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 <span>Add Address</span>
               </button>
             </div>
@@ -473,24 +555,35 @@ export default function AccountPage() {
                       </div>
                     </div>
 
+                    <div>
+                      <label className="block text-charcoal-700 dark:text-[#B8B3A8] font-semibold mb-1">Postal Code (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 54000"
+                        value={postalCode}
+                        onChange={(e) => setPostalCode(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
+                      />
+                    </div>
+
                     <div className="flex items-center gap-2 pt-1">
                       <input
                         type="checkbox"
                         id="isDefault"
                         checked={isDefault}
                         onChange={(e) => setIsDefault(e.target.checked)}
-                        className="accent-[#B89555] w-4 h-4 rounded"
+                        className="rounded border-light-border dark:border-[#34322D] text-champagne-500 focus:ring-champagne-500"
                       />
-                      <label htmlFor="isDefault" className="text-charcoal-700 dark:text-[#B8B3A8] font-medium cursor-pointer">
+                      <label htmlFor="isDefault" className="text-charcoal-700 dark:text-[#B8B3A8]">
                         Set as default address
                       </label>
                     </div>
 
-                    <div className="flex justify-end gap-2.5 pt-3 border-t border-light-border dark:border-[#34322D]">
+                    <div className="pt-3 flex justify-end gap-2.5 border-t border-light-border dark:border-[#34322D]">
                       <button
                         type="button"
                         onClick={() => setIsAddingAddress(false)}
-                        className="py-2.5 px-4 bg-light-elevated dark:bg-[#22211E] text-charcoal-600 dark:text-[#8E8A80] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] rounded-xl font-semibold border border-light-border dark:border-[#34322D]"
+                        className="py-2.5 px-4 bg-light-elevated dark:bg-[#22211E] text-charcoal-700 dark:text-[#D7D7D4] rounded-xl font-semibold hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D]"
                       >
                         Cancel
                       </button>
@@ -537,76 +630,322 @@ export default function AccountPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {customerOrders.map((ord) => (
-                  <div
-                    key={ord.id}
-                    className="bg-white dark:bg-[#191917] rounded-2xl p-6 border border-light-border dark:border-[#34322D] shadow-sm space-y-4"
+                {customerOrders.map((ord) => {
+                  const isDelivered = ord.status?.toLowerCase() === 'delivered';
+
+                  return (
+                    <div
+                      key={ord.id}
+                      className="bg-white dark:bg-[#191917] rounded-2xl p-6 border border-light-border dark:border-[#34322D] shadow-sm space-y-4"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-light-border dark:border-[#34322D] pb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-[#B89555] dark:text-[#C9A96A] font-mono">
+                            Order #{ord.orderNumber}
+                          </span>
+                          {ord.isWholesale && (
+                            <span className="text-[10px] font-bold bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                              Wholesale
+                            </span>
+                          )}
+                          <span className="text-xs text-charcoal-400 dark:text-[#8E8A80]">
+                            {new Date(ord.createdAt).toLocaleDateString('en-PK', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${
+                              isDelivered
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+                                : ord.status === 'Cancelled'
+                                ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-800'
+                                : ord.status === 'Pending'
+                                ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800'
+                                : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800/60'
+                            }`}
+                          >
+                            {ord.status}
+                          </span>
+                          <span className="text-xs font-extrabold text-[#B89555] dark:text-[#C9A96A]">
+                            Rs. {ord.totalAmount.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Items with Delivered-Only Review Action */}
+                      <div className="space-y-2.5 text-xs">
+                        {ord.items.map((it, idx) => {
+                          const existingReview = customerReviews.find(
+                            (r) =>
+                              (it.productId && r.productId === it.productId) ||
+                              (r.orderId && r.orderId === ord.id)
+                          );
+
+                          return (
+                            <div
+                              key={idx}
+                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-xl bg-light-elevated/50 dark:bg-[#22211E]/50 border border-light-border/60 dark:border-[#34322D]/60"
+                            >
+                              <div>
+                                <div className="font-semibold text-charcoal-900 dark:text-[#F4F1E9]">
+                                  {it.productName}
+                                </div>
+                                <div className="text-[11px] text-charcoal-500 dark:text-[#8E8A80] mt-0.5">
+                                  {it.quality} • {it.sleeve} • Size {it.size} • Qty: {it.quantity}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 self-end sm:self-auto">
+                                <span className="font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+                                  Rs. {it.totalPrice.toLocaleString()}
+                                </span>
+
+                                {/* CRITICAL: ONLY SHOW WRITE A REVIEW IF STATUS IS DELIVERED */}
+                                {isDelivered ? (
+                                  existingReview ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 rounded-lg">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Reviewed ({existingReview.rating}★)</span>
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => openReviewModal(ord, it)}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#B89555] hover:bg-[#A38346] text-black font-bold text-xs rounded-xl shadow-xs transition-colors"
+                                    >
+                                      <Star className="w-3.5 h-3.5 fill-black" />
+                                      <span>Write a Review</span>
+                                    </button>
+                                  )
+                                ) : (
+                                  // Non-delivered orders show NO review submission button
+                                  null
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {ord.wholesaleDiscount && ord.wholesaleDiscount > 0 && (
+                        <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg text-emerald-800 dark:text-emerald-300 text-xs font-bold flex justify-between">
+                          <span>Wholesale Discount Applied:</span>
+                          <span>- Rs. {ord.wholesaleDiscount.toLocaleString()}</span>
+                        </div>
+                      )}
+
+                      <div className="text-[11px] text-charcoal-500 dark:text-[#8E8A80] pt-2 border-t border-light-border dark:border-[#34322D] flex flex-col sm:flex-row sm:justify-between gap-1">
+                        <span>Delivery Destination: {ord.address}, {ord.city}</span>
+                        <span>Payment: {ord.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Direct Bank Transfer'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: My Reviews */}
+        {activeTab === 'reviews' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold text-charcoal-900 dark:text-[#F4F1E9]">My Reviews</h2>
+            {customerReviews.length === 0 ? (
+              <div className="p-8 bg-white dark:bg-[#191917] rounded-2xl border border-light-border dark:border-[#34322D] text-center space-y-3 shadow-sm">
+                <Star className="w-8 h-8 text-charcoal-400 dark:text-[#8E8A80] mx-auto text-[#B89555]" />
+                <h3 className="font-bold text-charcoal-900 dark:text-[#F4F1E9] text-sm">No reviews submitted yet</h3>
+                <p className="text-xs text-charcoal-500 dark:text-[#8E8A80] max-w-md mx-auto">
+                  You can submit genuine reviews for products once your order has been marked as Delivered.
+                </p>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('orders')}
+                    className="py-2.5 px-5 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 font-bold text-xs rounded-xl shadow-xs"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-light-border dark:border-[#34322D] pb-3">
+                    View My Orders
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {customerReviews.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className="p-5 bg-white dark:bg-[#191917] rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm space-y-2.5"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-[#B89555] dark:text-[#C9A96A] font-mono">
-                          Order #{ord.orderNumber}
+                        <span className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9]">
+                          {rev.customerName}
                         </span>
-                        {ord.isWholesale && (
-                          <span className="text-[10px] font-bold bg-champagne-100 dark:bg-[#22211E] text-[#96763D] dark:text-[#C9A96A] border border-[#B89555]/30 px-2 py-0.5 rounded uppercase tracking-wider">
-                            Wholesale
+                        {rev.customerCity && (
+                          <span className="text-xs text-charcoal-500 dark:text-[#8E8A80]">
+                            ({rev.customerCity})
                           </span>
                         )}
-                        <span className="text-xs text-charcoal-400 dark:text-[#8E8A80] ml-1">
-                          {new Date(ord.createdAt).toLocaleDateString('en-PK', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded-md">
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                          <span>Verified Purchase</span>
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${
-                            ord.status === 'Delivered'
-                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
-                              : ord.status === 'Cancelled'
-                              ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-800'
-                              : ord.status === 'Pending'
-                              ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800'
-                              : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800/60'
-                          }`}
+                      <div className="flex text-[#B89555] dark:text-[#C9A96A]">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-3.5 h-3.5 ${
+                              star <= rev.rating ? 'fill-current' : 'text-charcoal-300 dark:text-[#6E6A62]'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-charcoal-700 dark:text-[#D7D7D4] leading-relaxed">
+                      {rev.comment}
+                    </p>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-light-border dark:border-[#34322D] text-[10px] text-charcoal-400 dark:text-[#8E8A80]">
+                      <span>
+                        {new Date(rev.createdAt).toLocaleDateString('en-PK', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+
+                      {rev.productId && (
+                        <Link
+                          href={`/product/${rev.productId}#reviews-section`}
+                          className="text-[#B89555] dark:text-[#C9A96A] hover:underline flex items-center gap-1 font-semibold"
                         >
-                          {ord.status}
-                        </span>
-                        <span className="text-xs font-extrabold text-[#B89555] dark:text-[#C9A96A]">
-                          Rs. {ord.totalAmount.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 text-xs">
-                      {ord.items.map((it, idx) => (
-                        <div key={idx} className="flex justify-between text-charcoal-700 dark:text-[#B8B3A8]">
-                          <span>
-                            {it.productName} ({it.quality}, {it.sleeve}, Size {it.size}) x {it.quantity}
-                          </span>
-                          <span className="font-semibold text-charcoal-900 dark:text-[#F4F1E9]">Rs. {it.totalPrice.toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {ord.wholesaleDiscount && ord.wholesaleDiscount > 0 && (
-                      <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg text-emerald-800 dark:text-emerald-300 text-xs font-bold flex justify-between">
-                        <span>Wholesale Discount Applied:</span>
-                        <span>- Rs. {ord.wholesaleDiscount.toLocaleString()}</span>
-                      </div>
-                    )}
-
-                    <div className="text-[11px] text-charcoal-500 dark:text-[#8E8A80] pt-2 border-t border-light-border dark:border-[#34322D] flex flex-col sm:flex-row sm:justify-between gap-1">
-                      <span>Delivery Destination: {ord.address}, {ord.city}</span>
-                      <span>Payment: {ord.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Direct Bank Transfer'}</span>
+                          <span>View on Product Page</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Review Submission Modal for Delivered Orders */}
+        {reviewTarget && (
+          <div
+            className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+            onClick={() => !reviewSubmitting && setReviewTarget(null)}
+          >
+            <div
+              className="bg-white dark:bg-[#191917] rounded-2xl p-6 max-w-md w-full shadow-elevation border border-light-border dark:border-[#34322D] space-y-4 text-charcoal-900 dark:text-[#F4F1E9]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-light-border dark:border-[#34322D] pb-3">
+                <div>
+                  <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9]">
+                    Review {reviewTarget.item.productName}
+                  </h3>
+                  <p className="text-[10px] text-[#B89555] dark:text-[#C9A96A] font-mono">
+                    Order #{reviewTarget.order.orderNumber} • Delivered
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => !reviewSubmitting && setReviewTarget(null)}
+                  className="text-charcoal-400 dark:text-[#8E8A80] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {reviewSuccess ? (
+                <div className="p-6 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl text-center space-y-2">
+                  <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-600 dark:text-emerald-400" />
+                  <p className="text-xs font-bold">Review Submitted Successfully!</p>
+                  <p className="text-[11px]">Thank you for verifying your delivered purchase.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitReview} className="space-y-3.5 text-xs">
+                  {reviewError && (
+                    <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 rounded-xl text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{reviewError}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
+                      Your Rating *
+                    </label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className="p-1 text-[#B89555] dark:text-[#C9A96A] hover:scale-110 transition-transform"
+                        >
+                          <Star
+                            className={`w-6 h-6 ${
+                              star <= reviewRating ? 'fill-current' : 'text-charcoal-300 dark:text-[#6E6A62]'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
+                      Product Variant
+                    </label>
+                    <div className="p-2.5 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] text-charcoal-600 dark:text-[#8E8A80]">
+                      {reviewTarget.item.quality} • {reviewTarget.item.sleeve} • Size {reviewTarget.item.size}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
+                      Review Message *
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Share your experience with fabric breathability, softness, stitching, and sizing..."
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] rounded-xl focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
+                    />
+                  </div>
+
+                  <div className="pt-3 flex justify-end gap-2.5 border-t border-light-border dark:border-[#34322D]">
+                    <button
+                      type="button"
+                      disabled={reviewSubmitting}
+                      onClick={() => setReviewTarget(null)}
+                      className="py-2 px-4 bg-light-elevated dark:bg-[#22211E] text-charcoal-700 dark:text-[#D7D7D4] rounded-xl font-semibold hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={reviewSubmitting}
+                      className="py-2 px-5 bg-champagne-500 hover:bg-champagne-400 text-charcoal-950 font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2"
+                    >
+                      {reviewSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>{reviewSubmitting ? 'Submitting...' : 'Submit Verified Review'}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         )}
       </div>

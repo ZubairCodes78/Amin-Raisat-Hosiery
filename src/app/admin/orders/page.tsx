@@ -29,7 +29,7 @@ import { formatWhatsAppNumber } from '@/lib/whatsapp';
 const ALL_STATUSES: OrderStatus[] = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'];
 
 export default function AdminOrdersPage() {
-  const { orders, updateOrderStatus, refreshData, isLoading } = useStore();
+  const { orders, products, updateOrderStatus, refreshData, isLoading } = useStore();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [wholesaleFilter, setWholesaleFilter] = useState<string>('all');
@@ -375,14 +375,17 @@ export default function AdminOrdersPage() {
                       `Assalam-o-Alaikum ${ord.customerName}, this is Amin Raisat Hosiery regarding your Order #${ord.orderNumber}.`
                     )}`;
 
-                    // WhatsApp Review Request Link
-                    const firstItemSlug = ord.items?.[0]?.productName
+                    // WhatsApp Review Request Link for Delivered Orders
+                    const matchingProd = ord.items?.[0]?.productId
+                      ? products.find((p) => p.id === ord.items[0].productId)
+                      : null;
+                    const firstItemSlug = matchingProd?.slug || (ord.items?.[0]?.productName
                       ? ord.items[0].productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-                      : '';
+                      : '');
                     const productReviewUrl = firstItemSlug
                       ? `https://aminhosiery.com/product/${firstItemSlug}#reviews-section`
                       : `https://aminhosiery.com/#reviews`;
-                    const reviewMsg = `Assalam-o-Alaikum ${ord.customerName}! Thank you for shopping with Amin Raisat Hosiery. We hope you are loving your 100% Combed Cotton innerwear from order #${ord.orderNumber}. Could you please take a moment to leave us a quick review and rating here: ${productReviewUrl} — JazakAllah Khair!`;
+                    const reviewMsg = `Hi ${ord.customerName},\n\nThank you for shopping with Amin Raisat Hosiery.\n\nYour order #${ord.orderNumber} has been delivered.\n\nWe would love to hear your feedback.\n\nPlease share your review:\n${productReviewUrl}\n\nThank you!`;
                     const whatsappReviewLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(reviewMsg)}`;
 
                     return (
@@ -522,13 +525,16 @@ export default function AdminOrdersPage() {
                   `Assalam-o-Alaikum ${ord.customerName}, this is Amin Raisat Hosiery regarding your Order #${ord.orderNumber}.`
                 )}`;
 
-                const firstItemSlug = ord.items?.[0]?.productName
+                const matchingDrawerProd = ord.items?.[0]?.productId
+                  ? products.find((p) => p.id === ord.items[0].productId)
+                  : null;
+                const firstItemSlug = matchingDrawerProd?.slug || (ord.items?.[0]?.productName
                   ? ord.items[0].productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-                  : '';
+                  : '');
                 const productReviewUrl = firstItemSlug
                   ? `https://aminhosiery.com/product/${firstItemSlug}#reviews-section`
                   : `https://aminhosiery.com/#reviews`;
-                const reviewMsg = `Assalam-o-Alaikum ${ord.customerName}! Thank you for shopping with Amin Raisat Hosiery. We hope you are loving your 100% Combed Cotton innerwear from order #${ord.orderNumber}. Could you please take a moment to leave us a quick review and rating here: ${productReviewUrl} — JazakAllah Khair!`;
+                const reviewMsg = `Hi ${ord.customerName},\n\nThank you for shopping with Amin Raisat Hosiery.\n\nYour order #${ord.orderNumber} has been delivered.\n\nWe would love to hear your feedback.\n\nPlease share your review:\n${productReviewUrl}\n\nThank you!`;
                 const whatsappReviewLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(reviewMsg)}`;
 
                 return (

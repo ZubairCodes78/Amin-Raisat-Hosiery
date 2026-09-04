@@ -1260,25 +1260,31 @@ export class DataStore {
     return [];
   }
 
-  static async submitReview(review: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>): Promise<ProductReview> {
+  static async submitReview(
+    review: Omit<ProductReview, 'id' | 'createdAt' | 'isApproved'>,
+    token?: string
+  ): Promise<ProductReview> {
     if (this.isClient()) {
-      try {
-        const res = await fetch('/api/reviews', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(review),
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.review) {
-            const existing = await this.getReviews();
-            const updated = [json.review, ...existing.filter((r) => r.id !== json.review.id)];
-            localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(updated));
-            return json.review;
-          }
-        }
-      } catch (err) {
-        console.warn('API /api/reviews error, falling back to direct persistence:', err);
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(review),
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to submit review. Only verified delivered purchases can be reviewed.');
+      }
+
+      if (json.success && json.review) {
+        const existing = await this.getReviews();
+        const updated = [json.review, ...existing.filter((r) => r.id !== json.review.id)];
+        localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(updated));
+        return json.review;
       }
     }
 
