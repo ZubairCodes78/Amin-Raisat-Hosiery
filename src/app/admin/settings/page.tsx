@@ -78,8 +78,8 @@ export default function AdminSettingsPage() {
       }, 3500);
     } catch (err: any) {
       console.error('Settings update error:', err);
-      setToastMessage('Error updating settings. Please try again.');
-      setTimeout(() => setToastMessage(''), 3500);
+      setToastMessage(`Settings save failed: ${err instanceof Error ? err.message : 'Unknown error. Please try again.'}`);
+      setTimeout(() => setToastMessage(''), 5000);
     } finally {
       setIsSaving(false);
     }

@@ -19,13 +19,13 @@ export const AnnouncementMarquee: React.FC = () => {
     return null;
   }
 
-  const freeThreshold = settings.shipping?.freeDeliveryThreshold ?? 3;
-
-  // Use configured announcement strips if present and active
+  // Use configured announcement strips if present and active — sorted by displayOrder
   let stripsToDisplay: { icon: any; text: string }[] = [];
 
   if (settings.announcementStrips && Array.isArray(settings.announcementStrips)) {
-    const activeCustom = settings.announcementStrips.filter((s) => s.isActive);
+    const activeCustom = settings.announcementStrips
+      .filter((s) => s.isActive)
+      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
     if (activeCustom.length > 0) {
       stripsToDisplay = activeCustom.map((s) => ({
         icon: (s.icon && ICON_MAP[s.icon.toLowerCase()]) || CheckCircle,
@@ -34,26 +34,15 @@ export const AnnouncementMarquee: React.FC = () => {
     }
   }
 
-  // Fallback if no custom strips are defined or active
+  // Fallback: use the single "Default Static Announcement Text" from Admin settings
   if (stripsToDisplay.length === 0) {
-    stripsToDisplay = [
-      {
-        icon: Truck,
-        text: `FREE DELIVERY ON ${freeThreshold}+ PIECES ACROSS PAKISTAN`,
-      },
-      {
-        icon: ShieldCheck,
-        text: '100% Pure Combed Cotton — Breathable Rib Weave & Anti-Sag Seams',
-      },
-      {
-        icon: CheckCircle,
-        text: 'Cash on Delivery (COD) & Direct Bank Transfer Available Across Pakistan',
-      },
-      {
-        icon: PhoneCall,
-        text: 'Official WhatsApp Ordering & 24/7 Customer Support Across Pakistan',
-      },
-    ];
+    const fallbackText = settings.announcementText;
+    if (fallbackText && fallbackText.trim().length > 0) {
+      stripsToDisplay = [{ icon: CheckCircle, text: fallbackText }];
+    } else {
+      // No strips and no fallback text — hide the bar entirely
+      return null;
+    }
   }
 
   return (

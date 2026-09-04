@@ -331,6 +331,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     isPublished: true,
     isWholesaleEnabled: true,
     wholesaleMinQty: 12,
+    sizeGuideUrl: 'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/products/f0000000-0000-0000-0000-000000000001/size-guide/arh_mens_vest_size_chart.webp',
     createdAt: new Date().toISOString(),
     media: [
       {
@@ -354,6 +355,16 @@ export const INITIAL_PRODUCTS: Product[] = [
         displayOrder: 2,
         variantQuality: 'High Quality',
         variantSleeve: 'Full Sleeve',
+      },
+      {
+        id: 'med-hq-sg',
+        productId: 'f0000000-0000-0000-0000-000000000001',
+        type: 'size_guide',
+        url: 'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/products/f0000000-0000-0000-0000-000000000001/size-guide/arh_mens_vest_size_chart.webp',
+        alt: "Men's Pure Cotton Vest Size Guide Chart",
+        title: 'Size Guide',
+        variantSleeve: 'size_guide',
+        displayOrder: 99,
       },
     ],
     variants: [
@@ -410,6 +421,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     isPublished: true,
     isWholesaleEnabled: true,
     wholesaleMinQty: 12,
+    sizeGuideUrl: 'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/products/f0000000-0000-0000-0000-000000000001/size-guide/arh_mens_vest_size_chart.webp',
     createdAt: new Date().toISOString(),
     media: [
       {
@@ -422,6 +434,16 @@ export const INITIAL_PRODUCTS: Product[] = [
         displayOrder: 1,
         variantQuality: 'Standard Quality',
         variantSleeve: 'Sleeveless',
+      },
+      {
+        id: 'med-sq-sg',
+        productId: 'f0000000-0000-0000-0000-000000000002',
+        type: 'size_guide',
+        url: 'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/products/f0000000-0000-0000-0000-000000000001/size-guide/arh_mens_vest_size_chart.webp',
+        alt: "Men's Pure Cotton Vest Size Guide Chart",
+        title: 'Size Guide',
+        variantSleeve: 'size_guide',
+        displayOrder: 99,
       },
     ],
     variants: [

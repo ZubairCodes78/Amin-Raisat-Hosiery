@@ -40,12 +40,59 @@ export class DataStore {
   // ============================================================================
   // 1. FILE UPLOADER (SUPABASE STORAGE BUCKET -> PUBLIC CDN URL)
   // ============================================================================
-  static async uploadMediaFile(file: File, bucket = 'product-media'): Promise<string> {
-    let targetBucket = bucket;
-    if (targetBucket === 'products' || targetBucket === 'arh_products_v6' || !targetBucket) {
-      targetBucket = 'product-media';
-    } else if (targetBucket === 'desktop-hero' || targetBucket === 'mobile-hero' || targetBucket === 'hero') {
+  static async uploadMediaFile(
+    file: File,
+    folderOrBucket = 'product-media',
+    subfolder?: string
+  ): Promise<string> {
+    // 1. Client-side File Validation
+    const validMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
+    const validExts = ['jpg', 'jpeg', 'png', 'webp'];
+    const isMimeValid = file.type ? validMimes.includes(file.type.toLowerCase()) : false;
+    const isExtValid = validExts.includes(fileExt);
+
+    if (!isMimeValid && !isExtValid) {
+      throw new Error('Please upload a valid image (JPG, PNG, or WebP).');
+    }
+
+    const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10MB limit
+    if (file.size > MAX_SIZE_BYTES) {
+      throw new Error('Image size is too large. Maximum allowed size is 10MB.');
+    }
+
+    // 2. Strict Bucket Resolution
+    // Existing Supabase buckets: ONLY 'product-media' and 'hero-slides'.
+    let targetBucket = 'product-media';
+    if (
+      folderOrBucket === 'hero-slides' ||
+      folderOrBucket === 'hero' ||
+      folderOrBucket === 'desktop-hero' ||
+      folderOrBucket === 'mobile-hero'
+    ) {
       targetBucket = 'hero-slides';
+    } else {
+      targetBucket = 'product-media';
+    }
+
+    // 3. Clean Folder Structure Organization
+    let folderPath = '';
+    if (subfolder && subfolder.trim()) {
+      folderPath = subfolder.trim().replace(/^\/+|\/+$/g, '');
+    } else if (folderOrBucket.includes('/')) {
+      folderPath = folderOrBucket.trim().replace(/^\/+|\/+$/g, '');
+    } else if (
+      folderOrBucket === 'size-guides' ||
+      folderOrBucket === 'size-guide' ||
+      folderOrBucket === 'sizeguide'
+    ) {
+      folderPath = 'products/size-guide';
+    } else if (folderOrBucket === 'payment-receipts' || folderOrBucket === 'receipts') {
+      folderPath = 'receipts';
+    } else if (targetBucket === 'hero-slides') {
+      folderPath = '';
+    } else {
+      folderPath = 'products';
     }
 
     if (!isSupabaseConfigured()) {
@@ -53,25 +100,44 @@ export class DataStore {
     }
 
     try {
-      const fileExt = file.name.split('.').pop() || 'webp';
       const cleanName = file.name
         .replace(/\.[^/.]+$/, '')
         .replace(/[^a-zA-Z0-9_-]/g, '_')
-        .toLowerCase();
-      const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
+        .toLowerCase()
+        .slice(0, 50);
+      const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const fileName = `${uniqueSuffix}_${cleanName}.${fileExt || 'webp'}`;
+      const storagePath = folderPath ? `${folderPath}/${fileName}` : fileName;
 
       const { data, error } = await supabaseBrowser.storage
         .from(targetBucket)
-        .upload(fileName, file, {
+        .upload(storagePath, file, {
           cacheControl: '3600',
-          upsert: true,
+          upsert: false,
         });
 
       if (error) {
-        console.error(`Supabase storage upload error in bucket '${targetBucket}':`, error.message);
-        const lowerMsg = error.message.toLowerCase();
-        if (lowerMsg.includes('quota') || lowerMsg.includes('payload too large') || lowerMsg.includes('storage limit')) {
-          throw new Error('Storage limit reached. Please remove unused media from Supabase Storage or upgrade the storage plan.');
+        console.error(`Supabase storage upload error in bucket '${targetBucket}' at path '${storagePath}':`, error);
+        const lowerMsg = (error.message || '').toLowerCase();
+        if (lowerMsg.includes('bucket not found')) {
+          throw new Error(`Storage bucket '${targetBucket}' not found.`);
+        }
+        if (
+          lowerMsg.includes('quota') ||
+          lowerMsg.includes('payload too large') ||
+          lowerMsg.includes('storage limit') ||
+          lowerMsg.includes('entity too large')
+        ) {
+          throw new Error('Image size is too large or storage quota exceeded.');
+        }
+        if (
+          lowerMsg.includes('security policy') ||
+          lowerMsg.includes('row-level security') ||
+          lowerMsg.includes('permission denied') ||
+          (error as any).statusCode === 403 ||
+          (error as any).statusCode === '403'
+        ) {
+          throw new Error('Permission denied. Storage upload policy does not allow this action.');
         }
         throw new Error(`Image upload failed: ${error.message}`);
       }
@@ -79,7 +145,7 @@ export class DataStore {
       if (data) {
         const { data: publicUrlData } = supabaseBrowser.storage
           .from(targetBucket)
-          .getPublicUrl(fileName);
+          .getPublicUrl(storagePath);
         if (publicUrlData?.publicUrl) {
           return publicUrlData.publicUrl;
         }
@@ -437,7 +503,11 @@ export class DataStore {
             shippingInfo: p.shipping_info || INITIAL_PRODUCTS[0].shippingInfo,
             returnPolicy: 'We offer hassle-free exchange within 7 days of delivery in case of sizing or defect issues. Product must be unwashed and in original condition.',
             videoUrl: p.video_url || p.product_media?.find((m: any) => m.media_type === 'video')?.url || undefined,
-            sizeGuideUrl: p.size_guide_url || p.product_media?.find((m: any) => m.media_type === 'size_guide')?.url || undefined,
+            sizeGuideUrl:
+              p.size_guide_url ||
+              p.product_media?.find((m: any) => m.media_type === 'size_guide')?.url ||
+              INITIAL_PRODUCTS.find((ip) => ip.slug === p.slug || p.slug?.startsWith(ip.slug))?.sizeGuideUrl ||
+              'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/products/f0000000-0000-0000-0000-000000000001/size-guide/arh_mens_vest_size_chart.webp',
             isPublished: p.is_published ?? true,
             isWholesaleEnabled: p.is_wholesale_enabled ?? true,
             wholesaleMinQty: p.wholesale_min_qty ? Number(p.wholesale_min_qty) : 12,
@@ -1139,9 +1209,7 @@ export class DataStore {
     if (isSupabaseConfigured()) {
       try {
         const adminDb = createAdminClient();
-        await adminDb
-          .from('site_settings')
-          .update({
+        const siteUpdatePayload: any = {
             brand_name: settings.brandName,
             owner_name: settings.ownerName,
             phone: settings.phone,
@@ -1153,10 +1221,23 @@ export class DataStore {
             account_title: settings.bankDetails.accountTitle,
             account_number: settings.bankDetails.accountNumber,
             iban: settings.bankDetails.iban,
+            bank_instructions: settings.bankDetails.instructions || '',
             is_store_open: settings.isStoreOpen,
+            is_announcement_enabled: settings.isAnnouncementEnabled,
+            is_whatsapp_floating_enabled: settings.isWhatsAppFloatingEnabled,
+            exchange_return_days: settings.exchangeReturnDays || 7,
             announcement_text: settings.announcementText,
             updated_at: new Date().toISOString(),
-          })
+        };
+        if (settings.announcementStrips) {
+          siteUpdatePayload.announcement_strips = settings.announcementStrips;
+        }
+        if (settings.paymentMethods) {
+          siteUpdatePayload.payment_methods = settings.paymentMethods;
+        }
+        await adminDb
+          .from('site_settings')
+          .update(siteUpdatePayload)
           .eq('id', 'b0000000-0000-0000-0000-000000000001');
 
         await adminDb

@@ -180,7 +180,7 @@ export async function POST(req: Request) {
     // Determine final delivery fee
     const hasWholesale = totalItemCount >= wholesaleMinQty || clientIsWholesale;
     let deliveryFee = baseDeliveryCharge;
-    if (subtotal >= freeDeliveryThreshold && !hasWholesale) {
+    if (totalItemCount >= freeDeliveryThreshold || hasWholesale) {
       deliveryFee = 0;
     }
 

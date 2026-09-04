@@ -110,7 +110,7 @@ export async function POST(req: Request) {
       .single();
 
     // If optional columns not present in DB schema, omit and retry
-    if (prodErr && prodErr.code === 'PGRST204') {
+    if (prodErr && (prodErr.code === 'PGRST204' || prodErr.code === '42703' || prodErr.message?.includes('does not exist'))) {
       delete duplicatePayload.short_description;
       delete duplicatePayload.video_url;
       delete duplicatePayload.size_guide_url;

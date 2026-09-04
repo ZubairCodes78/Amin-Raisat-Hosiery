@@ -75,7 +75,11 @@ export async function GET() {
         shippingInfo: p.shipping_info || '',
         returnPolicy: 'Hassle-free exchange within 7 days of delivery for sizing or manufacturing defect.',
         videoUrl: p.video_url || videoMedia?.url || undefined,
-        sizeGuideUrl: p.size_guide_url || sizeGuideMedia?.url || undefined,
+        sizeGuideUrl:
+          p.size_guide_url ||
+          sizeGuideMedia?.url ||
+          INITIAL_PRODUCTS.find((ip) => ip.slug === p.slug || p.slug?.startsWith(ip.slug))?.sizeGuideUrl ||
+          'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/products/f0000000-0000-0000-0000-000000000001/size-guide/arh_mens_vest_size_chart.webp',
         isPublished: p.is_published ?? true,
         isWholesaleEnabled: p.is_wholesale_enabled ?? true,
         wholesaleMinQty: p.wholesale_min_qty ? Number(p.wholesale_min_qty) : 12,
@@ -241,7 +245,7 @@ export async function POST(req: Request) {
     savedProd = res1.data;
     prodErr = res1.error;
 
-    if (prodErr && prodErr.code === 'PGRST204') {
+    if (prodErr && (prodErr.code === 'PGRST204' || prodErr.code === '42703' || prodErr.message?.includes('does not exist'))) {
       // Omit optional wholesale & new columns if schema migration hasn't added them yet
       delete productPayload.is_wholesale_enabled;
       delete productPayload.wholesale_min_qty;

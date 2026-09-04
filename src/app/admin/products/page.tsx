@@ -301,7 +301,7 @@ function AdminProductsContent() {
 
     // MANDATORY Size Guide validation
     if (!prodSizeGuideUrl.trim()) {
-      showNotice('Size Guide image is required. Please upload a Size Guide image before saving the product.', 'error');
+      showNotice('Size Guide image is required.', 'error');
       setEditorTab('sizeguide');
       return;
     }
@@ -671,7 +671,10 @@ function AdminProductsContent() {
         }
 
         // Upload to Supabase Storage bucket 'product-media'
-        const uploadedUrl = await uploadMediaFile(fileToUpload, 'product-media');
+        const prodMediaFolder = editingProductId
+          ? `products/${editingProductId}/images`
+          : 'products/images';
+        const uploadedUrl = await uploadMediaFile(fileToUpload, 'product-media', prodMediaFolder);
 
         // Safety check: Never accept Base64 Data URLs
         if (uploadedUrl.startsWith('data:image')) {
@@ -2093,14 +2096,17 @@ function AdminProductsContent() {
                         <span>{isUploadingSizeGuide ? 'Uploading...' : 'Replace Image'}</span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/png,image/webp"
                           disabled={isUploadingSizeGuide}
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
                             try {
                               setIsUploadingSizeGuide(true);
-                              const url = await uploadMediaFile(file, 'size-guides');
+                              const prodFolder = editingProductId
+                                ? `products/${editingProductId}/size-guide`
+                                : `products/new_${Date.now()}/size-guide`;
+                              const url = await uploadMediaFile(file, 'product-media', prodFolder);
                               setProdSizeGuideUrl(url);
                               showNotice('New Size Guide image uploaded and replaced successfully.');
                             } catch (err: any) {
@@ -2108,6 +2114,7 @@ function AdminProductsContent() {
                               showNotice(err?.message || 'Failed to replace Size Guide image.', 'error');
                             } finally {
                               setIsUploadingSizeGuide(false);
+                              e.target.value = '';
                             }
                           }}
                           className="hidden"
@@ -2128,14 +2135,17 @@ function AdminProductsContent() {
                 <div className="p-8 border-2 border-dashed border-rose-300 dark:border-rose-900/60 hover:border-[#B89555] rounded-2xl text-center transition-colors bg-rose-50/30 dark:bg-rose-950/10 space-y-3 relative">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     disabled={isUploadingSizeGuide}
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       try {
                         setIsUploadingSizeGuide(true);
-                        const url = await uploadMediaFile(file, 'size-guides');
+                        const prodFolder = editingProductId
+                          ? `products/${editingProductId}/size-guide`
+                          : `products/new_${Date.now()}/size-guide`;
+                        const url = await uploadMediaFile(file, 'product-media', prodFolder);
                         setProdSizeGuideUrl(url);
                         showNotice('Size Guide image uploaded successfully.');
                       } catch (err: any) {
@@ -2143,6 +2153,7 @@ function AdminProductsContent() {
                         showNotice(err?.message || 'Failed to upload Size Guide image.', 'error');
                       } finally {
                         setIsUploadingSizeGuide(false);
+                        e.target.value = '';
                       }
                     }}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"

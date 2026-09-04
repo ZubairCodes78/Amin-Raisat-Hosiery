@@ -22,7 +22,11 @@ export async function GET() {
             ...p,
             shortDescription: p.short_description || p.subtitle || '',
             videoUrl: p.video_url || videoMedia?.url || undefined,
-            sizeGuideUrl: p.size_guide_url || sizeGuideMedia?.url || undefined,
+            sizeGuideUrl:
+              p.size_guide_url ||
+              sizeGuideMedia?.url ||
+              INITIAL_PRODUCTS.find((ip) => ip.slug === p.slug || p.slug?.startsWith(ip.slug))?.sizeGuideUrl ||
+              'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/products/f0000000-0000-0000-0000-000000000001/size-guide/arh_mens_vest_size_chart.webp',
           };
         });
 

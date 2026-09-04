@@ -65,6 +65,7 @@ export async function GET() {
       isAnnouncementEnabled: siteData?.is_announcement_enabled ?? true,
       announcementText: siteData?.announcement_text || INITIAL_SITE_SETTINGS.announcementText,
       exchangeReturnDays: siteData?.exchange_return_days ? Number(siteData.exchange_return_days) : 7,
+      isWhatsAppFloatingEnabled: siteData?.is_whatsapp_floating_enabled ?? true,
     };
 
     return NextResponse.json({ settings: mergedSettings });
@@ -149,7 +150,11 @@ export async function POST(req: Request) {
       account_title: body.bankDetails?.accountTitle || 'Muhammad Amin',
       account_number: body.bankDetails?.accountNumber || '01010101010101',
       iban: body.bankDetails?.iban || 'PK00MEZN0000000000000000',
+      bank_instructions: body.bankDetails?.instructions || '',
       is_store_open: body.isStoreOpen ?? true,
+      is_announcement_enabled: body.isAnnouncementEnabled ?? true,
+      is_whatsapp_floating_enabled: body.isWhatsAppFloatingEnabled ?? true,
+      exchange_return_days: body.exchangeReturnDays ? Number(body.exchangeReturnDays) : 7,
       announcement_text: body.announcementText || '',
       updated_at: new Date().toISOString(),
     };
@@ -163,11 +168,26 @@ export async function POST(req: Request) {
 
     let { error: siteErr } = await db.from('site_settings').upsert(sitePayload);
 
-    // If column doesn't exist yet (PGRST204), omit optional jsonb columns and retry
+    // If any column doesn't exist yet (PGRST204), fallback to core confirmed columns
     if (siteErr && siteErr.code === 'PGRST204') {
-      delete sitePayload.announcement_strips;
-      delete sitePayload.payment_methods;
-      const retry = await db.from('site_settings').upsert(sitePayload);
+      const corePayload: any = {
+        id: targetSiteId,
+        brand_name: sitePayload.brand_name,
+        owner_name: sitePayload.owner_name,
+        phone: sitePayload.phone,
+        whatsapp: sitePayload.whatsapp,
+        email: sitePayload.email,
+        market: sitePayload.market,
+        currency: sitePayload.currency,
+        bank_name: sitePayload.bank_name,
+        account_title: sitePayload.account_title,
+        account_number: sitePayload.account_number,
+        iban: sitePayload.iban,
+        is_store_open: sitePayload.is_store_open,
+        announcement_text: sitePayload.announcement_text,
+        updated_at: sitePayload.updated_at,
+      };
+      const retry = await db.from('site_settings').upsert(corePayload);
       siteErr = retry.error;
     }
 
