@@ -143,16 +143,11 @@ export default function ProductDetailPage() {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-charcoal-900 dark:text-[#F4F1E9] mt-1 tracking-tight leading-tight">
                 {product.name}
               </h1>
-              {product.subtitle && (
-                <p className="text-xs sm:text-sm text-charcoal-600 dark:text-[#B8B3A8] mt-1.5 font-normal leading-relaxed">
-                  {product.subtitle}
-                </p>
-              )}
 
-              {/* Short Description */}
-              {product.shortDescription && (
-                <p className="text-xs sm:text-sm text-charcoal-700 dark:text-[#D7D7D4] mt-2.5 font-medium leading-relaxed bg-white/80 dark:bg-[#191917]/80 p-3 rounded-xl border border-light-border dark:border-[#34322D]">
-                  {product.shortDescription}
+              {/* Short Description / Tagline */}
+              {(product.shortDescription || product.subtitle) && (
+                <p className="text-xs sm:text-sm text-charcoal-600 dark:text-[#B8B3A8] mt-1.5 font-normal leading-relaxed">
+                  {product.shortDescription || product.subtitle}
                 </p>
               )}
 
