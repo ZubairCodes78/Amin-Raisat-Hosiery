@@ -68,11 +68,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
 
   // Resolve matching photo for chosen sleeve
   const currentPhoto = useMemo(() => {
-    const match = product.media.find(
+    const match = photoMedia.find(
       (m) => !m.variantSleeve || m.variantSleeve === 'All' || m.variantSleeve === selectedSleeve
     );
     return match?.url || photoMedia[0]?.url || '/images/products/sleevless high.jpeg';
-  }, [product.media, photoMedia, selectedSleeve]);
+  }, [photoMedia, selectedSleeve]);
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -132,7 +132,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
     <div className="group bg-white dark:bg-[#191917] rounded-2xl border border-light-border dark:border-[#34322D] overflow-hidden flex flex-col justify-between shadow-sm hover:border-[#B89555]/60 dark:hover:border-[#C9A96A]/60 hover:shadow-md transition-all duration-300 relative w-full h-full text-charcoal-900 dark:text-[#F4F1E9]">
       <div className="flex-1 flex flex-col">
         {/* 1. Product Image Area */}
-        <div className="relative w-full h-60 sm:h-68 bg-light-elevated dark:bg-[#22211E] p-4 flex items-center justify-center overflow-hidden border-b border-light-border dark:border-[#34322D]">
+        <div className="relative w-full aspect-square bg-light-elevated dark:bg-[#22211E] overflow-hidden border-b border-light-border dark:border-[#34322D]">
           {/* Badges */}
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
             {isWholesaleView ? (
@@ -153,16 +153,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
 
           <Link
             href={detailUrl}
-            className="relative w-full h-full flex items-center justify-center cursor-pointer group"
+            className="relative block w-full h-full cursor-pointer group"
           >
             <Image
               src={currentPhoto}
               alt={product.name}
               fill
               loading="lazy"
-              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 280px"
-              quality={80}
-              className="object-contain object-center w-full h-full transition-transform duration-500 ease-out group-hover:scale-105"
+              sizes="(max-width: 640px) 95vw, (max-width: 1024px) 48vw, 320px"
+              quality={85}
+              className="object-cover object-center w-full h-full transition-transform duration-500 ease-out group-hover:scale-105"
               priority={false}
             />
           </Link>
