@@ -1898,36 +1898,41 @@ function AdminProductsContent() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Film className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
-                    <label className="block text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider">
-                      Product Video Demonstration (YouTube, Vimeo, or MP4)
-                    </label>
+                    <h3 className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider">
+                      Product Video
+                    </h3>
                   </div>
                   {prodVideoUrl && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                      ✓ Video Attached
+                      ✓ Video Configured
                     </span>
                   )}
                 </div>
                 <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80]">
-                  When provided, product cards and product details display an interactive video demonstration that plays inline.
+                  When provided, product cards display a &apos;Play Video&apos; overlay and the product page media area plays the video inline.
                 </p>
-                <div className="flex flex-col sm:flex-row items-center gap-2">
-                  <input
-                    type="url"
-                    placeholder="e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
-                    value={prodVideoUrl}
-                    onChange={(e) => setProdVideoUrl(e.target.value)}
-                    className="flex-1 w-full p-2.5 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
-                  />
-                  {prodVideoUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setProdVideoUrl('')}
-                      className="px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl font-semibold transition-colors flex-shrink-0"
-                    >
-                      Clear Video
-                    </button>
-                  )}
+                <div>
+                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                    Video URL
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <input
+                      type="url"
+                      placeholder="Paste YouTube or supported video URL (e.g. https://www.youtube.com/watch?v=XXXXXXXX)"
+                      value={prodVideoUrl}
+                      onChange={(e) => setProdVideoUrl(e.target.value)}
+                      className="flex-1 w-full p-2.5 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                    />
+                    {prodVideoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setProdVideoUrl('')}
+                        className="px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl font-semibold transition-colors flex-shrink-0"
+                      >
+                        Remove Video URL
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {prodVideoUrl && (

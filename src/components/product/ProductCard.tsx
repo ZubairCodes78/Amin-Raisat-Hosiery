@@ -167,7 +167,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
             />
           </Link>
 
-          {/* Watch Video Button Overlay (Navigates in Same Tab to Product Page Inline Video Player) */}
+          {/* Play Video Button Overlay (Navigates in Same Tab to Product Page Inline Video Player) */}
           {(product.videoUrl || product.media?.some((m) => m.type === 'video')) && (
             <button
               type="button"
@@ -176,11 +176,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
                 e.stopPropagation();
                 router.push(`/product/${product.slug}?video=1`);
               }}
-              className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-charcoal-900/85 hover:bg-black text-white text-[11px] font-bold shadow-md hover:scale-105 transition-all backdrop-blur-xs border border-white/20"
-              aria-label={`Watch video of ${product.name}`}
+              className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-charcoal-900/85 hover:bg-black text-white text-[11px] font-bold shadow-md hover:scale-105 transition-all backdrop-blur-xs border border-white/20"
+              aria-label={`Play video of ${product.name}`}
             >
               <Play className="w-3 h-3 fill-rose-500 text-rose-500" />
-              <span>Watch Video</span>
+              <span>Play Video</span>
             </button>
           )}
         </div>
