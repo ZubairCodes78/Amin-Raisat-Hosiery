@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { ProductGallery } from '@/components/product/ProductGallery';
 import { VariantSelector } from '@/components/product/VariantSelector';
-import { QualityComparison } from '@/components/product/QualityComparison';
 import { ProductReviews } from '@/components/product/ProductReviews';
 import { SleeveType, ProductSize } from '@/types';
 import { ChevronRight, PackageCheck, Truck, ShieldCheck, Headphones } from 'lucide-react';
@@ -29,7 +28,6 @@ export default function WholesaleProductDetailPage() {
   // Accordion Sections State
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
     description: true,
-    qualityComparison: false,
     care: false,
     shipping: true,
     returns: false,
@@ -216,9 +214,8 @@ export default function WholesaleProductDetailPage() {
           </div>
         </div>
 
-        {/* Quality Comparison & Customer Reviews */}
-        <div className="mt-16 space-y-16 border-t border-light-border dark:border-[#34322D] pt-14">
-          <QualityComparison />
+        {/* Customer Reviews */}
+        <div className="mt-16 border-t border-light-border dark:border-[#34322D] pt-14">
           <ProductReviews
             productId={product.id}
             productName={product.name}

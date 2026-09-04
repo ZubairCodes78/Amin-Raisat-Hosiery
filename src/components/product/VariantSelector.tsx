@@ -573,64 +573,53 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
       {/* SIZE GUIDE MODAL */}
       {isSizeGuideOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-xs animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 dark:bg-black/85 backdrop-blur-xs animate-in fade-in"
           onClick={() => setIsSizeGuideOpen(false)}
         >
           <div
-            className="bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-elevation max-h-[90vh] overflow-y-auto"
+            className="bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-2xl max-w-xl w-full p-4 sm:p-6 shadow-elevation max-h-[90vh] flex flex-col space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-light-border dark:border-[#34322D] pb-3">
-              <h3 className="font-bold text-base text-charcoal-900 dark:text-[#F4F1E9]">Size Guide &amp; Measurements</h3>
+            <div className="flex items-center justify-between border-b border-light-border dark:border-[#34322D] pb-3 flex-shrink-0">
+              <h3 className="font-bold text-base text-charcoal-900 dark:text-[#F4F1E9]">
+                Size Guide
+              </h3>
               <button
                 type="button"
                 onClick={() => setIsSizeGuideOpen(false)}
-                className="p-1 rounded-lg text-charcoal-400 hover:text-charcoal-900 dark:hover:text-white"
+                className="p-1 rounded-lg text-charcoal-400 hover:text-charcoal-900 dark:hover:text-white transition-colors"
+                aria-label="Close Size Guide"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Uploaded Product Size Guide Image */}
-            {(product.sizeGuideUrl || product.media?.find((m) => m.type === 'size_guide' || m.variantSleeve === 'size_guide')?.url) && (
-              <div className="space-y-2">
-                <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D]">
-                  <Image
-                    src={product.sizeGuideUrl || product.media?.find((m) => m.type === 'size_guide' || m.variantSleeve === 'size_guide')!.url}
-                    alt={`${product.name} Official Size Guide`}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 500px"
-                    className="object-contain p-2"
-                  />
-                </div>
-                <p className="text-[10px] text-center text-charcoal-500 dark:text-[#8E8A80]">
-                  Official Amin Raisat Hosiery measurement chart
-                </p>
-              </div>
-            )}
+            {/* Content: ONLY the Admin-Uploaded Product-Specific Size Guide Image */}
+            <div className="overflow-y-auto flex-1 max-h-[75vh] py-1">
+              {(() => {
+                const sizeGuideSrc =
+                  product.sizeGuideUrl ||
+                  product.media?.find((m) => m.type === 'size_guide' || m.variantSleeve === 'size_guide')?.url;
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead>
-                  <tr className="border-b border-light-border dark:border-[#34322D] text-charcoal-500 dark:text-[#B8B3A8]">
-                    <th className="py-2">Size</th>
-                    <th className="py-2">Chest (Inches)</th>
-                    <th className="py-2">Length (Inches)</th>
-                    <th className="py-2">Recommended Fit</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-light-border dark:divide-[#34322D] text-charcoal-900 dark:text-[#F4F1E9]">
-                  <tr><td className="py-2 font-bold text-[#B89555] dark:text-[#C9A96A]">S (36)</td><td>34&quot; - 36&quot;</td><td>27&quot;</td><td>Slim / Small</td></tr>
-                  <tr><td className="py-2 font-bold text-[#B89555] dark:text-[#C9A96A]">M (38)</td><td>37&quot; - 39&quot;</td><td>28&quot;</td><td>Regular Medium</td></tr>
-                  <tr><td className="py-2 font-bold text-[#B89555] dark:text-[#C9A96A]">L (40)</td><td>40&quot; - 42&quot;</td><td>29&quot;</td><td>Standard Large</td></tr>
-                  <tr><td className="py-2 font-bold text-[#B89555] dark:text-[#C9A96A]">XL (42)</td><td>43&quot; - 45&quot;</td><td>30&quot;</td><td>Extra Large</td></tr>
-                  <tr><td className="py-2 font-bold text-[#B89555] dark:text-[#C9A96A]">XXL (44)</td><td>46&quot; - 48&quot;</td><td>31&quot;</td><td>Plus Size</td></tr>
-                </tbody>
-              </table>
+                if (sizeGuideSrc) {
+                  return (
+                    <div className="flex items-center justify-center w-full">
+                      <img
+                        src={sizeGuideSrc}
+                        alt={`${product.name} Size Guide`}
+                        className="max-w-full h-auto object-contain rounded-xl border border-light-border dark:border-[#34322D]"
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="py-12 text-center text-xs text-charcoal-500 dark:text-[#8E8A80]">
+                    Size guide not available.
+                  </div>
+                );
+              })()}
             </div>
-            <p className="text-[11px] text-charcoal-500 dark:text-[#B8B3A8]">
-              * Measurements in standard inches. 100% fine combed cotton knit with gentle natural stretch.
-            </p>
           </div>
         </div>
       )}

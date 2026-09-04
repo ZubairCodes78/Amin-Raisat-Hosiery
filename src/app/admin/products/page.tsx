@@ -135,7 +135,7 @@ function AdminProductsContent() {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   // Active Editor Tab
-  const [editorTab, setEditorTab] = useState<'basic' | 'variants' | 'media'>('basic');
+  const [editorTab, setEditorTab] = useState<'basic' | 'media' | 'variants' | 'sizeguide'>('basic');
 
   // Search & Filter
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -150,8 +150,8 @@ function AdminProductsContent() {
       const targetProd = products.find((p) => p.id === editId);
       if (targetProd) {
         handleStartEdit(targetProd);
-        if (tabParam === 'variants' || tabParam === 'basic' || tabParam === 'media') {
-          setEditorTab(tabParam);
+        if (tabParam === 'variants' || tabParam === 'basic' || tabParam === 'media' || tabParam === 'sizeguide') {
+          setEditorTab(tabParam as any);
         }
       }
     }
@@ -302,7 +302,7 @@ function AdminProductsContent() {
     // MANDATORY Size Guide validation
     if (!prodSizeGuideUrl.trim()) {
       showNotice('Size Guide image is required. Please upload a Size Guide image before saving the product.', 'error');
-      setEditorTab('basic');
+      setEditorTab('sizeguide');
       return;
     }
 
@@ -355,26 +355,31 @@ function AdminProductsContent() {
       };
     });
 
-    const cleanMedia: ProductMedia[] = mediaList.map((m, i) => ({
+    let cleanMedia: ProductMedia[] = mediaList.map((m, i) => ({
       ...m,
       id: m.id || `med-${currentId}-${i + 1}`,
       productId: currentId,
     }));
 
     // Maintain media redundancy for video and size guide
-    if (prodVideoUrl.trim() && !cleanMedia.some((m) => m.type === 'video' || m.url === prodVideoUrl.trim())) {
-      cleanMedia.push({
-        id: `med-${currentId}-vid`,
-        productId: currentId,
-        type: 'video',
-        url: prodVideoUrl.trim(),
-        alt: `${prodName.trim()} video demo`,
-        title: 'Product Video Showcase',
-        displayOrder: cleanMedia.length + 1,
-      });
+    if (prodVideoUrl.trim()) {
+      if (!cleanMedia.some((m) => m.type === 'video' || m.url === prodVideoUrl.trim())) {
+        cleanMedia.push({
+          id: `med-${currentId}-vid`,
+          productId: currentId,
+          type: 'video',
+          url: prodVideoUrl.trim(),
+          alt: `${prodName.trim()} video demo`,
+          title: 'Product Video Showcase',
+          displayOrder: cleanMedia.length + 1,
+        });
+      }
+    } else {
+      cleanMedia = cleanMedia.filter((m) => m.type !== 'video');
     }
 
-    if (prodSizeGuideUrl.trim() && !cleanMedia.some((m) => m.type === 'size_guide' || m.variantSleeve === 'size_guide')) {
+    if (prodSizeGuideUrl.trim()) {
+      cleanMedia = cleanMedia.filter((m) => m.type !== 'size_guide' && m.variantSleeve !== 'size_guide');
       cleanMedia.push({
         id: `med-${currentId}-sg`,
         productId: currentId,
@@ -385,6 +390,8 @@ function AdminProductsContent() {
         variantSleeve: 'size_guide',
         displayOrder: 99,
       });
+    } else {
+      cleanMedia = cleanMedia.filter((m) => m.type !== 'size_guide' && m.variantSleeve !== 'size_guide');
     }
 
     const productToSave: Product = {
@@ -1034,7 +1041,19 @@ function AdminProductsContent() {
                   : 'bg-white dark:bg-[#191917] text-charcoal-500 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] border border-light-border dark:border-[#34322D]'
               }`}
             >
-              1. Basic Info &amp; Taxonomy
+              1. Basic Info
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEditorTab('media')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                editorTab === 'media'
+                  ? 'bg-light-elevated dark:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border-b-2 border-[#B89555] dark:border-[#C9A96A]'
+                  : 'bg-white dark:bg-[#191917] text-charcoal-500 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] border border-light-border dark:border-[#34322D]'
+              }`}
+            >
+              <span>2. Photos &amp; Video ({mediaList.length})</span>
             </button>
 
             <button
@@ -1047,19 +1066,24 @@ function AdminProductsContent() {
               }`}
             >
               <Zap className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A]" />
-              <span>2. Retail &amp; Wholesale Pricing Matrix ({variantsList.length})</span>
+              <span>3. Pricing &amp; Variants ({variantsList.length})</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setEditorTab('media')}
+              onClick={() => setEditorTab('sizeguide')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 ${
-                editorTab === 'media'
+                editorTab === 'sizeguide'
                   ? 'bg-light-elevated dark:bg-[#22211E] text-charcoal-900 dark:text-[#F4F1E9] border-b-2 border-[#B89555] dark:border-[#C9A96A]'
                   : 'bg-white dark:bg-[#191917] text-charcoal-500 dark:text-[#B8B3A8] hover:text-charcoal-900 dark:hover:text-[#F4F1E9] border border-light-border dark:border-[#34322D]'
               }`}
             >
-              <span>3. Photos &amp; Video ({mediaList.length})</span>
+              <span>4. Size Guide</span>
+              {prodSizeGuideUrl ? (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold">✓</span>
+              ) : (
+                <span className="text-[10px] text-rose-500 font-bold">*</span>
+              )}
             </button>
           </div>
 
@@ -1256,109 +1280,6 @@ function AdminProductsContent() {
                   onChange={(e) => setProdDesc(e.target.value)}
                   className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs leading-relaxed text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                 />
-              </div>
-
-              {/* Video URL Input */}
-              <div>
-                <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
-                  Product Video URL (YouTube, Vimeo, or MP4)
-                </label>
-                <input
-                  type="url"
-                  placeholder="e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
-                  value={prodVideoUrl}
-                  onChange={(e) => setProdVideoUrl(e.target.value)}
-                  className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
-                />
-                <span className="text-[10px] text-charcoal-500 dark:text-[#8E8A80] mt-0.5 block">
-                  When provided, product cards display a &apos;Watch Video&apos; button that plays inline in the product media section without leaving the page.
-                </span>
-              </div>
-
-              {/* MANDATORY SIZE GUIDE IMAGE UPLOAD */}
-              <div className="p-4 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="block text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">
-                      Official Size Guide Image <span className="text-rose-600">* (Mandatory)</span>
-                    </label>
-                    <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80]">
-                      Displayed inside the customer-facing Size Guide modal above &apos;Select Size&apos;. Product cannot be saved without a Size Guide image.
-                    </p>
-                  </div>
-                  {prodSizeGuideUrl && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                      ✓ Size Guide Attached
-                    </span>
-                  )}
-                </div>
-
-                {prodSizeGuideUrl ? (
-                  <div className="p-3 bg-white dark:bg-[#191917] rounded-xl border border-light-border dark:border-[#34322D] flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] flex-shrink-0">
-                        <img
-                          src={prodSizeGuideUrl}
-                          alt="Size Guide Chart Preview"
-                          className="w-full h-full object-contain p-1"
-                        />
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">
-                          Size Guide Chart
-                        </p>
-                        <a
-                          href={prodSizeGuideUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[10px] text-[#B89555] dark:text-[#C9A96A] hover:underline block"
-                        >
-                          View full image
-                        </a>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setProdSizeGuideUrl('')}
-                      className="text-xs text-rose-600 hover:underline font-semibold"
-                    >
-                      Remove / Replace
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative border-2 border-dashed border-rose-300 dark:border-rose-900/60 hover:border-[#B89555] rounded-xl p-4 text-center transition-colors bg-rose-50/40 dark:bg-rose-950/20">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      disabled={isUploadingSizeGuide}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        try {
-                          setIsUploadingSizeGuide(true);
-                          const url = await uploadMediaFile(file, 'size-guides');
-                          setProdSizeGuideUrl(url);
-                          showNotice('Size Guide image uploaded successfully.');
-                        } catch (err: any) {
-                          console.error('Size guide upload failed:', err);
-                          showNotice(err?.message || 'Failed to upload Size Guide image.', 'error');
-                        } finally {
-                          setIsUploadingSizeGuide(false);
-                        }
-                      }}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
-                      <Upload className={`w-5 h-5 text-rose-600 dark:text-rose-400 ${isUploadingSizeGuide ? 'animate-bounce' : ''}`} />
-                      <span className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">
-                        {isUploadingSizeGuide ? 'Uploading Size Guide...' : 'Upload Size Guide Chart (Required)'}
-                      </span>
-                      <span className="text-[10px] text-charcoal-500 dark:text-[#8E8A80]">
-                        PNG, JPG, or WebP chart
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1972,6 +1893,85 @@ function AdminProductsContent() {
                 </div>
               </div>
 
+              {/* Product Video URL Section */}
+              <div className="p-5 bg-light-elevated dark:bg-[#22211E] rounded-2xl border border-light-border dark:border-[#34322D] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Film className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+                    <label className="block text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider">
+                      Product Video Demonstration (YouTube, Vimeo, or MP4)
+                    </label>
+                  </div>
+                  {prodVideoUrl && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                      ✓ Video Attached
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80]">
+                  When provided, product cards and product details display an interactive video demonstration that plays inline.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <input
+                    type="url"
+                    placeholder="e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                    value={prodVideoUrl}
+                    onChange={(e) => setProdVideoUrl(e.target.value)}
+                    className="flex-1 w-full p-2.5 bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                  />
+                  {prodVideoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setProdVideoUrl('')}
+                      className="px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl font-semibold transition-colors flex-shrink-0"
+                    >
+                      Clear Video
+                    </button>
+                  )}
+                </div>
+
+                {prodVideoUrl && (
+                  <div className="flex items-center gap-3 p-3 bg-white dark:bg-[#191917] rounded-xl border border-light-border dark:border-[#34322D]">
+                    {(() => {
+                      const ytMatch = prodVideoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+                      const ytId = ytMatch ? ytMatch[1] : null;
+                      if (ytId) {
+                        return (
+                          <div className="relative w-20 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-black">
+                            <img
+                              src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+                              alt="YouTube Video Preview"
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <Film className="w-5 h-5 text-white drop-shadow" />
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="w-14 h-14 rounded-lg bg-light-elevated dark:bg-[#22211E] flex items-center justify-center flex-shrink-0 border border-light-border dark:border-[#34322D]">
+                          <Film className="w-6 h-6 text-[#B89555] dark:text-[#C9A96A]" />
+                        </div>
+                      );
+                    })()}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9] truncate">
+                        {prodVideoUrl}
+                      </p>
+                      <a
+                        href={prodVideoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-[#B89555] dark:text-[#C9A96A] hover:underline font-semibold"
+                      >
+                        Test / View Video URL &rarr;
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Media List Grid */}
               <div className="space-y-3">
                 <h4 className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9] uppercase tracking-wider">
@@ -2025,6 +2025,136 @@ function AdminProductsContent() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 4: SIZE GUIDE (MANDATORY ADMIN-UPLOADED CHART) */}
+          {/* ========================================================================= */}
+          {editorTab === 'sizeguide' && (
+            <div className="bg-white dark:bg-[#191917] p-5 sm:p-6 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm dark:shadow-card space-y-6 animate-in fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-light-border dark:border-[#34322D] pb-3">
+                <div>
+                  <h2 className="text-xs font-bold text-[#B89555] dark:text-[#C9A96A] uppercase tracking-wider">
+                    Official Product Size Guide Chart <span className="text-rose-600">* (Mandatory)</span>
+                  </h2>
+                  <p className="text-xs text-charcoal-500 dark:text-[#8E8A80] mt-0.5">
+                    This chart is the ONLY content shown inside the customer-facing &apos;Size Guide&apos; modal on the product page.
+                  </p>
+                </div>
+                {prodSizeGuideUrl ? (
+                  <span className="text-xs font-bold px-3 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 self-start sm:self-auto">
+                    ✓ Size Guide Attached
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold px-3 py-1 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800 self-start sm:self-auto">
+                    * Upload Required to Save
+                  </span>
+                )}
+              </div>
+
+              {prodSizeGuideUrl ? (
+                <div className="p-5 bg-light-elevated dark:bg-[#22211E] rounded-2xl border border-light-border dark:border-[#34322D] space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-28 h-28 rounded-xl overflow-hidden bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] flex-shrink-0 shadow-xs">
+                        <img
+                          src={prodSizeGuideUrl}
+                          alt="Size Guide Chart Preview"
+                          className="w-full h-full object-contain p-2"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+                          Attached Size Guide Chart
+                        </p>
+                        <p className="text-xs text-charcoal-500 dark:text-[#8E8A80]">
+                          Ready to be rendered exclusively in the customer Size Guide modal.
+                        </p>
+                        <a
+                          href={prodSizeGuideUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-[#B89555] dark:text-[#C9A96A] hover:underline font-semibold inline-block pt-1"
+                        >
+                          View Full Image in New Tab &rarr;
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <label className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-white dark:bg-[#191917] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] text-xs font-semibold rounded-xl cursor-pointer transition-colors flex-1 sm:flex-initial">
+                        <Upload className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A]" />
+                        <span>{isUploadingSizeGuide ? 'Uploading...' : 'Replace Image'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={isUploadingSizeGuide}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              setIsUploadingSizeGuide(true);
+                              const url = await uploadMediaFile(file, 'size-guides');
+                              setProdSizeGuideUrl(url);
+                              showNotice('New Size Guide image uploaded and replaced successfully.');
+                            } catch (err: any) {
+                              console.error('Size guide replacement failed:', err);
+                              showNotice(err?.message || 'Failed to replace Size Guide image.', 'error');
+                            } finally {
+                              setIsUploadingSizeGuide(false);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => setProdSizeGuideUrl('')}
+                        className="px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl font-semibold transition-colors flex-1 sm:flex-initial text-center"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 border-2 border-dashed border-rose-300 dark:border-rose-900/60 hover:border-[#B89555] rounded-2xl text-center transition-colors bg-rose-50/30 dark:bg-rose-950/10 space-y-3 relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingSizeGuide}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        setIsUploadingSizeGuide(true);
+                        const url = await uploadMediaFile(file, 'size-guides');
+                        setProdSizeGuideUrl(url);
+                        showNotice('Size Guide image uploaded successfully.');
+                      } catch (err: any) {
+                        console.error('Size guide upload failed:', err);
+                        showNotice(err?.message || 'Failed to upload Size Guide image.', 'error');
+                      } finally {
+                        setIsUploadingSizeGuide(false);
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                    <div className="p-3.5 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+                      <Upload className={`w-7 h-7 ${isUploadingSizeGuide ? 'animate-bounce' : ''}`} />
+                    </div>
+                    <span className="text-sm font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+                      {isUploadingSizeGuide ? 'Uploading Size Guide Chart...' : 'Upload Size Guide Chart (Required)'}
+                    </span>
+                    <span className="text-xs text-charcoal-500 dark:text-[#8E8A80] max-w-sm">
+                      PNG, JPG, or WebP. This chart will be rendered at full fidelity when customers click &apos;Size Guide&apos; on the product page.
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </form>

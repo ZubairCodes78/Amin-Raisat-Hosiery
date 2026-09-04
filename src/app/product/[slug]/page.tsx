@@ -6,7 +6,6 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import { ProductGallery } from '@/components/product/ProductGallery';
 import { VariantSelector } from '@/components/product/VariantSelector';
-import { QualityComparison } from '@/components/product/QualityComparison';
 import { ProductReviews } from '@/components/product/ProductReviews';
 import { SleeveType, ProductSize } from '@/types';
 import { ChevronRight, Star, ChevronDown, ChevronUp } from 'lucide-react';
@@ -31,7 +30,6 @@ export default function ProductDetailPage() {
   // Accordion Sections State
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
     description: true,
-    qualityComparison: false,
     care: false,
     shipping: false,
     returns: false,
@@ -222,24 +220,7 @@ export default function ProductDetailPage() {
                   </div>
                 )}
               </div>
-
-              {/* 2. Quality Comparison Guide */}
-              <div className="py-3.5">
-                <button
-                  onClick={() => toggleSection('qualityComparison')}
-                  className="w-full flex items-center justify-between font-bold text-charcoal-800 dark:text-[#F4F1E9] text-left py-1 hover:text-[#B89555] dark:hover:text-[#C9A96A] transition-colors"
-                >
-                  <span>Quality &amp; Construction Guide (High vs Standard)</span>
-                  {openSections.qualityComparison ? <ChevronUp className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {openSections.qualityComparison && (
-                  <div className="pt-3">
-                    <QualityComparison />
-                  </div>
-                )}
-              </div>
-
-              {/* 3. Care Instructions */}
+              {/* 2. Care Instructions */}
               <div className="py-3.5">
                 <button
                   onClick={() => toggleSection('care')}
