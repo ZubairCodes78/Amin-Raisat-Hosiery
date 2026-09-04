@@ -21,6 +21,7 @@ import {
   Eye,
   AlertTriangle,
   ZoomIn,
+  Trash2,
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -29,13 +30,25 @@ import { formatWhatsAppNumber } from '@/lib/whatsapp';
 const ALL_STATUSES: OrderStatus[] = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'];
 
 export default function AdminOrdersPage() {
-  const { orders, products, updateOrderStatus, refreshData, isLoading } = useStore();
+  const { orders, products, updateOrderStatus, deleteOrder, bulkDeleteOrders, refreshData, isLoading } = useStore();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [wholesaleFilter, setWholesaleFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Selection & Bulk Actions State
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    orderId?: string;
+    orderNumber?: string;
+    count?: number;
+    isBulk: boolean;
+  } | null>(null);
 
   // Receipt Modal State
   const [receiptModalOrder, setReceiptModalOrder] = useState<Order | null>(null);
@@ -92,6 +105,69 @@ export default function AdminOrdersPage() {
       delivered: orders.filter((o) => o.status === 'Delivered').length,
     };
   }, [orders]);
+
+  const isAllSelected = useMemo(() => {
+    return filteredOrders.length > 0 && filteredOrders.every((o) => selectedOrderIds.includes(o.id));
+  }, [filteredOrders, selectedOrderIds]);
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(filteredOrders.map((o) => o.id));
+    }
+  };
+
+  const toggleSelectOrder = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setSelectedOrderIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  };
+
+  const handleInitiateSingleDelete = (order: Order, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setDeleteError('');
+    setDeleteModal({
+      isOpen: true,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      isBulk: false,
+    });
+  };
+
+  const handleInitiateBulkDelete = () => {
+    if (selectedOrderIds.length === 0) return;
+    setDeleteError('');
+    setDeleteModal({
+      isOpen: true,
+      count: selectedOrderIds.length,
+      isBulk: true,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      if (deleteModal.isBulk) {
+        await bulkDeleteOrders(selectedOrderIds);
+        showToast(`Successfully deleted ${selectedOrderIds.length} order(s) permanently.`);
+        setSelectedOrderIds([]);
+      } else if (deleteModal.orderId) {
+        await deleteOrder(deleteModal.orderId);
+        showToast(`Order #${deleteModal.orderNumber} deleted permanently.`);
+        if (selectedOrder && (selectedOrder.id === deleteModal.orderId || selectedOrder.orderNumber === deleteModal.orderNumber)) {
+          setSelectedOrder(null);
+        }
+      }
+      setDeleteModal(null);
+    } catch (err: any) {
+      console.error('Delete order error:', err);
+      setDeleteError(err?.message || 'Failed to delete order from database.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleInitiateStatusChange = (orderId: string, orderNumber: string, newStatus: OrderStatus) => {
     setStatusConfirmModal({
@@ -341,6 +417,18 @@ export default function AdminOrdersPage() {
               </option>
             ))}
           </select>
+
+          {/* Bulk Delete Button */}
+          {selectedOrderIds.length > 0 && (
+            <button
+              type="button"
+              onClick={handleInitiateBulkDelete}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 animate-in fade-in"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Selected ({selectedOrderIds.length})</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -359,13 +447,22 @@ export default function AdminOrdersPage() {
               <table className="w-full text-xs text-left">
                 <thead className="bg-light-elevated dark:bg-[#22211E] text-[#B89555] dark:text-[#C9A96A] uppercase font-bold text-[11px] border-b border-light-border dark:border-[#34322D]">
                   <tr>
+                    <th className="p-4 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={toggleSelectAll}
+                        className="rounded border-light-border dark:border-[#34322D] accent-[#B89555] cursor-pointer"
+                        aria-label="Select all orders"
+                      />
+                    </th>
                     <th className="p-4 w-28 whitespace-nowrap font-mono">Order #</th>
                     <th className="p-4 min-w-[200px]">Customer &amp; Phone</th>
                     <th className="p-4 w-36 whitespace-nowrap">City / Province</th>
                     <th className="p-4 min-w-[200px]">Items &amp; Total</th>
                     <th className="p-4 w-44 whitespace-nowrap">Payment &amp; Proof</th>
                     <th className="p-4 w-36 whitespace-nowrap">Order Status</th>
-                    <th className="p-4 w-36 text-right whitespace-nowrap">Actions</th>
+                    <th className="p-4 w-40 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-light-border dark:divide-[#282723] font-medium text-charcoal-700 dark:text-[#B8B3A8]">
@@ -388,8 +485,19 @@ export default function AdminOrdersPage() {
                     const reviewMsg = `Hi ${ord.customerName},\n\nThank you for shopping with Amin Raisat Hosiery.\n\nYour order #${ord.orderNumber} has been delivered.\n\nWe would love to hear your feedback.\n\nPlease share your review:\n${productReviewUrl}\n\nThank you!`;
                     const whatsappReviewLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(reviewMsg)}`;
 
+                    const isSelected = selectedOrderIds.includes(ord.id);
+
                     return (
-                      <tr key={ord.id} className="hover:bg-light-hover dark:hover:bg-[#22211E]/60 transition-colors">
+                      <tr key={ord.id} className={`hover:bg-light-hover dark:hover:bg-[#22211E]/60 transition-colors ${isSelected ? 'bg-[#B89555]/5 dark:bg-[#C9A96A]/5' : ''}`}>
+                        <td className="p-4 w-10 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => toggleSelectOrder(ord.id, e as any)}
+                            className="rounded border-light-border dark:border-[#34322D] accent-[#B89555] cursor-pointer"
+                            aria-label={`Select order ${ord.orderNumber}`}
+                          />
+                        </td>
                         <td className="p-4 font-mono font-bold text-[#B89555] dark:text-[#C9A96A] whitespace-nowrap">
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1">
@@ -485,7 +593,7 @@ export default function AdminOrdersPage() {
                             ))}
                           </select>
                         </td>
-                        <td className="p-4 w-36 text-right whitespace-nowrap">
+                        <td className="p-4 w-40 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
                             {/* WhatsApp Review Request Button for Delivered Orders */}
                             {ord.status === 'Delivered' && (
@@ -493,7 +601,7 @@ export default function AdminOrdersPage() {
                                 href={whatsappReviewLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-2.5 py-1.5 bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#1EBE5D] border border-[#25D366]/30 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors"
+                                className="px-2 py-1 bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#1EBE5D] border border-[#25D366]/30 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors"
                                 title="Send WhatsApp Review Request"
                               >
                                 <WhatsAppIcon size={13} className="fill-current" />
@@ -504,9 +612,20 @@ export default function AdminOrdersPage() {
                             <button
                               type="button"
                               onClick={() => setSelectedOrder(ord)}
-                              className="px-3 py-1.5 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] text-[#B89555] dark:text-[#C9A96A] hover:text-champagne-500 rounded-xl text-xs font-bold transition-colors whitespace-nowrap"
+                              className="px-2.5 py-1 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] text-[#B89555] dark:text-[#C9A96A] hover:text-champagne-500 rounded-xl text-xs font-bold transition-colors whitespace-nowrap"
                             >
                               Details
+                            </button>
+
+                            {/* Delete Order Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => handleInitiateSingleDelete(ord, e)}
+                              className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition-colors active:scale-95"
+                              title="Delete Order Permanently"
+                              aria-label={`Delete order ${ord.orderNumber}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
@@ -643,9 +762,19 @@ export default function AdminOrdersPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedOrder(ord)}
-                        className="px-4 py-1.5 bg-champagne-500 text-charcoal-950 rounded-xl text-xs font-bold shadow-xs"
+                        className="px-3 py-1.5 bg-champagne-500 text-charcoal-950 rounded-xl text-xs font-bold shadow-xs"
                       >
                         View
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleInitiateSingleDelete(ord, e)}
+                        className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition-colors active:scale-95"
+                        title="Delete Order Permanently"
+                        aria-label={`Delete order ${ord.orderNumber}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -917,6 +1046,88 @@ export default function AdminOrdersPage() {
                 <span>Total Amount</span>
                 <span>Rs. {selectedOrder.totalAmount}</span>
               </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-2 border-t border-light-border dark:border-[#34322D]">
+              <button
+                type="button"
+                onClick={(e) => handleInitiateSingleDelete(selectedOrder, e)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-xl text-xs font-bold transition-all active:scale-95"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Order Permanently</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedOrder(null)}
+                className="px-5 py-2 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] text-charcoal-800 dark:text-[#F4F1E9] rounded-xl text-xs font-bold transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Danger Deletion Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-[#191917] border border-rose-500/30 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-elevation text-charcoal-900 dark:text-[#F4F1E9]">
+            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+              <div className="p-3 bg-rose-500/10 rounded-xl border border-rose-500/30">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-charcoal-900 dark:text-[#F4F1E9]">
+                  {deleteModal.isBulk
+                    ? `Delete ${deleteModal.count} Selected Orders Permanently?`
+                    : `Delete Order #${deleteModal.orderNumber} Permanently?`}
+                </h3>
+                <span className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold block mt-0.5">
+                  Destructive Action • Cannot be Undone
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-charcoal-600 dark:text-[#B8B3A8] leading-relaxed">
+              This action will permanently remove the order record, line items, and associated payment proof receipt from Supabase. Customer accounts and unrelated store data will not be affected.
+            </p>
+
+            {deleteError && (
+              <div className="p-3 bg-rose-500/15 border border-rose-500/40 rounded-xl text-rose-700 dark:text-rose-400 text-xs font-semibold">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-light-border dark:border-[#34322D]">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeleteModal(null)}
+                className="px-4 py-2 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] text-charcoal-700 dark:text-[#B8B3A8] text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50 active:scale-95"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Permanently</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

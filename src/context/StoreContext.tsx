@@ -36,6 +36,8 @@ interface StoreContextType {
   updateSettings: (newSettings: SiteSettings) => Promise<void>;
   createOrder: (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'status'>) => Promise<Order>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
+  deleteOrder: (orderId: string) => Promise<void>;
+  bulkDeleteOrders: (orderIds: string[]) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -116,7 +118,7 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children, initialP
 
       // Non-blocking background fetch for secondary/admin data
       DataStore.getOrders().then((ords) => {
-        if (ords && ords.length > 0) setOrders(ords);
+        if (ords) setOrders(ords);
       }).catch((err) => console.warn('Non-critical orders fetch notice:', err));
 
       DataStore.getReviews().then((revs) => {
@@ -227,6 +229,18 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children, initialP
     await loadData();
   };
 
+  const deleteOrder = async (orderId: string) => {
+    await DataStore.deleteOrder(orderId);
+    setOrders((prev) => prev.filter((o) => o.id !== orderId && o.orderNumber !== orderId));
+    await loadData();
+  };
+
+  const bulkDeleteOrders = async (orderIds: string[]) => {
+    await DataStore.deleteOrders(orderIds);
+    setOrders((prev) => prev.filter((o) => !orderIds.includes(o.id) && !orderIds.includes(o.orderNumber)));
+    await loadData();
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -257,6 +271,8 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children, initialP
         updateSettings,
         createOrder,
         updateOrderStatus,
+        deleteOrder,
+        bulkDeleteOrders,
       }}
     >
       {children}

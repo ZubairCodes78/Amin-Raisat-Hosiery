@@ -82,6 +82,163 @@ export async function GET() {
   }
 }
 
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const queryId = searchParams.get('id') || searchParams.get('orderId');
+
+    let targetIds: string[] = [];
+
+    if (queryId) {
+      targetIds = [queryId.trim()];
+    } else {
+      try {
+        const body = await req.json();
+        if (body.orderId) {
+          targetIds = [body.orderId.trim()];
+        } else if (Array.isArray(body.orderIds)) {
+          targetIds = body.orderIds.map((id: any) => String(id).trim()).filter(Boolean);
+        }
+      } catch {}
+    }
+
+    if (targetIds.length === 0) {
+      return NextResponse.json(
+        { error: 'Valid order ID or orderIds list is required for deletion.' },
+        { status: 400 }
+      );
+    }
+
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json({
+        success: true,
+        count: targetIds.length,
+        deletedIds: targetIds,
+        message: 'Order(s) deleted from local state.',
+      });
+    }
+
+    const dbClient = getDbClient();
+
+    // 1. Fetch matching orders to verify existence and extract storage file references
+    let { data: existingOrders, error: fetchErr } = await dbClient
+      .from('orders')
+      .select('id, order_number')
+      .in('id', targetIds);
+
+    // If not found by UUID, attempt search by order_number
+    if (!existingOrders || existingOrders.length === 0) {
+      const { data: byOrderNumber } = await dbClient
+        .from('orders')
+        .select('id, order_number')
+        .in('order_number', targetIds);
+      if (byOrderNumber && byOrderNumber.length > 0) {
+        existingOrders = byOrderNumber;
+      }
+    }
+
+    if (fetchErr) {
+      console.error('Fetch orders prior to delete error:', fetchErr);
+      return NextResponse.json(
+        { error: `Database error during order verification: ${fetchErr.message}` },
+        { status: 500 }
+      );
+    }
+
+    if (!existingOrders || existingOrders.length === 0) {
+      return NextResponse.json(
+        { error: `No matching order found with ID: ${targetIds.join(', ')}` },
+        { status: 404 }
+      );
+    }
+
+    const confirmedIds = existingOrders.map((o: any) => o.id);
+
+    // 2. Clean dependent records safely (order_items, disconnect reviews)
+    try {
+      await dbClient.from('order_items').delete().in('order_id', confirmedIds);
+    } catch (itemErr) {
+      console.warn('Order items cascade delete notice:', itemErr);
+    }
+
+    try {
+      await dbClient.from('reviews').update({ order_id: null }).in('order_id', confirmedIds);
+    } catch (revErr) {
+      console.warn('Reviews order_id disconnect notice:', revErr);
+    }
+
+    // 3. Delete order record(s) from database
+    const { data: deletedRows, error: delErr } = await dbClient
+      .from('orders')
+      .delete()
+      .in('id', confirmedIds)
+      .select('id');
+
+    if (delErr) {
+      console.error('Authoritative orders delete error:', delErr);
+      return NextResponse.json(
+        { error: `Failed to delete order(s) from database: ${delErr.message}`, code: delErr.code },
+        { status: 500 }
+      );
+    }
+
+    if ((!deletedRows || deletedRows.length === 0) && confirmedIds.length > 0) {
+      if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return NextResponse.json(
+          {
+            error:
+              'Database deletion blocked by Supabase Row Level Security (RLS). SUPABASE_SERVICE_ROLE_KEY must be configured in server environment variables to grant permanent admin deletion authority.',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 4. Clean up associated payment receipt files from Supabase Storage
+    const storageCleanupResults: { url: string; success: boolean; error?: string }[] = [];
+    for (const ord of existingOrders) {
+      const screenshotUrl = (ord as any).payment_screenshot_url;
+      if (screenshotUrl && typeof screenshotUrl === 'string') {
+        const rawUrl = screenshotUrl;
+        try {
+          // Parse bucket and object path from Supabase storage public / signed URL format:
+          // e.g. .../storage/v1/object/public/<bucket>/<path>
+          const storageMatch = rawUrl.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/?#]+)\/([^?#]+)/);
+          if (storageMatch) {
+            const bucket = decodeURIComponent(storageMatch[1]);
+            const objectPath = decodeURIComponent(storageMatch[2]);
+            const { error: removeErr } = await dbClient.storage.from(bucket).remove([objectPath]);
+            if (removeErr) {
+              console.warn(`Storage file removal failed for bucket '${bucket}', path '${objectPath}':`, removeErr);
+              storageCleanupResults.push({ url: rawUrl, success: false, error: removeErr.message });
+            } else {
+              storageCleanupResults.push({ url: rawUrl, success: true });
+            }
+          }
+        } catch (storageException: any) {
+          console.warn('Storage cleanup exception for receipt:', storageException);
+          storageCleanupResults.push({ url: rawUrl, success: false, error: storageException?.message });
+        }
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      count: confirmedIds.length,
+      deletedIds: confirmedIds,
+      deletedOrderNumbers: existingOrders.map((o: any) => o.order_number),
+      storageCleanup: storageCleanupResults,
+      message: `Permanently deleted ${confirmedIds.length} order(s) and dependent data successfully.`,
+    });
+  } catch (err: any) {
+    console.error('API /api/admin/orders DELETE error:', err);
+    return NextResponse.json(
+      { error: err?.message || 'Internal Server Error during order deletion.' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
@@ -114,3 +271,5 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+

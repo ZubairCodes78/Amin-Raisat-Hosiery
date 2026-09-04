@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { ProductMedia } from '@/types';
-import { Maximize2, X, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Maximize2, X, Play, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 
 interface ProductGalleryProps {
   media: ProductMedia[];
@@ -14,7 +14,7 @@ interface ProductGalleryProps {
 
 function getEmbedVideoUrl(url?: string): { isEmbed: boolean; embedUrl: string } {
   if (!url) return { isEmbed: false, embedUrl: '' };
-  // YouTube watch URL or short link
+  // YouTube watch URL, shorts, or short link
   const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   if (ytMatch && ytMatch[1]) {
     return { isEmbed: true, embedUrl: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0` };
@@ -35,26 +35,25 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
-  // Dynamically prioritize media matching selected sleeve and merge videoUrl
-  const activeMediaList = useMemo(() => {
-    let list: ProductMedia[] = media ? [...media] : [];
+  // Derive the active video URL from prop or media list
+  const effectiveVideoUrl = useMemo(() => {
+    if (videoUrl && videoUrl.trim()) return videoUrl.trim();
+    const videoItem = media?.find((m) => m.type === 'video' || (m as any).media_type === 'video');
+    return videoItem?.url ? videoItem.url.trim() : '';
+  }, [videoUrl, media]);
 
-    // If videoUrl prop exists and isn't in media list yet, add it
-    if (videoUrl && !list.some((m) => m.type === 'video' || m.url === videoUrl)) {
-      list.push({
-        id: 'product-video-prop',
-        productId: '',
-        type: 'video',
-        url: videoUrl,
-        title: 'Product Video Demo',
-      });
-    }
+  // Gallery items strictly contains PHOTOS (videos are never gallery items or thumbnails)
+  const photoMediaList = useMemo(() => {
+    let list: ProductMedia[] = (media || []).filter(
+      (m) => m.type !== 'video' && (m as any).media_type !== 'video' && m.type !== 'size_guide' && (m as any).media_type !== 'size_guide'
+    );
 
     if (list.length === 0) return [];
 
     const exactMatch = list.filter(
-      (m) => !selectedSleeve || !m.variantSleeve || m.variantSleeve === 'All' || m.variantSleeve === selectedSleeve || m.type === 'video'
+      (m) => !selectedSleeve || !m.variantSleeve || m.variantSleeve === 'All' || m.variantSleeve === selectedSleeve
     );
 
     if (exactMatch.length > 0) {
@@ -63,53 +62,57 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
     }
 
     return list;
-  }, [media, selectedSleeve, videoUrl]);
+  }, [media, selectedSleeve]);
 
-  // Support ?video=1 query parameter from product card "Watch Video" button
+  // Support ?video=1 or ?watchVideo=true on load to start video
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && effectiveVideoUrl) {
       const params = new URLSearchParams(window.location.search);
       if (params.get('video') === '1' || params.get('watchVideo') === 'true') {
-        const videoIdx = activeMediaList.findIndex((m) => m.type === 'video');
-        if (videoIdx !== -1) {
-          setSelectedIndex(videoIdx);
-        }
+        setIsVideoPlaying(true);
       }
     }
-  }, [activeMediaList]);
+  }, [effectiveVideoUrl]);
 
-  // Reset index when sleeve style switches (only if not on video)
+  // When sleeve switches, reset photo selection and return to photo view
   useEffect(() => {
-    if (activeMediaList[selectedIndex]?.type !== 'video') {
-      setSelectedIndex(0);
-    }
+    setSelectedIndex(0);
+    setIsVideoPlaying(false);
   }, [selectedSleeve]);
 
   const handlePrev = useCallback(() => {
-    setSelectedIndex((prev) => (prev === 0 ? activeMediaList.length - 1 : prev - 1));
-  }, [activeMediaList.length]);
+    setIsVideoPlaying(false);
+    setSelectedIndex((prev) => (prev === 0 ? photoMediaList.length - 1 : prev - 1));
+  }, [photoMediaList.length]);
 
   const handleNext = useCallback(() => {
-    setSelectedIndex((prev) => (prev === activeMediaList.length - 1 ? 0 : prev + 1));
-  }, [activeMediaList.length]);
+    setIsVideoPlaying(false);
+    setSelectedIndex((prev) => (prev === photoMediaList.length - 1 ? 0 : prev + 1));
+  }, [photoMediaList.length]);
 
-  // Keyboard: arrow keys for gallery navigation, Escape to close zoom
+  // Keyboard navigation
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isZoomOpen) {
-        setIsZoomOpen(false);
-        return;
+      if (e.key === 'Escape') {
+        if (isZoomOpen) {
+          setIsZoomOpen(false);
+          return;
+        }
+        if (isVideoPlaying) {
+          setIsVideoPlaying(false);
+          return;
+        }
       }
-      if (!isZoomOpen) {
+      if (!isZoomOpen && !isVideoPlaying) {
         if (e.key === 'ArrowLeft') handlePrev();
         if (e.key === 'ArrowRight') handleNext();
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isZoomOpen, handlePrev, handleNext]);
+  }, [isZoomOpen, isVideoPlaying, handlePrev, handleNext]);
 
-  // Lock body scroll while zoom modal is open
+  // Lock scroll on zoom
   useEffect(() => {
     if (isZoomOpen) {
       const prev = document.body.style.overflow;
@@ -120,62 +123,86 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
     }
   }, [isZoomOpen]);
 
-  const activeItem = activeMediaList[selectedIndex] || activeMediaList[0];
-  const videoDetails = activeItem?.type === 'video' ? getEmbedVideoUrl(activeItem.url) : null;
+  const activePhoto = photoMediaList[selectedIndex] || photoMediaList[0];
+  const videoDetails = effectiveVideoUrl ? getEmbedVideoUrl(effectiveVideoUrl) : null;
 
   return (
     <div className="w-full space-y-4 select-none">
-      {/* Main Full-Width Product Image Container */}
+      {/* Main Product Media Container (Exact same dimensions for Photo & Video) */}
       <div className="relative w-full aspect-square sm:aspect-[4/4.2] md:aspect-square bg-light-elevated dark:bg-[#22211E] rounded-2xl overflow-hidden border border-light-border dark:border-[#34322D] flex items-center justify-center p-2 sm:p-4 group shadow-sm dark:shadow-card">
-        {activeItem?.type === 'video' ? (
-          <div className="relative w-full h-full flex items-center justify-center bg-black rounded-xl overflow-hidden">
-            {videoDetails?.isEmbed ? (
+        {isVideoPlaying && videoDetails ? (
+          /* Inline Video Player: Replaces product image within the exact same container */
+          <div className="relative w-full h-full flex items-center justify-center bg-black rounded-xl overflow-hidden animate-in fade-in duration-200">
+            {videoDetails.isEmbed ? (
               <iframe
                 src={videoDetails.embedUrl}
-                title="Product Video"
+                title={`${productName} Video`}
                 className="w-full h-full border-0 rounded-xl"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
             ) : (
               <video
-                src={activeItem.url}
+                src={videoDetails.embedUrl}
                 controls
                 autoPlay
-                className="w-full h-full object-contain"
-                poster="/images/products/sleevless high.jpeg"
+                className="w-full h-full object-contain rounded-xl"
+                poster={activePhoto?.url || '/images/products/sleevless high.jpeg'}
               />
             )}
+
+            {/* Back to Photo Button */}
+            <button
+              type="button"
+              onClick={() => setIsVideoPlaying(false)}
+              className="absolute top-3 right-3 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/80 hover:bg-black text-white text-xs font-semibold rounded-xl border border-white/20 backdrop-blur-md shadow-md transition-all hover:scale-105 active:scale-95"
+              aria-label="Back to product photo"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-[#C9A96A]" />
+              <span>Back to Photo</span>
+            </button>
           </div>
         ) : (
+          /* Primary Product Image + Optional Play Overlay */
           <div className="relative w-full h-full flex items-center justify-center">
             <Image
-              src={activeItem?.url || '/images/products/sleevless high.jpeg'}
-              alt={activeItem?.alt || productName}
+              src={activePhoto?.url || '/images/products/sleevless high.jpeg'}
+              alt={activePhoto?.alt || productName}
               fill
               priority
               sizes="(max-width: 768px) 100vw, 650px"
               className="object-contain object-center w-full h-full transition-opacity duration-300"
             />
+
+            {/* Subtle, Elegant Play Icon Overlay when video exists */}
+            {effectiveVideoUrl && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsVideoPlaying(true);
+                }}
+                className="absolute inset-0 m-auto w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-charcoal-950/75 hover:bg-black text-white hover:text-champagne-400 dark:hover:text-[#C9A96A] border border-[#B89555]/50 dark:border-[#C9A96A]/60 flex items-center justify-center shadow-lg hover:shadow-xl backdrop-blur-xs transition-all duration-300 hover:scale-110 active:scale-95 z-10 group/play cursor-pointer"
+                aria-label="Play product video"
+                title="Play product video"
+              >
+                <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-champagne-400 dark:fill-[#C9A96A] text-champagne-400 dark:text-[#C9A96A] ml-0.5 transition-transform duration-300 group-hover/play:scale-110" />
+              </button>
+            )}
           </div>
         )}
 
-        {/* Media Title Badge */}
-        <div className="absolute top-3.5 left-3.5 flex items-center gap-2 z-10">
-          {activeItem?.title && (
+        {/* Media Title Badge (Only when not playing video) */}
+        {!isVideoPlaying && activePhoto?.title && (
+          <div className="absolute top-3.5 left-3.5 flex items-center gap-2 z-10">
             <span className="bg-charcoal-900/85 dark:bg-black/80 backdrop-blur-xs text-champagne-400 dark:text-[#C9A96A] border border-charcoal-700 dark:border-[#34322D] text-[10px] font-bold px-2.5 py-1 rounded shadow-xs uppercase tracking-wider">
-              {activeItem.title}
+              {activePhoto.title}
             </span>
-          )}
-          {activeItem?.type === 'video' && (
-            <span className="bg-rose-600 text-white text-[10px] font-bold px-2.5 py-1 rounded flex items-center gap-1 shadow-xs">
-              <Play className="w-3 h-3 fill-current" /> Video Demo
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Fullscreen Enlarge Trigger */}
-        {activeItem?.type === 'photo' && (
+        {/* Fullscreen Enlarge Trigger (Only for photos) */}
+        {!isVideoPlaying && (
           <button
             type="button"
             onClick={() => setIsZoomOpen(true)}
@@ -186,8 +213,8 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
           </button>
         )}
 
-        {/* Prev / Next Carousel Arrows */}
-        {activeMediaList.length > 1 && (
+        {/* Prev / Next Carousel Arrows (Only when multiple photos exist and video is not playing) */}
+        {!isVideoPlaying && photoMediaList.length > 1 && (
           <>
             <button
               onClick={handlePrev}
@@ -207,43 +234,39 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
         )}
       </div>
 
-      {/* Thumbnails Navigation */}
-      {activeMediaList.length > 1 && (
+      {/* Thumbnails Navigation (Strictly Photos Only) */}
+      {photoMediaList.length > 1 && (
         <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
-          {activeMediaList.map((item, idx) => (
+          {photoMediaList.map((item, idx) => (
             <button
               key={item.id || idx}
-              onClick={() => setSelectedIndex(idx)}
+              onClick={() => {
+                setSelectedIndex(idx);
+                setIsVideoPlaying(false);
+              }}
               className={`relative w-20 h-20 sm:w-22 sm:h-22 flex-shrink-0 rounded-xl overflow-hidden border bg-light-elevated dark:bg-[#22211E] p-1 transition-all duration-200 ${
-                selectedIndex === idx
+                !isVideoPlaying && selectedIndex === idx
                   ? 'border-[#B89555] dark:border-[#C9A96A] ring-2 ring-[#B89555]/30 dark:ring-[#C9A96A]/30 shadow-xs'
                   : 'border-light-border dark:border-[#34322D] opacity-70 hover:opacity-100 hover:border-[#B89555]/40 dark:hover:border-[#C9A96A]/40'
               }`}
             >
-              {item.type === 'video' ? (
-                <div className="w-full h-full bg-light-hover dark:bg-[#2A2925] rounded-lg flex flex-col items-center justify-center text-[#B89555] dark:text-[#C9A96A]">
-                  <Play className="w-4 h-4 fill-current" />
-                  <span className="text-[9px] font-bold mt-0.5">Video</span>
-                </div>
-              ) : (
-                <div className="relative w-full h-full">
-                  <Image
-                    src={item.url}
-                    alt={item.alt || `${productName} thumbnail ${idx + 1}`}
-                    fill
-                    loading="lazy"
-                    sizes="90px"
-                    quality={75}
-                    className="object-contain object-center w-full h-full"
-                  />
-                </div>
-              )}
+              <div className="relative w-full h-full">
+                <Image
+                  src={item.url}
+                  alt={item.alt || `${productName} thumbnail ${idx + 1}`}
+                  fill
+                  loading="lazy"
+                  sizes="90px"
+                  quality={75}
+                  className="object-contain object-center w-full h-full"
+                />
+              </div>
             </button>
           ))}
         </div>
       )}
 
-      {/* Fullscreen Zoom Modal — click backdrop or press Escape to close */}
+      {/* Fullscreen Zoom Modal */}
       {isZoomOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
@@ -261,8 +284,8 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={activeItem?.url || '/images/products/sleevless high.jpeg'}
-              alt={activeItem?.alt || productName}
+              src={activePhoto?.url || '/images/products/sleevless high.jpeg'}
+              alt={activePhoto?.alt || productName}
               fill
               className="object-contain object-center"
             />

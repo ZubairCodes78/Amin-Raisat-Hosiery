@@ -729,8 +729,8 @@ export class DataStore {
           .select('*, order_items(*)')
           .order('created_at', { ascending: false });
 
-        if (!error && data && data.length > 0) {
-          return data.map((o: any) => ({
+        if (!error && data) {
+          const mapped = data.map((o: any) => ({
             id: o.id,
             orderNumber: o.order_number,
             customerType: o.customer_type || (o.user_id ? 'REGISTERED' : 'GUEST'),
@@ -775,6 +775,12 @@ export class DataStore {
                 }))
               : [],
           }));
+          if (this.isClient()) {
+            try {
+              localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(mapped));
+            } catch {}
+          }
+          return mapped;
         }
       } catch (err) {
         console.warn('Supabase getOrders error', err);
@@ -935,6 +941,58 @@ export class DataStore {
         orders[index].status = status;
         localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(orders));
       }
+    }
+  }
+
+  static async deleteOrder(orderId: string): Promise<void> {
+    return this.deleteOrders([orderId]);
+  }
+
+  static async deleteOrders(orderIds: string[]): Promise<void> {
+    const cleanIds = orderIds.map((id) => id.trim()).filter(Boolean);
+    if (cleanIds.length === 0) return;
+
+    if (this.isClient()) {
+      try {
+        const res = await fetch('/api/admin/orders', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderIds: cleanIds }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to delete order(s).');
+        }
+
+        const orders = await this.getOrders();
+        const updated = orders.filter((o) => !cleanIds.includes(o.id) && !cleanIds.includes(o.orderNumber));
+        localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(updated));
+        return;
+      } catch (err) {
+        console.error('API /api/admin/orders DELETE error:', err);
+        throw err;
+      }
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const adminDb = createAdminClient();
+        await adminDb.from('order_items').delete().in('order_id', cleanIds);
+        await adminDb.from('reviews').update({ order_id: null }).in('order_id', cleanIds);
+        const { error } = await adminDb.from('orders').delete().in('id', cleanIds);
+        if (error) {
+          throw new Error(error.message);
+        }
+      } catch (err: any) {
+        console.error('Direct Supabase deleteOrders error:', err);
+        throw err;
+      }
+    }
+
+    if (this.isClient()) {
+      const orders = await this.getOrders();
+      const updated = orders.filter((o) => !cleanIds.includes(o.id) && !cleanIds.includes(o.orderNumber));
+      localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(updated));
     }
   }
 
