@@ -124,6 +124,7 @@ export default function ProductDetailPage() {
               media={product.media}
               productName={product.name}
               selectedSleeve={selectedSleeve}
+              videoUrl={product.videoUrl}
             />
           </div>
 
@@ -144,30 +145,44 @@ export default function ProductDetailPage() {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-charcoal-900 dark:text-[#F4F1E9] mt-1 tracking-tight leading-tight">
                 {product.name}
               </h1>
-              <p className="text-xs sm:text-sm text-charcoal-600 dark:text-[#B8B3A8] mt-2 font-normal leading-relaxed">
-                {product.subtitle}
-              </p>
+              {product.subtitle && (
+                <p className="text-xs sm:text-sm text-charcoal-600 dark:text-[#B8B3A8] mt-1.5 font-normal leading-relaxed">
+                  {product.subtitle}
+                </p>
+              )}
 
-              {/* Rating Summary */}
+              {/* Short Description */}
+              {product.shortDescription && (
+                <p className="text-xs sm:text-sm text-charcoal-700 dark:text-[#D7D7D4] mt-2.5 font-medium leading-relaxed bg-white/80 dark:bg-[#191917]/80 p-3 rounded-xl border border-light-border dark:border-[#34322D]">
+                  {product.shortDescription}
+                </p>
+              )}
+
+              {/* Rating Summary (Clickable to scroll to reviews) */}
               <div className="flex items-center gap-3 mt-3.5 pt-3.5 border-t border-light-border dark:border-[#34322D]">
-                {reviewsCount > 0 ? (
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex text-[#B89555] dark:text-[#C9A96A]">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          className={`w-3.5 h-3.5 ${
-                            s <= Math.round(Number(avgRating)) ? 'fill-current' : 'text-charcoal-300 dark:text-[#6E6A62]'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">{avgRating}</span>
-                    <span className="text-xs text-charcoal-500 dark:text-[#B8B3A8]">({reviewsCount} reviews)</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex items-center gap-1.5 text-left group hover:opacity-85 transition-opacity"
+                  aria-label="View customer reviews"
+                >
+                  <div className="flex text-[#B89555] dark:text-[#C9A96A]">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-3.5 h-3.5 ${
+                          s <= Math.round(Number(avgRating || 5)) ? 'fill-current' : 'text-charcoal-300 dark:text-[#6E6A62]'
+                        }`}
+                      />
+                    ))}
                   </div>
-                ) : (
-                  <span className="text-xs text-[#96763D] dark:text-[#C9A96A] font-medium">★ Authentic Combed Cotton Quality</span>
-                )}
+                  <span className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">{avgRating || '5.0'}</span>
+                  <span className="text-xs text-charcoal-500 dark:text-[#B8B3A8] group-hover:underline">
+                    ({reviewsCount} {reviewsCount === 1 ? 'review' : 'reviews'})
+                  </span>
+                </button>
                 <span className="text-charcoal-300 dark:text-[#6E6A62]">•</span>
                 <span className="text-xs font-semibold text-charcoal-700 dark:text-[#B8B3A8]">Made in Faisalabad, Pakistan</span>
               </div>
@@ -293,11 +308,13 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Customer Reviews Section */}
-        <ProductReviews
-          productId={product.id}
-          productName={product.name}
-          reviews={product.reviews}
-        />
+        <div id="reviews-section" className="scroll-mt-10">
+          <ProductReviews
+            productId={product.id}
+            productName={product.name}
+            reviews={product.reviews}
+          />
+        </div>
       </div>
     </div>
   );

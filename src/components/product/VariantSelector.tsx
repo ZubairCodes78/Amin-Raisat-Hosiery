@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SleeveType, ProductSize, Product, ProductVariant } from '@/types';
 import { useCart } from '@/context/CartContext';
@@ -576,11 +577,11 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
           onClick={() => setIsSizeGuideOpen(false)}
         >
           <div
-            className="bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-elevation"
+            className="bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-elevation max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-light-border dark:border-[#34322D] pb-3">
-              <h3 className="font-bold text-base text-charcoal-900 dark:text-[#F4F1E9]">Size Guide (Inches)</h3>
+              <h3 className="font-bold text-base text-charcoal-900 dark:text-[#F4F1E9]">Size Guide &amp; Measurements</h3>
               <button
                 type="button"
                 onClick={() => setIsSizeGuideOpen(false)}
@@ -589,6 +590,25 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Uploaded Product Size Guide Image */}
+            {(product.sizeGuideUrl || product.media?.find((m) => m.type === 'size_guide' || m.variantSleeve === 'size_guide')?.url) && (
+              <div className="space-y-2">
+                <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D]">
+                  <Image
+                    src={product.sizeGuideUrl || product.media?.find((m) => m.type === 'size_guide' || m.variantSleeve === 'size_guide')!.url}
+                    alt={`${product.name} Official Size Guide`}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 500px"
+                    className="object-contain p-2"
+                  />
+                </div>
+                <p className="text-[10px] text-center text-charcoal-500 dark:text-[#8E8A80]">
+                  Official Amin Raisat Hosiery measurement chart
+                </p>
+              </div>
+            )}
+
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead>

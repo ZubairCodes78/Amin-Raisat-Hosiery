@@ -14,6 +14,13 @@ import {
   Truck,
   ExternalLink,
   ChevronDown,
+  CheckCircle,
+  XCircle,
+  Clock,
+  FileText,
+  Eye,
+  AlertTriangle,
+  ZoomIn,
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
@@ -22,12 +29,20 @@ import { formatWhatsAppNumber } from '@/lib/whatsapp';
 const ALL_STATUSES: OrderStatus[] = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'];
 
 export default function AdminOrdersPage() {
-  const { orders, updateOrderStatus, isLoading } = useStore();
+  const { orders, updateOrderStatus, refreshData, isLoading } = useStore();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [wholesaleFilter, setWholesaleFilter] = useState<string>('all');
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Receipt Modal State
+  const [receiptModalOrder, setReceiptModalOrder] = useState<Order | null>(null);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Status Change Confirmation Modal State
   const [statusConfirmModal, setStatusConfirmModal] = useState<{
@@ -37,11 +52,20 @@ export default function AdminOrdersPage() {
     newStatus: OrderStatus;
   } | null>(null);
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 4000);
+  };
+
   const filteredOrders = useMemo(() => {
     return orders.filter((ord) => {
       if (statusFilter !== 'all' && ord.status !== statusFilter) return false;
       if (wholesaleFilter === 'wholesale' && !ord.isWholesale) return false;
       if (wholesaleFilter === 'retail' && ord.isWholesale) return false;
+      if (paymentFilter !== 'all') {
+        const pStatus = ord.paymentStatus || (ord.paymentMethod === 'cod' ? 'COD_PENDING' : 'PENDING_VERIFICATION');
+        if (pStatus !== paymentFilter) return false;
+      }
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
@@ -53,12 +77,15 @@ export default function AdminOrdersPage() {
       }
       return true;
     });
-  }, [orders, statusFilter, wholesaleFilter, searchQuery]);
+  }, [orders, statusFilter, wholesaleFilter, paymentFilter, searchQuery]);
 
   const stats = useMemo(() => {
     return {
       total: orders.length,
       wholesale: orders.filter((o) => o.isWholesale).length,
+      pendingVerification: orders.filter(
+        (o) => o.paymentStatus === 'PENDING_VERIFICATION' || (o.paymentMethod !== 'cod' && o.status === 'Pending' && !o.paymentVerifiedAt)
+      ).length,
       pending: orders.filter((o) => o.status === 'Pending').length,
       confirmed: orders.filter((o) => o.status === 'Confirmed' || o.status === 'Processing').length,
       shipped: orders.filter((o) => o.status === 'Shipped').length,
@@ -83,10 +110,120 @@ export default function AdminOrdersPage() {
       setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
     }
     setStatusConfirmModal(null);
+    showToast(`Order #${statusConfirmModal.orderNumber} status updated to ${newStatus}`);
+  };
+
+  // Payment Verification API call
+  const handleVerifyPayment = async (orderId: string) => {
+    setIsVerifyingPayment(true);
+    try {
+      const res = await fetch('/api/admin/orders/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          action: 'verify',
+          verifiedBy: 'Admin',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to verify payment');
+
+      showToast('Payment verified successfully! Order marked as Confirmed.');
+      setReceiptModalOrder(null);
+      await refreshData();
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder((prev) =>
+          prev ? { ...prev, paymentStatus: 'VERIFIED', status: 'Confirmed', paymentVerifiedAt: new Date().toISOString() } : null
+        );
+      }
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Error verifying payment');
+    } finally {
+      setIsVerifyingPayment(false);
+    }
+  };
+
+  // Payment Rejection API call
+  const handleRejectPayment = async (orderId: string) => {
+    setIsVerifyingPayment(true);
+    try {
+      const res = await fetch('/api/admin/orders/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          action: 'reject',
+          rejectionReason: rejectionReasonInput || 'Payment screenshot invalid or amount mismatch.',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reject payment');
+
+      showToast('Payment rejected. Customer will need to re-submit proof.');
+      setReceiptModalOrder(null);
+      setShowRejectForm(false);
+      setRejectionReasonInput('');
+      await refreshData();
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder((prev) =>
+          prev ? { ...prev, paymentStatus: 'REJECTED', paymentRejectionReason: rejectionReasonInput } : null
+        );
+      }
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || 'Error rejecting payment');
+    } finally {
+      setIsVerifyingPayment(false);
+    }
+  };
+
+  // Helper for Payment Status Badge
+  const renderPaymentStatusBadge = (ord: Order) => {
+    const status = ord.paymentStatus || (ord.paymentMethod === 'cod' ? 'COD_PENDING' : 'PENDING_VERIFICATION');
+
+    if (status === 'VERIFIED') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+          <CheckCircle className="w-2.5 h-2.5" />
+          <span>Verified</span>
+        </span>
+      );
+    }
+    if (status === 'REJECTED') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+          <XCircle className="w-2.5 h-2.5" />
+          <span>Rejected</span>
+        </span>
+      );
+    }
+    if (status === 'PENDING_VERIFICATION') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+          <Clock className="w-2.5 h-2.5" />
+          <span>Verify Receipt</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-charcoal-100 dark:bg-[#22211E] text-charcoal-600 dark:text-[#8E8A80]">
+        <span>COD Pending</span>
+      </span>
+    );
   };
 
   return (
     <div className="space-y-6 max-w-7xl text-charcoal-900 dark:text-[#F4F1E9]">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 bg-white dark:bg-[#191917] text-charcoal-900 dark:text-[#F4F1E9] border border-emerald-500/40 rounded-xl shadow-elevation flex items-center gap-2.5 text-xs font-semibold animate-in fade-in">
+          <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#191917] p-6 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm">
         <div>
@@ -97,19 +234,27 @@ export default function AdminOrdersPage() {
             </span>
           </div>
           <p className="text-xs text-charcoal-500 dark:text-[#8E8A80] mt-1">
-            Real-time customer dispatch desk. Confirm orders, update courier fulfillment statuses, and launch direct WhatsApp messages.
+            Real-time customer dispatch desk. Confirm orders, inspect &amp; verify payment screenshots (JazzCash, EasyPaisa, SadaPay, Bank Transfer), and launch direct WhatsApp messages.
           </p>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3.5">
         <div className="bg-white dark:bg-[#191917] p-4 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm">
           <span className="text-[10px] font-bold text-charcoal-500 dark:text-[#8E8A80] uppercase tracking-wider block whitespace-nowrap">
             Wholesale Orders
           </span>
           <div className="text-xl font-bold text-[#B89555] dark:text-[#C9A96A] mt-1">{stats.wholesale}</div>
           <span className="text-[10px] text-charcoal-400 dark:text-[#8E8A80] mt-0.5 block whitespace-nowrap">B2B Bulk Orders</span>
+        </div>
+
+        <div className="bg-white dark:bg-[#191917] p-4 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm">
+          <span className="text-[10px] font-bold text-charcoal-500 dark:text-[#8E8A80] uppercase tracking-wider block whitespace-nowrap">
+            Pending Receipt
+          </span>
+          <div className="text-xl font-bold text-amber-500 mt-1">{stats.pendingVerification}</div>
+          <span className="text-[10px] text-charcoal-400 dark:text-[#8E8A80] mt-0.5 block whitespace-nowrap">Awaiting Verification</span>
         </div>
 
         <div className="bg-white dark:bg-[#191917] p-4 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm">
@@ -159,6 +304,19 @@ export default function AdminOrdersPage() {
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+          {/* Payment Verification Filter */}
+          <select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+            className="px-3 py-2 text-xs bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] text-charcoal-900 dark:text-[#F4F1E9] rounded-xl focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+          >
+            <option value="all">All Payments</option>
+            <option value="PENDING_VERIFICATION">Needs Verification</option>
+            <option value="VERIFIED">Payment Verified</option>
+            <option value="REJECTED">Payment Rejected</option>
+            <option value="COD_PENDING">COD Orders</option>
+          </select>
+
           {/* Wholesale Filter */}
           <select
             value={wholesaleFilter}
@@ -204,30 +362,52 @@ export default function AdminOrdersPage() {
                     <th className="p-4 w-28 whitespace-nowrap font-mono">Order #</th>
                     <th className="p-4 min-w-[200px]">Customer &amp; Phone</th>
                     <th className="p-4 w-36 whitespace-nowrap">City / Province</th>
-                    <th className="p-4 min-w-[220px]">Items &amp; Type</th>
-                    <th className="p-4 w-32 whitespace-nowrap">Total (Rs.)</th>
-                    <th className="p-4 w-36 whitespace-nowrap">Payment</th>
-                    <th className="p-4 w-36 whitespace-nowrap">Status</th>
-                    <th className="p-4 w-28 text-right whitespace-nowrap">Action</th>
+                    <th className="p-4 min-w-[200px]">Items &amp; Total</th>
+                    <th className="p-4 w-44 whitespace-nowrap">Payment &amp; Proof</th>
+                    <th className="p-4 w-36 whitespace-nowrap">Order Status</th>
+                    <th className="p-4 w-36 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-light-border dark:divide-[#282723] font-medium text-charcoal-700 dark:text-[#B8B3A8]">
                   {filteredOrders.map((ord) => {
                     const targetPhone = formatWhatsAppNumber(ord.customerPhone);
-                    const whatsappLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(
+                    const whatsappOrderLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(
                       `Assalam-o-Alaikum ${ord.customerName}, this is Amin Raisat Hosiery regarding your Order #${ord.orderNumber}.`
                     )}`;
+
+                    // WhatsApp Review Request Link
+                    const firstItemSlug = ord.items?.[0]?.productName
+                      ? ord.items[0].productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+                      : '';
+                    const productReviewUrl = firstItemSlug
+                      ? `https://aminhosiery.com/product/${firstItemSlug}#reviews-section`
+                      : `https://aminhosiery.com/#reviews`;
+                    const reviewMsg = `Assalam-o-Alaikum ${ord.customerName}! Thank you for shopping with Amin Raisat Hosiery. We hope you are loving your 100% Combed Cotton innerwear from order #${ord.orderNumber}. Could you please take a moment to leave us a quick review and rating here: ${productReviewUrl} — JazakAllah Khair!`;
+                    const whatsappReviewLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(reviewMsg)}`;
 
                     return (
                       <tr key={ord.id} className="hover:bg-light-hover dark:hover:bg-[#22211E]/60 transition-colors">
                         <td className="p-4 font-mono font-bold text-[#B89555] dark:text-[#C9A96A] whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            <span>#{ord.orderNumber}</span>
-                            {ord.isWholesale && (
-                              <span className="text-[9px] font-extrabold bg-[#B89555]/20 text-[#B89555] dark:text-[#C9A96A] border border-[#B89555]/40 px-1 py-0.5 rounded uppercase">
-                                Wholesale
-                              </span>
-                            )}
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1">
+                              <span>#{ord.orderNumber}</span>
+                              {ord.isWholesale && (
+                                <span className="text-[9px] font-extrabold bg-[#B89555]/20 text-[#B89555] dark:text-[#C9A96A] border border-[#B89555]/40 px-1 py-0.5 rounded uppercase">
+                                  Wholesale
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              {ord.customerType === 'GUEST' ? (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-charcoal-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-[#8E8A80]">
+                                  GUEST
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                  REGISTERED
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="p-4 min-w-[200px]">
@@ -235,7 +415,7 @@ export default function AdminOrdersPage() {
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-charcoal-500 dark:text-[#8E8A80] font-mono text-[11px] whitespace-nowrap">{ord.customerPhone}</span>
                             <a
-                              href={whatsappLink}
+                              href={whatsappOrderLink}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#25D366] hover:text-[#1EBE5D] p-0.5 inline-flex items-center"
@@ -249,26 +429,35 @@ export default function AdminOrdersPage() {
                           <div>{ord.city}</div>
                           <span className="text-[10px] text-charcoal-500 dark:text-[#8E8A80]">{ord.province}</span>
                         </td>
-                        <td className="p-4 min-w-[220px] text-charcoal-900 dark:text-[#F4F1E9]">
-                          <div className="font-bold whitespace-nowrap flex items-center gap-1.5">
-                            <span>{ord.items.reduce((s, it) => s + it.quantity, 0)} pieces</span>
-                            {ord.isWholesale && (
-                              <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400">
-                                (Wholesale Tier)
-                              </span>
-                            )}
+                        <td className="p-4 min-w-[200px] text-charcoal-900 dark:text-[#F4F1E9]">
+                          <div className="font-bold text-[#B89555] dark:text-[#C9A96A] text-sm whitespace-nowrap">
+                            Rs. {ord.totalAmount}
                           </div>
-                          <span className="text-[10px] text-charcoal-500 dark:text-[#8E8A80] line-clamp-1">
-                            {ord.items.map((it) => `${it.quality} ${it.size} x${it.quantity}`).join(', ')}
-                          </span>
+                          <div className="text-[10px] text-charcoal-500 dark:text-[#8E8A80]">
+                            {ord.items.reduce((s, it) => s + it.quantity, 0)} pieces
+                          </div>
                         </td>
-                        <td className="p-4 w-32 font-bold text-[#B89555] dark:text-[#C9A96A] text-sm whitespace-nowrap">
-                          Rs. {ord.totalAmount}
-                        </td>
-                        <td className="p-4 w-36 whitespace-nowrap">
-                          <span className="capitalize font-semibold text-[11px] text-charcoal-600 dark:text-[#B8B3A8]">
-                            {ord.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Bank Transfer'}
-                          </span>
+                        <td className="p-4 w-44 whitespace-nowrap space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="uppercase font-bold text-[10px] text-charcoal-700 dark:text-[#B8B3A8]">
+                              {ord.paymentMethod.replace('_', ' ')}
+                            </span>
+                            {renderPaymentStatusBadge(ord)}
+                          </div>
+                          
+                          {/* Receipt View Button if screenshot uploaded */}
+                          {ord.paymentScreenshotUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => setReceiptModalOrder(ord)}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#B89555] dark:text-[#C9A96A] hover:underline"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>View Receipt</span>
+                            </button>
+                          ) : ord.paymentMethod !== 'cod' ? (
+                            <span className="text-[10px] text-charcoal-400 italic block">No receipt uploaded</span>
+                          ) : null}
                         </td>
                         <td className="p-4 w-36 whitespace-nowrap">
                           <select
@@ -293,14 +482,30 @@ export default function AdminOrdersPage() {
                             ))}
                           </select>
                         </td>
-                        <td className="p-4 w-28 text-right whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedOrder(ord)}
-                            className="px-3.5 py-1.5 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] text-[#B89555] dark:text-[#C9A96A] hover:text-champagne-500 rounded-xl text-xs font-bold transition-colors whitespace-nowrap"
-                          >
-                            Details
-                          </button>
+                        <td className="p-4 w-36 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* WhatsApp Review Request Button for Delivered Orders */}
+                            {ord.status === 'Delivered' && (
+                              <a
+                                href={whatsappReviewLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1.5 bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#1EBE5D] border border-[#25D366]/30 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors"
+                                title="Send WhatsApp Review Request"
+                              >
+                                <WhatsAppIcon size={13} className="fill-current" />
+                                <span>Review</span>
+                              </a>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedOrder(ord)}
+                              className="px-3 py-1.5 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] border border-light-border dark:border-[#34322D] text-[#B89555] dark:text-[#C9A96A] hover:text-champagne-500 rounded-xl text-xs font-bold transition-colors whitespace-nowrap"
+                            >
+                              Details
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -313,9 +518,18 @@ export default function AdminOrdersPage() {
             <div className="md:hidden divide-y divide-light-border dark:divide-[#282723] p-3 space-y-3">
               {filteredOrders.map((ord) => {
                 const targetPhone = formatWhatsAppNumber(ord.customerPhone);
-                const whatsappLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(
+                const whatsappOrderLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(
                   `Assalam-o-Alaikum ${ord.customerName}, this is Amin Raisat Hosiery regarding your Order #${ord.orderNumber}.`
                 )}`;
+
+                const firstItemSlug = ord.items?.[0]?.productName
+                  ? ord.items[0].productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+                  : '';
+                const productReviewUrl = firstItemSlug
+                  ? `https://aminhosiery.com/product/${firstItemSlug}#reviews-section`
+                  : `https://aminhosiery.com/#reviews`;
+                const reviewMsg = `Assalam-o-Alaikum ${ord.customerName}! Thank you for shopping with Amin Raisat Hosiery. We hope you are loving your 100% Combed Cotton innerwear from order #${ord.orderNumber}. Could you please take a moment to leave us a quick review and rating here: ${productReviewUrl} — JazakAllah Khair!`;
+                const whatsappReviewLink = `https://wa.me/${targetPhone}?text=${encodeURIComponent(reviewMsg)}`;
 
                 return (
                   <div
@@ -327,6 +541,15 @@ export default function AdminOrdersPage() {
                         <span className="font-mono font-bold text-sm text-[#B89555] dark:text-[#C9A96A]">
                           #{ord.orderNumber}
                         </span>
+                        {ord.customerType === 'GUEST' ? (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-charcoal-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-[#8E8A80]">
+                            GUEST
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                            REG
+                          </span>
+                        )}
                         {ord.isWholesale && (
                           <span className="text-[9px] font-extrabold bg-[#B89555]/20 text-[#B89555] dark:text-[#C9A96A] border border-[#B89555]/40 px-1 py-0.5 rounded uppercase">
                             Wholesale
@@ -345,18 +568,34 @@ export default function AdminOrdersPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <a
-                          href={whatsappLink}
+                          href={whatsappOrderLink}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg border border-emerald-500/30"
+                          title="WhatsApp Chat"
                         >
                           <WhatsAppIcon size={14} className="fill-current" />
                         </a>
                       </div>
                     </div>
 
-                    <div className="text-[11px] text-charcoal-500 dark:text-[#8E8A80]">
-                      {ord.items.reduce((s, it) => s + it.quantity, 0)} pcs • {ord.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Bank Transfer'}
+                    {/* Payment Info & Proof */}
+                    <div className="flex items-center justify-between pt-1 border-t border-light-border dark:border-[#34322D] text-[11px]">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold uppercase text-[10px]">{ord.paymentMethod.replace('_', ' ')}</span>
+                        {renderPaymentStatusBadge(ord)}
+                      </div>
+
+                      {ord.paymentScreenshotUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setReceiptModalOrder(ord)}
+                          className="text-[#B89555] dark:text-[#C9A96A] font-bold flex items-center gap-1"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span>Receipt</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-light-border dark:border-[#34322D]">
@@ -382,6 +621,19 @@ export default function AdminOrdersPage() {
                         ))}
                       </select>
 
+                      {ord.status === 'Delivered' && (
+                        <a
+                          href={whatsappReviewLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2.5 py-1.5 bg-[#25D366]/20 text-[#1EBE5D] rounded-xl text-xs font-bold flex items-center gap-1"
+                          title="WhatsApp Review Request"
+                        >
+                          <WhatsAppIcon size={12} className="fill-current" />
+                          <span>Review</span>
+                        </a>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => setSelectedOrder(ord)}
@@ -398,6 +650,140 @@ export default function AdminOrdersPage() {
         )}
       </div>
 
+      {/* Payment Receipt / Screenshot Verification Modal */}
+      {receiptModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white dark:bg-[#191917] border border-light-border dark:border-[#34322D] rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-elevation max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-light-border dark:border-[#34322D] pb-3">
+              <div>
+                <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9] flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+                  <span>Payment Receipt — Order #{receiptModalOrder.orderNumber}</span>
+                </h3>
+                <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80]">
+                  Customer: {receiptModalOrder.customerName} ({receiptModalOrder.customerPhone})
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setReceiptModalOrder(null);
+                  setShowRejectForm(false);
+                }}
+                className="p-1 rounded-lg text-charcoal-400 hover:text-charcoal-900 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Order Summary Pill */}
+            <div className="grid grid-cols-3 gap-2 p-3 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] text-xs">
+              <div>
+                <span className="text-charcoal-400 block text-[10px]">Method</span>
+                <span className="font-bold uppercase text-charcoal-900 dark:text-[#F4F1E9]">
+                  {receiptModalOrder.paymentMethod.replace('_', ' ')}
+                </span>
+              </div>
+              <div>
+                <span className="text-charcoal-400 block text-[10px]">Total Order</span>
+                <span className="font-bold text-[#B89555] dark:text-[#C9A96A]">
+                  Rs. {receiptModalOrder.totalAmount}
+                </span>
+              </div>
+              <div>
+                <span className="text-charcoal-400 block text-[10px]">Status</span>
+                <span className="font-bold">{renderPaymentStatusBadge(receiptModalOrder)}</span>
+              </div>
+            </div>
+
+            {/* Receipt Image Display */}
+            {receiptModalOrder.paymentScreenshotUrl ? (
+              <div className="space-y-2">
+                <div className="relative rounded-xl border border-light-border dark:border-[#34322D] overflow-hidden bg-black/5 dark:bg-black/30 flex items-center justify-center max-h-[50vh]">
+                  <img
+                    src={receiptModalOrder.paymentScreenshotUrl}
+                    alt={`Payment receipt for order #${receiptModalOrder.orderNumber}`}
+                    className="max-h-[48vh] w-auto object-contain rounded-lg transition-transform hover:scale-[1.02]"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <a
+                    href={receiptModalOrder.paymentScreenshotUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-[#B89555] dark:text-[#C9A96A] font-bold hover:underline"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open High-Res Original</span>
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] text-xs text-charcoal-500">
+                No screenshot uploaded by customer.
+              </div>
+            )}
+
+            {/* Rejection Form Input */}
+            {showRejectForm && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl space-y-2 animate-in fade-in">
+                <label className="block text-xs font-bold text-rose-700 dark:text-rose-400">
+                  Reason for Rejecting Payment
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Screenshot unreadable, amount mismatch, or fake reference..."
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#191917] border border-rose-300 dark:border-rose-800 rounded-lg text-charcoal-900 dark:text-[#F4F1E9] focus:outline-none"
+                />
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowRejectForm(false)}
+                    className="px-3 py-1 text-xs font-semibold text-charcoal-500 hover:text-charcoal-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isVerifyingPayment}
+                    onClick={() => handleRejectPayment(receiptModalOrder.id)}
+                    className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                  >
+                    {isVerifyingPayment ? 'Rejecting...' : 'Confirm Rejection'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {!showRejectForm && (
+              <div className="flex items-center justify-between pt-2 border-t border-light-border dark:border-[#34322D]">
+                <button
+                  type="button"
+                  onClick={() => setShowRejectForm(true)}
+                  disabled={isVerifyingPayment}
+                  className="px-4 py-2 border border-rose-500/30 text-rose-600 hover:bg-rose-500/10 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  Reject Proof
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isVerifyingPayment}
+                  onClick={() => handleVerifyPayment(receiptModalOrder.id)}
+                  className="inline-flex items-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs transition-all disabled:opacity-50"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{isVerifyingPayment ? 'Verifying...' : 'Verify & Confirm Order'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Order Details Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-xs">
@@ -406,6 +792,15 @@ export default function AdminOrdersPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-base text-charcoal-900 dark:text-[#F4F1E9]">Order #{selectedOrder.orderNumber}</h3>
+                  {selectedOrder.customerType === 'GUEST' ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-charcoal-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-[#8E8A80]">
+                      Guest Checkout
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                      Registered Customer
+                    </span>
+                  )}
                   {selectedOrder.isWholesale && (
                     <span className="text-[10px] font-extrabold bg-champagne-500 text-charcoal-950 px-2 py-0.5 rounded uppercase">
                       Wholesale B2B Order
@@ -444,6 +839,33 @@ export default function AdminOrdersPage() {
                   <span className="text-charcoal-500 dark:text-[#8E8A80] block">Customer Order Notes</span>
                   <p className="text-[#B89555] dark:text-[#C9A96A] italic">{selectedOrder.orderNotes}</p>
                 </div>
+              )}
+            </div>
+
+            {/* Payment & Proof Box */}
+            <div className="p-4 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] flex items-center justify-between text-xs">
+              <div>
+                <span className="text-charcoal-500 dark:text-[#8E8A80] block text-[10px]">Payment Method</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <strong className="uppercase font-bold">{selectedOrder.paymentMethod.replace('_', ' ')}</strong>
+                  {renderPaymentStatusBadge(selectedOrder)}
+                </div>
+                {selectedOrder.paymentRejectionReason && (
+                  <p className="text-rose-500 text-[11px] mt-1">Rejection reason: {selectedOrder.paymentRejectionReason}</p>
+                )}
+              </div>
+
+              {selectedOrder.paymentScreenshotUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReceiptModalOrder(selectedOrder);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#B89555]/10 hover:bg-[#B89555]/20 text-[#B89555] dark:text-[#C9A96A] rounded-lg font-bold transition-colors"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Inspect Receipt</span>
+                </button>
               )}
             </div>
 

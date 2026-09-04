@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Product, ProductSize, SleeveType } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
-import { ShoppingBag, Zap, Check } from 'lucide-react';
+import { ShoppingBag, Zap, Check, Play, Star } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -166,6 +166,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
               priority={false}
             />
           </Link>
+
+          {/* Watch Video Button Overlay (Navigates in Same Tab to Product Page Inline Video Player) */}
+          {(product.videoUrl || product.media?.some((m) => m.type === 'video')) && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push(`/product/${product.slug}?video=1`);
+              }}
+              className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-charcoal-900/85 hover:bg-black text-white text-[11px] font-bold shadow-md hover:scale-105 transition-all backdrop-blur-xs border border-white/20"
+              aria-label={`Watch video of ${product.name}`}
+            >
+              <Play className="w-3 h-3 fill-rose-500 text-rose-500" />
+              <span>Watch Video</span>
+            </button>
+          )}
         </div>
 
         {/* 2. Product Details Area */}
@@ -177,9 +194,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
             <h3 className="text-sm sm:text-base font-bold text-charcoal-900 dark:text-[#F4F1E9] mt-1 group-hover:text-[#B89555] dark:group-hover:text-[#C9A96A] transition-colors leading-snug line-clamp-2">
               <Link href={detailUrl}>{product.name}</Link>
             </h3>
-            <p className="text-xs text-charcoal-500 dark:text-[#8E8A80] line-clamp-2 mt-1 font-normal leading-relaxed">
-              {product.subtitle}
-            </p>
+
+            {/* Real Rating Stars & Reviews Count */}
+            <div className="flex items-center gap-1.5 mt-1">
+              <div className="flex text-[#B89555] dark:text-[#C9A96A]">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`w-3 h-3 ${
+                      s <= Math.round(Number(product.rating || 5)) ? 'fill-current' : 'text-charcoal-300 dark:text-[#6E6A62]'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+                {(product.rating || 5.0).toFixed(1)}
+              </span>
+              <span className="text-[10px] text-charcoal-500 dark:text-[#8E8A80]">
+                ({product.reviewsCount ?? (product.reviews?.length || 0)})
+              </span>
+            </div>
+
+            {product.subtitle && (
+              <p className="text-xs text-charcoal-500 dark:text-[#8E8A80] line-clamp-2 mt-1 font-normal leading-relaxed">
+                {product.subtitle}
+              </p>
+            )}
           </div>
 
           {/* Sleeve Style Selector */}

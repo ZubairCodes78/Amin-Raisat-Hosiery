@@ -10,12 +10,14 @@ export async function POST(req: Request) {
       customerName,
       customerPhone,
       customerEmail,
+      customerType,
       address,
       city,
       province,
       orderNotes,
       paymentMethod,
       paymentReference,
+      paymentScreenshotUrl,
       items,
       isWholesale: clientIsWholesale,
     } = body;
@@ -185,6 +187,8 @@ export async function POST(req: Request) {
     const totalAmount = subtotal + deliveryFee;
     const orderNumber = `ARH-${Date.now().toString().slice(-6)}`;
     let orderId = `ord-${Date.now()}`;
+    const assignedCustomerType = customerType || (userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId) ? 'REGISTERED' : 'GUEST');
+    const defaultPaymentStatus = paymentMethod === 'cod' ? 'COD_PENDING' : 'PENDING_VERIFICATION';
 
     // 4. Save Order to Supabase Database
     if (isSupabaseConfigured()) {
@@ -201,10 +205,11 @@ export async function POST(req: Request) {
           user_id: userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
             ? userId
             : null,
+          customer_type: assignedCustomerType,
           customer_name: cleanName,
           customer_phone: cleanPhone,
           customer_email: customerEmail?.trim() || null,
-          shipping_address: cleanAddress,
+          address: cleanAddress,
           city: cleanCity,
           province: province?.trim() || 'Punjab',
           order_notes: orderNotes?.trim() || null,
@@ -213,6 +218,8 @@ export async function POST(req: Request) {
           total_amount: totalAmount,
           payment_method: paymentMethod || 'cod',
           payment_reference: paymentReference || null,
+          payment_screenshot_url: paymentScreenshotUrl || null,
+          payment_status: defaultPaymentStatus,
           status: 'Pending',
           is_wholesale: hasWholesale,
           wholesale_discount: totalSavings,
@@ -224,16 +231,37 @@ export async function POST(req: Request) {
           .select()
           .single();
 
-        if (ordErr && ordErr.code === 'PGRST204') {
-          delete orderPayload.is_wholesale;
-          delete orderPayload.wholesale_discount;
+        // If insert fails due to missing optional columns (e.g. schema migration pending), strip them and retry
+        if (ordErr) {
+          console.warn('Initial order insert failed, attempting clean fallback:', ordErr.message);
+          const fallbackPayload: any = {
+            order_number: orderNumber,
+            user_id: orderPayload.user_id,
+            customer_name: cleanName,
+            customer_phone: cleanPhone,
+            customer_email: customerEmail?.trim() || null,
+            address: cleanAddress,
+            city: cleanCity,
+            province: province?.trim() || 'Punjab',
+            order_notes: orderNotes?.trim() || null,
+            subtotal: subtotal,
+            delivery_fee: deliveryFee,
+            total_amount: totalAmount,
+            payment_method: paymentMethod || 'cod',
+            payment_reference: paymentReference || null,
+            status: 'Pending',
+          };
+
           const retryRes = await dbClient
             .from('orders')
-            .insert(orderPayload)
+            .insert(fallbackPayload)
             .select()
             .single();
           insertedOrder = retryRes.data;
           ordErr = retryRes.error;
+          if (ordErr) {
+            console.error('Fallback order insert failed:', ordErr);
+          }
         }
 
         if (!ordErr && insertedOrder) {
@@ -284,6 +312,7 @@ export async function POST(req: Request) {
     const order = {
       id: orderId,
       orderNumber,
+      customerType: assignedCustomerType,
       customerName: cleanName,
       customerPhone: cleanPhone,
       customerEmail: customerEmail?.trim() || undefined,
@@ -296,6 +325,8 @@ export async function POST(req: Request) {
       totalAmount,
       paymentMethod: paymentMethod || 'cod',
       paymentReference: paymentReference || undefined,
+      paymentScreenshotUrl: paymentScreenshotUrl || undefined,
+      paymentStatus: defaultPaymentStatus,
       status: 'Pending',
       isWholesale: hasWholesale,
       wholesaleDiscount: totalSavings > 0 ? totalSavings : undefined,
@@ -306,6 +337,84 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, order }, { status: 201 });
   } catch (err: any) {
     console.error('Order API error:', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+
+    let dbClient = supabaseServer;
+    try {
+      dbClient = createAdminClient();
+    } catch {}
+
+    let query = dbClient
+      .from('orders')
+      .select('*, order_items(*)')
+      .order('created_at', { ascending: false });
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data: orders, error } = await query;
+    if (error) {
+      console.error('Fetch orders error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const mappedOrders = (orders || []).map((o: any) => ({
+      id: o.id,
+      orderNumber: o.order_number,
+      customerType: o.customer_type || (o.user_id ? 'REGISTERED' : 'GUEST'),
+      customerName: o.customer_name,
+      customerPhone: o.customer_phone,
+      customerEmail: o.customer_email || undefined,
+      address: o.address || o.shipping_address || '',
+      city: o.city,
+      province: o.province,
+      orderNotes: o.order_notes || undefined,
+      subtotal: Number(o.subtotal) || 0,
+      deliveryFee: Number(o.delivery_fee) || 0,
+      totalAmount: Number(o.total_amount) || 0,
+      paymentMethod: o.payment_method || 'cod',
+      paymentReference: o.payment_reference || undefined,
+      paymentScreenshotUrl: o.payment_screenshot_url || undefined,
+      paymentStatus: o.payment_status || (o.payment_method === 'cod' ? 'COD_PENDING' : 'PENDING_VERIFICATION'),
+      paymentVerifiedAt: o.payment_verified_at || undefined,
+      paymentVerifiedBy: o.payment_verified_by || undefined,
+      paymentRejectionReason: o.payment_rejection_reason || undefined,
+      status: o.status || 'Pending',
+      isWholesale: o.is_wholesale ?? false,
+      wholesaleDiscount: o.wholesale_discount ? Number(o.wholesale_discount) : undefined,
+      createdAt: o.created_at,
+      items: Array.isArray(o.order_items)
+        ? o.order_items.map((it: any) => ({
+            id: it.id,
+            orderId: it.order_id,
+            productId: it.product_id,
+            variantId: it.variant_id,
+            productName: it.product_name,
+            quality: it.quality,
+            sleeve: it.sleeve,
+            size: it.size,
+            unitPrice: Number(it.unit_price) || 0,
+            regularPrice: it.regular_price ? Number(it.regular_price) : undefined,
+            wholesalePrice: it.wholesale_price ? Number(it.wholesale_price) : undefined,
+            isWholesale: it.is_wholesale ?? false,
+            quantity: Number(it.quantity) || 1,
+            totalPrice: Number(it.total_price) || 0,
+            image: it.image_url,
+          }))
+        : [],
+    }));
+
+    return NextResponse.json({ success: true, orders: mappedOrders });
+  } catch (err: any) {
+    console.error('GET orders error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

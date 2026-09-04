@@ -20,6 +20,10 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  Upload,
+  Smartphone,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 const PAKISTAN_PROVINCES = [
@@ -70,8 +74,20 @@ export default function CheckoutPage() {
     wholesaleMinQty,
     totalSavings,
   } = useCart();
-  const { settings, createOrder } = useStore();
+  const { settings, createOrder, uploadMediaFile } = useStore();
   const { user, profile, addresses, isLoading: authLoading, signIn, signUp } = useAuth();
+
+  // Guest checkout state
+  const [isGuestCheckout, setIsGuestCheckout] = useState(false);
+  const [paymentScreenshotUrl, setPaymentScreenshotUrl] = useState('');
+  const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
 
   // Auth gate state (for unauthenticated customers)
   const [authTab, setAuthTab] = useState<'signup' | 'signin'>('signup');
@@ -237,8 +253,8 @@ export default function CheckoutPage() {
     }
   };
 
-  // STEP 1: AUTH GATE (If not signed in, prompt clean Sign In / Register)
-  if (!user && !authLoading) {
+  // STEP 1: AUTH GATE (If not signed in and not guest, prompt clean Sign In / Register / Guest)
+  if (!user && !authLoading && !isGuestCheckout) {
     return (
       <div className="py-12 bg-light-bg dark:bg-[#11110F] min-h-[85vh] text-charcoal-900 dark:text-[#F4F1E9] transition-colors duration-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -419,6 +435,33 @@ export default function CheckoutPage() {
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
+
+              {/* Continue as Guest option */}
+              <div className="space-y-3 pt-2">
+                <div className="relative flex items-center justify-center">
+                  <div className="border-t border-light-border dark:border-[#34322D] w-full" />
+                  <span className="bg-white dark:bg-[#191917] px-3 text-[10px] font-bold text-charcoal-400 dark:text-[#8E8A80] uppercase tracking-wider absolute">
+                    Or
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsGuestCheckout(true);
+                    setFormData((prev) => ({
+                      ...prev,
+                      fullName: authFullName.trim() || prev.fullName,
+                      email: authEmail.trim() || prev.email,
+                      phone: authPhone.trim() || prev.phone,
+                    }));
+                  }}
+                  className="w-full py-3 px-4 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] text-charcoal-900 dark:text-[#F4F1E9] font-bold text-xs rounded-xl border border-light-border dark:border-[#34322D] transition-all flex items-center justify-center gap-2 shadow-xs hover:border-[#B89555]/50 active:scale-[0.99]"
+                >
+                  <UserIcon className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
+                  <span>Continue as Guest (No Password Required)</span>
+                </button>
+              </div>
             </div>
 
             {/* Right: Cart Summary Sidebar */}
@@ -503,11 +546,18 @@ export default function CheckoutPage() {
       return;
     }
 
+    const isDigitalPayment = formData.paymentMethod !== 'cod';
+    if (isDigitalPayment && !paymentScreenshotUrl) {
+      setErrorMsg('Please upload your payment screenshot before placing the order.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
       const orderPayload = {
         userId: user?.id || undefined,
+        customerType: (user ? 'REGISTERED' : 'GUEST') as 'REGISTERED' | 'GUEST',
         customerName: formData.fullName.trim(),
         customerPhone: formData.phone.trim(),
         customerEmail: user?.email || formData.email.trim() || undefined,
@@ -520,6 +570,7 @@ export default function CheckoutPage() {
         totalAmount,
         paymentMethod: formData.paymentMethod,
         paymentReference: formData.paymentReference.trim() || undefined,
+        paymentScreenshotUrl: paymentScreenshotUrl || undefined,
         isWholesale: hasWholesaleItems,
         wholesaleDiscount: totalSavings,
         items: items.map((it) => ({
@@ -575,17 +626,26 @@ export default function CheckoutPage() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-charcoal-600 dark:text-[#8E8A80] mt-1 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Logged in as <strong className="text-[#B89555] dark:text-[#C9A96A]">{user?.email || profile?.email}</strong>. Saved address details auto-applied.</span>
-              </p>
+              {user ? (
+                <p className="text-xs text-charcoal-600 dark:text-[#8E8A80] mt-1 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Logged in as <strong className="text-[#B89555] dark:text-[#C9A96A]">{user?.email || profile?.email}</strong>. Saved address details auto-applied.</span>
+                </p>
+              ) : (
+                <p className="text-xs text-charcoal-600 dark:text-[#8E8A80] mt-1 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                  <span>Checking out as <strong>Guest</strong>. Complete delivery details below.</span>
+                </p>
+              )}
             </div>
-            <Link
-              href="/account"
-              className="text-xs text-[#B89555] dark:text-[#C9A96A] hover:underline font-semibold"
-            >
-              Manage Saved Addresses →
-            </Link>
+            {user && (
+              <Link
+                href="/account"
+                className="text-xs text-[#B89555] dark:text-[#C9A96A] hover:underline font-semibold"
+              >
+                Manage Saved Addresses →
+              </Link>
+            )}
           </div>
         </div>
 
@@ -655,13 +715,17 @@ export default function CheckoutPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
-                      Account Email Address
+                      Email Address {!user && <span className="text-charcoal-400 font-normal">(Optional for tracking)</span>}
                     </label>
                     <input
                       type="email"
-                      readOnly
+                      readOnly={!!user}
                       value={formData.email}
-                      className="w-full px-3.5 py-2.5 text-xs bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-charcoal-500 dark:text-[#8E8A80] cursor-not-allowed"
+                      placeholder="your.email@example.com"
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className={`w-full px-3.5 py-2.5 text-xs bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A] ${
+                        user ? 'cursor-not-allowed opacity-75' : ''
+                      }`}
                     />
                   </div>
                 </div>
@@ -767,8 +831,8 @@ export default function CheckoutPage() {
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* COD */}
-                  {(settings.isCodEnabled ?? true) && (
+                  {/* 1. COD */}
+                  {(settings.paymentMethods?.cod?.enabled ?? settings.isCodEnabled ?? true) && (
                     <label
                       className={`cursor-pointer p-4 rounded-xl border-2 flex items-start gap-3 transition-all ${
                         formData.paymentMethod === 'cod'
@@ -787,17 +851,17 @@ export default function CheckoutPage() {
                       <div>
                         <div className="flex items-center gap-1.5">
                           <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                          <span className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9]">Cash on Delivery (COD)</span>
+                          <span className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9]">Cash on Delivery</span>
                         </div>
                         <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80] mt-0.5">
-                          Pay cash to courier rider upon parcel delivery.
+                          Pay cash to rider upon delivery.
                         </p>
                       </div>
                     </label>
                   )}
 
-                  {/* Bank Transfer */}
-                  {(settings.isBankTransferEnabled ?? true) && (
+                  {/* 2. Direct Bank Transfer */}
+                  {(settings.paymentMethods?.bank_transfer?.enabled ?? settings.isBankTransferEnabled ?? true) && (
                     <label
                       className={`cursor-pointer p-4 rounded-xl border-2 flex items-start gap-3 transition-all ${
                         formData.paymentMethod === 'bank_transfer'
@@ -816,33 +880,276 @@ export default function CheckoutPage() {
                       <div>
                         <div className="flex items-center gap-1.5">
                           <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                          <span className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9]">Direct Bank Transfer</span>
+                          <span className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9]">Bank Transfer</span>
                         </div>
                         <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80] mt-0.5">
-                          Transfer via Raast, Meezan or online banking.
+                          Bank Al Habib / Raast online.
+                        </p>
+                      </div>
+                    </label>
+                  )}
+
+                  {/* 3. JazzCash */}
+                  {(settings.paymentMethods?.jazzcash?.enabled ?? true) && (
+                    <label
+                      className={`cursor-pointer p-4 rounded-xl border-2 flex items-start gap-3 transition-all ${
+                        formData.paymentMethod === 'jazzcash'
+                          ? 'border-[#B89555] dark:border-[#C9A96A] bg-champagne-50/70 dark:bg-[#22211E] shadow-xs'
+                          : 'border-light-border dark:border-[#34322D] bg-white dark:bg-[#191917] hover:border-light-border'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="jazzcash"
+                        checked={formData.paymentMethod === 'jazzcash'}
+                        onChange={() => setFormData({ ...formData, paymentMethod: 'jazzcash' })}
+                        className="mt-1 accent-[#B89555]"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <Smartphone className="w-4 h-4 text-red-600 dark:text-red-400" />
+                          <span className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9]">JazzCash</span>
+                        </div>
+                        <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80] mt-0.5">
+                          Instant mobile account transfer.
+                        </p>
+                      </div>
+                    </label>
+                  )}
+
+                  {/* 4. EasyPaisa */}
+                  {(settings.paymentMethods?.easypaisa?.enabled ?? true) && (
+                    <label
+                      className={`cursor-pointer p-4 rounded-xl border-2 flex items-start gap-3 transition-all ${
+                        formData.paymentMethod === 'easypaisa'
+                          ? 'border-[#B89555] dark:border-[#C9A96A] bg-champagne-50/70 dark:bg-[#22211E] shadow-xs'
+                          : 'border-light-border dark:border-[#34322D] bg-white dark:bg-[#191917] hover:border-light-border'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="easypaisa"
+                        checked={formData.paymentMethod === 'easypaisa'}
+                        onChange={() => setFormData({ ...formData, paymentMethod: 'easypaisa' })}
+                        className="mt-1 accent-[#B89555]"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          <span className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9]">EasyPaisa</span>
+                        </div>
+                        <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80] mt-0.5">
+                          Instant mobile account transfer.
+                        </p>
+                      </div>
+                    </label>
+                  )}
+
+                  {/* 5. SadaPay */}
+                  {(settings.paymentMethods?.sadapay?.enabled ?? true) && (
+                    <label
+                      className={`cursor-pointer p-4 rounded-xl border-2 flex items-start gap-3 transition-all sm:col-span-2 ${
+                        formData.paymentMethod === 'sadapay'
+                          ? 'border-[#B89555] dark:border-[#C9A96A] bg-champagne-50/70 dark:bg-[#22211E] shadow-xs'
+                          : 'border-light-border dark:border-[#34322D] bg-white dark:bg-[#191917] hover:border-light-border'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="sadapay"
+                        checked={formData.paymentMethod === 'sadapay'}
+                        onChange={() => setFormData({ ...formData, paymentMethod: 'sadapay' })}
+                        className="mt-1 accent-[#B89555]"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <Smartphone className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                          <span className="font-bold text-xs text-charcoal-900 dark:text-[#F4F1E9]">SadaPay</span>
+                        </div>
+                        <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80] mt-0.5">
+                          Zero-fee digital wallet &amp; debit card transfer.
                         </p>
                       </div>
                     </label>
                   )}
                 </div>
 
-                {/* Bank Details */}
-                {formData.paymentMethod === 'bank_transfer' && (settings.isBankTransferEnabled ?? true) && (
-                  <div className="p-4 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] space-y-2">
-                    <p className="font-bold text-[#B89555] dark:text-[#C9A96A]">{settings.bankDetails.bankName} Account Details:</p>
-                    <div className="space-y-1 font-mono text-[11px] text-charcoal-700 dark:text-[#B8B3A8]">
-                      <p>• Bank: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.bankDetails.bankName}</strong></p>
-                      <p>• Title: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.bankDetails.accountTitle}</strong></p>
-                      <p>• Account #: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.bankDetails.accountNumber}</strong></p>
-                      {settings.bankDetails.iban && (
-                        <p>• IBAN: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.bankDetails.iban}</strong></p>
+                {/* Digital Payment Details & Mandatory Screenshot Upload Box */}
+                {formData.paymentMethod !== 'cod' && (
+                  <div className="p-4 sm:p-5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs space-y-4 animate-in fade-in">
+                    {/* Method specific account info */}
+                    <div>
+                      {formData.paymentMethod === 'bank_transfer' && (
+                        <div className="space-y-1.5">
+                          <p className="font-bold text-[#B89555] dark:text-[#C9A96A]">
+                            {settings.paymentMethods?.bank_transfer?.bankName || settings.bankDetails?.bankName || 'Bank Al Habib'} Account Details:
+                          </p>
+                          <div className="space-y-1 font-mono text-[11px] text-charcoal-700 dark:text-[#B8B3A8]">
+                            <p>• Account Title: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.paymentMethods?.bank_transfer?.accountTitle || settings.bankDetails?.accountTitle || 'AMIN RAISAT HOSIERY'}</strong></p>
+                            <div className="flex items-center gap-2">
+                              <span>• Account #: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.paymentMethods?.bank_transfer?.accountNumber || settings.bankDetails?.accountNumber || '1088-0081-0062-8101'}</strong></span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(settings.paymentMethods?.bank_transfer?.accountNumber || settings.bankDetails?.accountNumber || '1088008100628101', 'bt-acc')}
+                                className="text-[#B89555] hover:underline"
+                              >
+                                {copiedKey === 'bt-acc' ? 'Copied!' : 'Copy'}
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span>• IBAN: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.paymentMethods?.bank_transfer?.iban || settings.bankDetails?.iban || 'PK09BBAH0010880081006281'}</strong></span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(settings.paymentMethods?.bank_transfer?.iban || settings.bankDetails?.iban || 'PK09BBAH0010880081006281', 'bt-iban')}
+                                className="text-[#B89555] hover:underline"
+                              >
+                                {copiedKey === 'bt-iban' ? 'Copied!' : 'Copy'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.paymentMethod === 'jazzcash' && (
+                        <div className="space-y-1.5">
+                          <p className="font-bold text-red-600 dark:text-red-400">JazzCash Account Details:</p>
+                          <div className="space-y-1 font-mono text-[11px] text-charcoal-700 dark:text-[#B8B3A8]">
+                            <p>• Account Title: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.paymentMethods?.jazzcash?.accountTitle || 'MUHAMMAD ZUBAIR'}</strong></p>
+                            <div className="flex items-center gap-2">
+                              <span>• JazzCash Number: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.paymentMethods?.jazzcash?.accountNumber || '03088666075'}</strong></span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(settings.paymentMethods?.jazzcash?.accountNumber || '03088666075', 'jc-num')}
+                                className="text-[#B89555] hover:underline"
+                              >
+                                {copiedKey === 'jc-num' ? 'Copied!' : 'Copy'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.paymentMethod === 'easypaisa' && (
+                        <div className="space-y-1.5">
+                          <p className="font-bold text-emerald-600 dark:text-emerald-400">EasyPaisa Account Details:</p>
+                          <div className="space-y-1 font-mono text-[11px] text-charcoal-700 dark:text-[#B8B3A8]">
+                            <p>• Account Title: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.paymentMethods?.easypaisa?.accountTitle || 'MUHAMMAD ZUBAIR'}</strong></p>
+                            <div className="flex items-center gap-2">
+                              <span>• EasyPaisa Number: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.paymentMethods?.easypaisa?.accountNumber || '03088666075'}</strong></span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(settings.paymentMethods?.easypaisa?.accountNumber || '03088666075', 'ep-num')}
+                                className="text-[#B89555] hover:underline"
+                              >
+                                {copiedKey === 'ep-num' ? 'Copied!' : 'Copy'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.paymentMethod === 'sadapay' && (
+                        <div className="space-y-1.5">
+                          <p className="font-bold text-teal-600 dark:text-teal-400">SadaPay Account Details:</p>
+                          <div className="space-y-1 font-mono text-[11px] text-charcoal-700 dark:text-[#B8B3A8]">
+                            <p>• Account Title: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.paymentMethods?.sadapay?.accountTitle || 'MUHAMMAD ZUBAIR'}</strong></p>
+                            <div className="flex items-center gap-2">
+                              <span>• SadaPay Number: <strong className="text-charcoal-900 dark:text-[#F4F1E9]">{settings.paymentMethods?.sadapay?.accountNumber || '03088666075'}</strong></span>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(settings.paymentMethods?.sadapay?.accountNumber || '03088666075', 'sp-num')}
+                                className="text-[#B89555] hover:underline"
+                              >
+                                {copiedKey === 'sp-num' ? 'Copied!' : 'Copy'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-2 text-[11px] text-charcoal-600 dark:text-[#B8B3A8]">
+                        Exact Transfer Amount: <strong className="text-[#B89555] dark:text-[#C9A96A] text-xs font-bold">Rs. {totalAmount}</strong>
+                      </div>
+                    </div>
+
+                    {/* Screenshot Upload UI */}
+                    <div className="pt-3 border-t border-light-border dark:border-[#34322D] space-y-2">
+                      <label className="block text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+                        Upload Payment Screenshot / Receipt <span className="text-rose-500">*</span>
+                      </label>
+                      <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80]">
+                        Please attach a clear receipt showing transaction ID, amount, and date.
+                      </p>
+
+                      {paymentScreenshotUrl ? (
+                        <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded-xl flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-emerald-300 dark:border-emerald-700 flex-shrink-0 bg-white dark:bg-black">
+                              <img
+                                src={paymentScreenshotUrl}
+                                alt="Payment Screenshot"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <p className="font-bold text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Screenshot Attached
+                              </p>
+                              <a
+                                href={paymentScreenshotUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline"
+                              >
+                                View full receipt
+                              </a>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setPaymentScreenshotUrl('')}
+                            className="text-xs text-rose-600 hover:underline font-semibold"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative border-2 border-dashed border-light-border dark:border-[#34322D] hover:border-[#B89555] rounded-xl p-4 text-center transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={isUploadingScreenshot}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                setIsUploadingScreenshot(true);
+                                const url = await uploadMediaFile(file, 'payment-receipts');
+                                setPaymentScreenshotUrl(url);
+                              } catch (uploadErr) {
+                                console.error('Screenshot upload failed:', uploadErr);
+                                setErrorMsg('Failed to upload screenshot. Please try another image.');
+                              } finally {
+                                setIsUploadingScreenshot(false);
+                              }
+                            }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
+                            <Upload className={`w-5 h-5 text-[#B89555] ${isUploadingScreenshot ? 'animate-bounce' : ''}`} />
+                            <span className="text-xs font-semibold text-charcoal-800 dark:text-[#F4F1E9]">
+                              {isUploadingScreenshot ? 'Uploading Screenshot...' : 'Click or tap to upload receipt image'}
+                            </span>
+                            <span className="text-[10px] text-charcoal-400 dark:text-[#8E8A80]">
+                              JPG, PNG, WebP up to 10MB
+                            </span>
+                          </div>
+                        </div>
                       )}
                     </div>
-                    {settings.bankDetails.instructions && (
-                      <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80] pt-1">
-                        {settings.bankDetails.instructions}
-                      </p>
-                    )}
                   </div>
                 )}
               </div>

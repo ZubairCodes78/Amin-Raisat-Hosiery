@@ -9,35 +9,80 @@ interface ProductGalleryProps {
   media: ProductMedia[];
   productName: string;
   selectedSleeve?: string;
+  videoUrl?: string;
+}
+
+function getEmbedVideoUrl(url?: string): { isEmbed: boolean; embedUrl: string } {
+  if (!url) return { isEmbed: false, embedUrl: '' };
+  // YouTube watch URL or short link
+  const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch && ytMatch[1]) {
+    return { isEmbed: true, embedUrl: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0` };
+  }
+  // Vimeo
+  const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/);
+  if (vimeoMatch && vimeoMatch[1]) {
+    return { isEmbed: true, embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1` };
+  }
+  return { isEmbed: false, embedUrl: url };
 }
 
 export const ProductGallery: React.FC<ProductGalleryProps> = ({
   media,
   productName,
   selectedSleeve,
+  videoUrl,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
-  // Dynamically prioritize media matching selected sleeve
+  // Dynamically prioritize media matching selected sleeve and merge videoUrl
   const activeMediaList = useMemo(() => {
-    if (!media || media.length === 0) return [];
+    let list: ProductMedia[] = media ? [...media] : [];
 
-    const exactMatch = media.filter(
-      (m) => !selectedSleeve || !m.variantSleeve || m.variantSleeve === 'All' || m.variantSleeve === selectedSleeve
+    // If videoUrl prop exists and isn't in media list yet, add it
+    if (videoUrl && !list.some((m) => m.type === 'video' || m.url === videoUrl)) {
+      list.push({
+        id: 'product-video-prop',
+        productId: '',
+        type: 'video',
+        url: videoUrl,
+        title: 'Product Video Demo',
+      });
+    }
+
+    if (list.length === 0) return [];
+
+    const exactMatch = list.filter(
+      (m) => !selectedSleeve || !m.variantSleeve || m.variantSleeve === 'All' || m.variantSleeve === selectedSleeve || m.type === 'video'
     );
 
     if (exactMatch.length > 0) {
-      const others = media.filter((m) => !exactMatch.includes(m));
+      const others = list.filter((m) => !exactMatch.includes(m));
       return [...exactMatch, ...others];
     }
 
-    return media;
-  }, [media, selectedSleeve]);
+    return list;
+  }, [media, selectedSleeve, videoUrl]);
 
-  // Reset index when sleeve style switches
+  // Support ?video=1 query parameter from product card "Watch Video" button
   useEffect(() => {
-    setSelectedIndex(0);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('video') === '1' || params.get('watchVideo') === 'true') {
+        const videoIdx = activeMediaList.findIndex((m) => m.type === 'video');
+        if (videoIdx !== -1) {
+          setSelectedIndex(videoIdx);
+        }
+      }
+    }
+  }, [activeMediaList]);
+
+  // Reset index when sleeve style switches (only if not on video)
+  useEffect(() => {
+    if (activeMediaList[selectedIndex]?.type !== 'video') {
+      setSelectedIndex(0);
+    }
   }, [selectedSleeve]);
 
   const handlePrev = useCallback(() => {
@@ -76,19 +121,31 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
   }, [isZoomOpen]);
 
   const activeItem = activeMediaList[selectedIndex] || activeMediaList[0];
+  const videoDetails = activeItem?.type === 'video' ? getEmbedVideoUrl(activeItem.url) : null;
 
   return (
-    <div className="space-y-4 select-none">
-      {/* Main Product Image Container */}
-      <div className="relative w-full aspect-square sm:aspect-[4/4.2] md:aspect-square bg-light-elevated dark:bg-[#22211E] rounded-2xl overflow-hidden border border-light-border dark:border-[#34322D] flex items-center justify-center p-3 sm:p-5 group shadow-sm dark:shadow-card">
+    <div className="w-full space-y-4 select-none">
+      {/* Main Full-Width Product Image Container */}
+      <div className="relative w-full aspect-square sm:aspect-[4/4.2] md:aspect-square bg-light-elevated dark:bg-[#22211E] rounded-2xl overflow-hidden border border-light-border dark:border-[#34322D] flex items-center justify-center p-2 sm:p-4 group shadow-sm dark:shadow-card">
         {activeItem?.type === 'video' ? (
           <div className="relative w-full h-full flex items-center justify-center bg-black rounded-xl overflow-hidden">
-            <video
-              src={activeItem.url}
-              controls
-              className="w-full h-full object-contain"
-              poster="/images/products/sleevless high.jpeg"
-            />
+            {videoDetails?.isEmbed ? (
+              <iframe
+                src={videoDetails.embedUrl}
+                title="Product Video"
+                className="w-full h-full border-0 rounded-xl"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <video
+                src={activeItem.url}
+                controls
+                autoPlay
+                className="w-full h-full object-contain"
+                poster="/images/products/sleevless high.jpeg"
+              />
+            )}
           </div>
         ) : (
           <div className="relative w-full h-full flex items-center justify-center">
@@ -97,7 +154,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
               alt={activeItem?.alt || productName}
               fill
               priority
-              sizes="(max-width: 768px) 100vw, 600px"
+              sizes="(max-width: 768px) 100vw, 650px"
               className="object-contain object-center w-full h-full transition-opacity duration-300"
             />
           </div>

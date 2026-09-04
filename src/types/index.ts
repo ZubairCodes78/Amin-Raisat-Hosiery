@@ -63,7 +63,7 @@ export interface ProductVariant {
 export interface ProductMedia {
   id: string;
   productId?: string;
-  type: 'photo' | 'video';
+  type: 'photo' | 'video' | 'size_guide';
   url: string;
   alt?: string;
   title?: string;
@@ -90,6 +90,7 @@ export interface Product {
   name: string;
   slug: string;
   subtitle: string;
+  shortDescription?: string;
   description: string;
   features: string[];
   qualityComparison?: {
@@ -99,6 +100,10 @@ export interface Product {
   careInstructions: string[];
   shippingInfo: string;
   returnPolicy?: string;
+  videoUrl?: string;
+  sizeGuideUrl?: string;
+  rating?: number;
+  reviewsCount?: number;
   isPublished: boolean;
   isWholesaleEnabled?: boolean;
   wholesaleMinQty?: number;
@@ -134,7 +139,13 @@ export type OrderStatus =
   | 'Cancelled'
   | 'Returned';
 
-export type PaymentMethodType = 'cod' | 'bank_transfer';
+export type PaymentMethodType = 'cod' | 'bank_transfer' | 'jazzcash' | 'easypaisa' | 'sadapay';
+
+export type PaymentStatusType =
+  | 'PENDING_VERIFICATION'
+  | 'VERIFIED'
+  | 'REJECTED'
+  | 'COD_PENDING';
 
 export interface OrderItem {
   id: string;
@@ -158,6 +169,7 @@ export interface Order {
   id: string;
   orderNumber: string;
   userId?: string;
+  customerType?: 'GUEST' | 'REGISTERED';
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
@@ -171,6 +183,11 @@ export interface Order {
   totalAmount: number;
   paymentMethod: PaymentMethodType;
   paymentReference?: string;
+  paymentStatus?: PaymentStatusType;
+  paymentScreenshotUrl?: string;
+  paymentVerifiedAt?: string;
+  paymentVerifiedBy?: string;
+  paymentRejectionReason?: string;
   status: OrderStatus;
   isWholesale?: boolean;
   wholesaleDiscount?: number;
@@ -191,6 +208,36 @@ export interface BankAccountDetails {
   accountNumber: string;
   iban?: string;
   instructions?: string;
+}
+
+export interface PaymentMethodConfig {
+  enabled: boolean;
+  displayName: string;
+  instructions?: string;
+  bankName?: string;
+  accountTitle?: string;
+  accountNumber?: string;
+  iban?: string;
+  branch?: string;
+  description?: string;
+}
+
+export interface PaymentMethodsSettings {
+  cod: PaymentMethodConfig;
+  bank_transfer: PaymentMethodConfig;
+  jazzcash: PaymentMethodConfig;
+  easypaisa: PaymentMethodConfig;
+  sadapay: PaymentMethodConfig;
+  [key: string]: PaymentMethodConfig;
+}
+
+export interface AnnouncementStrip {
+  id: string;
+  text: string;
+  link?: string;
+  isActive: boolean;
+  displayOrder: number;
+  icon?: string;
 }
 
 export interface WholesaleSettings {
@@ -217,6 +264,8 @@ export interface SiteSettings {
   currency: string;
   shipping: ShippingSettings;
   bankDetails: BankAccountDetails;
+  paymentMethods?: PaymentMethodsSettings;
+  announcementStrips?: AnnouncementStrip[];
   wholesale?: WholesaleSettings;
   isStoreOpen: boolean;
   isCodEnabled: boolean;

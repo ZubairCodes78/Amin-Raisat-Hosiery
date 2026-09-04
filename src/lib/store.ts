@@ -429,12 +429,15 @@ export class DataStore {
             name: p.name,
             slug: p.slug,
             subtitle: p.subtitle || '',
+            shortDescription: p.short_description || p.subtitle || '',
             description: p.description || '',
             features: Array.isArray(p.features) ? p.features : [],
             qualityComparison: p.quality_comparison || {},
             careInstructions: Array.isArray(p.care_instructions) ? p.care_instructions : INITIAL_PRODUCTS[0].careInstructions,
             shippingInfo: p.shipping_info || INITIAL_PRODUCTS[0].shippingInfo,
             returnPolicy: 'We offer hassle-free exchange within 7 days of delivery in case of sizing or defect issues. Product must be unwashed and in original condition.',
+            videoUrl: p.video_url || p.product_media?.find((m: any) => m.media_type === 'video')?.url || undefined,
+            sizeGuideUrl: p.size_guide_url || p.product_media?.find((m: any) => m.media_type === 'size_guide')?.url || undefined,
             isPublished: p.is_published ?? true,
             isWholesaleEnabled: p.is_wholesale_enabled ?? true,
             wholesaleMinQty: p.wholesale_min_qty ? Number(p.wholesale_min_qty) : 12,
@@ -457,6 +460,7 @@ export class DataStore {
               : [],
             media: Array.isArray(p.product_media)
               ? p.product_media
+                  .filter((m: any) => m.media_type !== 'size_guide')
                   .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
                   .map((m: any) => ({
                     id: m.id,
@@ -631,6 +635,23 @@ export class DataStore {
   // 4. ORDERS & GUEST CHECKOUT MANAGEMENT
   // ============================================================================
   static async getOrders(): Promise<Order[]> {
+    if (this.isClient()) {
+      try {
+        const res = await fetch('/api/admin/orders', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.orders && Array.isArray(data.orders)) {
+            try {
+              localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(data.orders));
+            } catch {}
+            return data.orders;
+          }
+        }
+      } catch (err) {
+        console.warn('API /api/admin/orders fetch notice, using fallback:', err);
+      }
+    }
+
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await supabaseBrowser
@@ -642,10 +663,11 @@ export class DataStore {
           return data.map((o: any) => ({
             id: o.id,
             orderNumber: o.order_number,
+            customerType: o.customer_type || (o.user_id ? 'REGISTERED' : 'GUEST'),
             customerName: o.customer_name,
             customerPhone: o.customer_phone,
             customerEmail: o.customer_email || undefined,
-            address: o.address,
+            address: o.address || o.shipping_address || '',
             city: o.city,
             province: o.province,
             orderNotes: o.order_notes || undefined,
@@ -654,6 +676,11 @@ export class DataStore {
             totalAmount: Number(o.total_amount) || 0,
             paymentMethod: o.payment_method || 'cod',
             paymentReference: o.payment_reference || undefined,
+            paymentScreenshotUrl: o.payment_screenshot_url || undefined,
+            paymentStatus: o.payment_status || (o.payment_method === 'cod' ? 'COD_PENDING' : 'PENDING_VERIFICATION'),
+            paymentVerifiedAt: o.payment_verified_at || undefined,
+            paymentVerifiedBy: o.payment_verified_by || undefined,
+            paymentRejectionReason: o.payment_rejection_reason || undefined,
             status: (o.status || 'Pending') as OrderStatus,
             isWholesale: o.is_wholesale ?? false,
             wholesaleDiscount: o.wholesale_discount ? Number(o.wholesale_discount) : undefined,
@@ -798,6 +825,27 @@ export class DataStore {
   }
 
   static async updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
+    if (this.isClient()) {
+      try {
+        const res = await fetch('/api/admin/orders', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, status }),
+        });
+        if (res.ok) {
+          const orders = await this.getOrders();
+          const index = orders.findIndex((o) => o.id === orderId || o.orderNumber === orderId);
+          if (index !== -1) {
+            orders[index].status = status;
+            localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+          }
+          return;
+        }
+      } catch (err) {
+        console.warn('API /api/admin/orders PATCH notice, fallback to direct:', err);
+      }
+    }
+
     if (isSupabaseConfigured()) {
       try {
         const adminDb = createAdminClient();
@@ -994,6 +1042,24 @@ export class DataStore {
   static async getSettings(): Promise<SiteSettings> {
     let settings: SiteSettings = INITIAL_SITE_SETTINGS;
 
+    if (this.isClient()) {
+      try {
+        const res = await fetch('/api/admin/settings', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.settings) {
+            const sanitized = this.sanitizeContactSettings(data.settings);
+            try {
+              localStorage.setItem(LOCAL_STORAGE_KEYS.SETTINGS, JSON.stringify(sanitized));
+            } catch {}
+            return sanitized;
+          }
+        }
+      } catch (err) {
+        console.warn('API /api/admin/settings fetch notice, using fallback:', err);
+      }
+    }
+
     if (isSupabaseConfigured()) {
       try {
         const db = this.isClient() ? supabaseBrowser : supabaseServer;
@@ -1022,6 +1088,8 @@ export class DataStore {
               accountNumber: siteData?.account_number || INITIAL_SITE_SETTINGS.bankDetails.accountNumber,
               iban: siteData?.iban || INITIAL_SITE_SETTINGS.bankDetails.iban,
             },
+            paymentMethods: siteData?.payment_methods || INITIAL_SITE_SETTINGS.paymentMethods,
+            announcementStrips: siteData?.announcement_strips || INITIAL_SITE_SETTINGS.announcementStrips,
             isStoreOpen: siteData?.is_store_open ?? true,
             announcementText: siteData?.announcement_text || INITIAL_SITE_SETTINGS.announcementText,
           };
@@ -1049,63 +1117,116 @@ export class DataStore {
   }
 
   static async updateSettings(settings: SiteSettings): Promise<void> {
-    if (isSupabaseConfigured()) {
-      const adminDb = createAdminClient();
-      const { error: siteErr } = await adminDb
-        .from('site_settings')
-        .update({
-          brand_name: settings.brandName,
-          owner_name: settings.ownerName,
-          phone: settings.phone,
-          whatsapp: settings.whatsapp,
-          email: settings.email,
-          market: settings.market,
-          currency: settings.currency,
-          bank_name: settings.bankDetails.bankName,
-          account_title: settings.bankDetails.accountTitle,
-          account_number: settings.bankDetails.accountNumber,
-          iban: settings.bankDetails.iban,
-          is_store_open: settings.isStoreOpen,
-          announcement_text: settings.announcementText,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', 'b0000000-0000-0000-0000-000000000001');
-
-      if (siteErr) {
-        console.error('FULL SUPABASE SITE SETTINGS ERROR:', siteErr);
-      }
-
-      const { error: shipErr } = await adminDb
-        .from('shipping_settings')
-        .update({
-          min_order_qty: settings.shipping.minOrderQty,
-          max_order_qty: settings.shipping.maxOrderQty,
-          base_delivery_charge: settings.shipping.baseDeliveryCharge,
-          free_delivery_threshold: settings.shipping.freeDeliveryThreshold,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', 'a0000000-0000-0000-0000-000000000001');
-
-      if (shipErr) {
-        console.error('FULL SUPABASE SHIPPING SETTINGS ERROR:', shipErr);
-      }
-    }
-
     if (this.isClient()) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      try {
+        const res = await fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Failed to save settings to database');
+        }
+        localStorage.setItem(LOCAL_STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings || settings));
+        return;
+      } catch (err: any) {
+        console.error('Store.updateSettings API error:', err);
+        throw err instanceof Error ? err : new Error('Failed to update store settings.');
+      }
     }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const adminDb = createAdminClient();
+        await adminDb
+          .from('site_settings')
+          .update({
+            brand_name: settings.brandName,
+            owner_name: settings.ownerName,
+            phone: settings.phone,
+            whatsapp: settings.whatsapp,
+            email: settings.email,
+            market: settings.market,
+            currency: settings.currency,
+            bank_name: settings.bankDetails.bankName,
+            account_title: settings.bankDetails.accountTitle,
+            account_number: settings.bankDetails.accountNumber,
+            iban: settings.bankDetails.iban,
+            is_store_open: settings.isStoreOpen,
+            announcement_text: settings.announcementText,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', 'b0000000-0000-0000-0000-000000000001');
+
+        await adminDb
+          .from('shipping_settings')
+          .update({
+            min_order_qty: settings.shipping.minOrderQty,
+            max_order_qty: settings.shipping.maxOrderQty,
+            base_delivery_charge: settings.shipping.baseDeliveryCharge,
+            free_delivery_threshold: settings.shipping.freeDeliveryThreshold,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', 'a0000000-0000-0000-0000-000000000001');
+      } catch (err) {
+        console.warn('Direct adminDb settings update warning:', err);
+      }
+    }
+  }
+
+  static async duplicateProduct(productId: string): Promise<Product> {
+    if (this.isClient()) {
+      const res = await fetch('/api/admin/products/duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to duplicate product in database.');
+      }
+      return data.product;
+    }
+    throw new Error('Duplication must be invoked in client context');
   }
 
   // ============================================================================
   // 7. CUSTOMER REVIEWS CRUD
   // ============================================================================
-  static async getReviews(): Promise<ProductReview[]> {
+  static async getReviews(productId?: string): Promise<ProductReview[]> {
+    if (this.isClient()) {
+      try {
+        const url = productId ? `/api/reviews?productId=${encodeURIComponent(productId)}` : '/api/reviews';
+        const res = await fetch(url, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reviews && Array.isArray(data.reviews)) {
+            if (!productId) {
+              try {
+                localStorage.setItem(LOCAL_STORAGE_KEYS.REVIEWS, JSON.stringify(data.reviews));
+              } catch {}
+            }
+            return data.reviews;
+          }
+        }
+      } catch (err) {
+        console.warn('API /api/reviews fetch notice, falling back:', err);
+      }
+    }
+
     if (isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabaseBrowser
+        let query = supabaseBrowser
           .from('reviews')
           .select('*')
           .order('created_at', { ascending: false });
+
+        if (productId) {
+          query = query.eq('product_id', productId);
+        }
+
+        const { data, error } = await query;
 
         if (!error && data) {
           return data.map((r: any) => ({
@@ -1128,7 +1249,11 @@ export class DataStore {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.REVIEWS);
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const parsed = JSON.parse(stored);
+          if (productId) {
+            return parsed.filter((r: any) => r.productId === productId);
+          }
+          return parsed;
         } catch {}
       }
     }

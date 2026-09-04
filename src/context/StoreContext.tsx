@@ -18,6 +18,7 @@ interface StoreContextType {
   updateProductVariants: (productId: string, variants: ProductVariant[]) => Promise<void>;
   updateProductMedia: (productId: string, media: ProductMedia[]) => Promise<void>;
   saveProduct: (product: Product) => Promise<void>;
+  duplicateProduct: (productId: string) => Promise<Product>;
   deleteProduct: (id: string) => Promise<void>;
   saveCategory: (category: Category) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
@@ -143,6 +144,12 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children, initialP
     await loadData();
   };
 
+  const duplicateProduct = async (productId: string) => {
+    const duplicated = await DataStore.duplicateProduct(productId);
+    await loadData();
+    return duplicated;
+  };
+
   const deleteProduct = async (id: string) => {
     await DataStore.deleteProduct(id);
     await loadData();
@@ -229,6 +236,7 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children, initialP
         updateProductVariants,
         updateProductMedia,
         saveProduct,
+        duplicateProduct,
         deleteProduct,
         saveCategory,
         deleteCategory,

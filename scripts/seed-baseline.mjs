@@ -1,300 +1,22 @@
-import { Category, Subcategory, Product, SiteSettings, ShippingSettings, HeroSlide } from '@/types';
-import { DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL } from '@/lib/whatsapp';
+/**
+ * One-time seed script: Inserts/restores the 2 baseline products via the
+ * live production API POST endpoint (which uses the server-side service role key).
+ * Products A and B are inserted with their canonical f0000000 UUIDs.
+ */
 
-export const INITIAL_HERO_SLIDES: HeroSlide[] = [
-  // Desktop Slides
-  {
-    id: 'd0000000-0000-0000-0000-000000000001',
-    deviceType: 'desktop',
-    title: 'Slider 1',
-    subtitle: '100% Fine Combed Cotton Vests & Innerwear',
-    desktopImage: '/slider 1.png',
-    mobileImage: '/slider 1.png',
-    buttonText: 'Shop Collection',
-    buttonLink: '/shop',
-    displayOrder: 1,
-    isActive: true,
-  },
-  {
-    id: 'd0000000-0000-0000-0000-000000000002',
-    deviceType: 'desktop',
-    title: 'Slider 2',
-    subtitle: 'Engineered for Lasting Comfort Across Pakistan',
-    desktopImage: '/slider 2.png',
-    mobileImage: '/slider 2.png',
-    buttonText: 'Explore Vests',
-    buttonLink: '/shop',
-    displayOrder: 2,
-    isActive: true,
-  },
-  // Mobile Slides
-  {
-    id: 'd0000000-0000-0000-0000-000000000011',
-    deviceType: 'mobile',
-    title: 'Mobile Slider 1',
-    subtitle: '100% Fine Combed Cotton Vests & Innerwear',
-    desktopImage: '/mobile slider 1.png',
-    mobileImage: '/mobile slider 1.png',
-    buttonText: 'Shop Collection',
-    buttonLink: '/shop',
-    displayOrder: 1,
-    isActive: true,
-  },
-  {
-    id: 'd0000000-0000-0000-0000-000000000012',
-    deviceType: 'mobile',
-    title: 'Mobile Slider 2',
-    subtitle: 'Engineered for Lasting Comfort Across Pakistan',
-    desktopImage: '/mobile slider 2.png',
-    mobileImage: '/mobile slider 2.png',
-    buttonText: 'Explore Vests',
-    buttonLink: '/shop',
-    displayOrder: 2,
-    isActive: true,
-  },
-];
+const API_BASE = 'https://aminhosiery.com';
 
-export const INITIAL_SHIPPING_SETTINGS: ShippingSettings = {
-  minOrderQty: 3,
-  maxOrderQty: 12,
-  baseDeliveryCharge: 200,
-  freeDeliveryThreshold: 3,
+const MEDIA_MAP = {
+  '/images/products/sleevless high.jpeg': 'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/original_products/sleevless_high.jpeg',
+  '/images/products/full sleeve high.jpeg': 'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/original_products/full_sleeve_high.jpeg',
+  '/images/products/sleevless low.jpeg': 'https://pqjpgexmupcuuqfzchhc.supabase.co/storage/v1/object/public/product-media/original_products/sleevless_low.jpeg',
 };
 
-export const INITIAL_SITE_SETTINGS: SiteSettings = {
-  brandName: 'Amin Raisat Hosiery',
-  ownerName: 'Muhammad Amin',
-  phone: DISPLAY_WHATSAPP_NUMBER,
-  whatsapp: DISPLAY_WHATSAPP_NUMBER,
-  email: BUSINESS_EMAIL,
-  address: 'Hosiery Market, Faisalabad, Pakistan',
-  businessHours: 'Monday - Saturday: 9:00 AM - 9:00 PM',
-  market: 'Pakistan',
-  currency: 'PKR',
-  shipping: INITIAL_SHIPPING_SETTINGS,
-  bankDetails: {
-    bankName: 'Meezan Bank Ltd.',
-    accountTitle: 'Muhammad Amin',
-    accountNumber: '01010101010101',
-    iban: 'PK00MEZN0000000000000000',
-    instructions: `Please transfer the exact total amount and upload your payment receipt screenshot.`,
-  },
-  paymentMethods: {
-    cod: {
-      enabled: true,
-      displayName: 'Cash on Delivery (COD)',
-      description: 'Pay cash upon delivery nationwide',
-      instructions: 'Pay in cash directly to the courier rider upon parcel delivery.',
-    },
-    bank_transfer: {
-      enabled: true,
-      displayName: 'Direct Bank Transfer',
-      bankName: 'Meezan Bank Ltd.',
-      accountTitle: 'Muhammad Amin',
-      accountNumber: '01010101010101',
-      iban: 'PK00MEZN0000000000000000',
-      branch: 'Clock Tower Branch, Faisalabad',
-      instructions: 'Please transfer the total order amount to our Meezan Bank account and upload the transaction screenshot.',
-    },
-    jazzcash: {
-      enabled: true,
-      displayName: 'JazzCash',
-      accountTitle: 'Muhammad Amin',
-      accountNumber: '03088666075',
-      instructions: 'Send money via JazzCash to 03088666075 (Muhammad Amin) and upload the confirmation screenshot.',
-    },
-    easypaisa: {
-      enabled: true,
-      displayName: 'Easypaisa',
-      accountTitle: 'Muhammad Amin',
-      accountNumber: '03088666075',
-      instructions: 'Send money via Easypaisa to 03088666075 (Muhammad Amin) and upload the confirmation screenshot.',
-    },
-    sadapay: {
-      enabled: true,
-      displayName: 'SadaPay',
-      accountTitle: 'Muhammad Amin',
-      accountNumber: '03088666075',
-      iban: 'PK45SADA0000000308866607',
-      instructions: 'Send money via SadaPay to 03088666075 / IBAN and upload the confirmation screenshot.',
-    },
-  },
-  announcementStrips: [
-    {
-      id: 'strip-1',
-      text: 'FREE DELIVERY ON 3+ PIECES ACROSS PAKISTAN',
-      isActive: true,
-      displayOrder: 1,
-      icon: 'Truck',
-    },
-    {
-      id: 'strip-2',
-      text: '100% Pure Combed Cotton — Breathable Rib Weave & Anti-Sag Seams',
-      isActive: true,
-      displayOrder: 2,
-      icon: 'ShieldCheck',
-    },
-    {
-      id: 'strip-3',
-      text: 'Cash on Delivery (COD) & Direct Bank Transfer Available Across Pakistan',
-      isActive: true,
-      displayOrder: 3,
-      icon: 'CheckCircle',
-    },
-    {
-      id: 'strip-4',
-      text: 'Official WhatsApp Ordering & 24/7 Customer Support Across Pakistan',
-      isActive: true,
-      displayOrder: 4,
-      icon: 'PhoneCall',
-    },
-  ],
-  isStoreOpen: true,
-  isCodEnabled: true,
-  isBankTransferEnabled: true,
-  isAnnouncementEnabled: true,
-  announcementText: '100% Pure Combed Cotton Innerwear — Free Delivery on Orders of 3+ Pieces Across Pakistan!',
-  wholesale: {
-    isEnabled: true,
-    defaultMinQty: 12,
-    defaultDiscountPercent: 18,
-    announcementText: 'Wholesale Orders: Min 12 pieces at factory-direct bulk rates.',
-    policyNotes: 'All wholesale orders include direct warehouse dispatch with verified fabric inspection.',
-  },
-  isWhatsAppFloatingEnabled: true,
-  exchangeReturnDays: 7,
-};
+function mapMediaUrl(url) {
+  return MEDIA_MAP[url] || url;
+}
 
-export const INITIAL_SUBCATEGORIES: Subcategory[] = [
-  // Men's Subcategories
-  {
-    id: 'sub-men-vests',
-    categoryId: 'cat-men',
-    name: 'Vests',
-    slug: 'vests',
-    description: '100% Combed Cotton High Quality & Standard Quality Vests.',
-    isActive: true,
-    displayOrder: 1,
-    productCount: 2,
-  },
-  {
-    id: 'sub-men-boxers',
-    categoryId: 'cat-men',
-    name: 'Boxers',
-    slug: 'boxers',
-    description: 'Relaxed fit pure cotton boxers for daily comfort.',
-    isActive: true,
-    displayOrder: 2,
-    productCount: 0,
-  },
-  {
-    id: 'sub-men-briefs',
-    categoryId: 'cat-men',
-    name: 'Briefs',
-    slug: 'briefs',
-    description: 'Soft stretch cotton briefs with snug waistband.',
-    isActive: true,
-    displayOrder: 3,
-    productCount: 0,
-  },
-  {
-    id: 'sub-men-tshirts',
-    categoryId: 'cat-men',
-    name: 'T-Shirts',
-    slug: 't-shirts',
-    description: 'Everyday casual cotton crewneck and v-neck t-shirts.',
-    isActive: true,
-    displayOrder: 4,
-    productCount: 0,
-  },
-  {
-    id: 'sub-men-trousers',
-    categoryId: 'cat-men',
-    name: 'Trousers',
-    slug: 'trousers',
-    description: 'Comfortable loungewear and cotton knit trousers.',
-    isActive: true,
-    displayOrder: 5,
-    productCount: 0,
-  },
-
-  // Women's Subcategories
-  {
-    id: 'sub-women-camisoles',
-    categoryId: 'cat-women',
-    name: 'Camisoles & Vests',
-    slug: 'camisoles',
-    description: 'Soft breathable cotton camisoles and inner vests for women.',
-    isActive: true,
-    displayOrder: 1,
-    productCount: 0,
-  },
-  {
-    id: 'sub-women-innerwear',
-    categoryId: 'cat-women',
-    name: 'Innerwear',
-    slug: 'innerwear',
-    description: 'Comfort-fit women hosiery essentials.',
-    isActive: true,
-    displayOrder: 2,
-    productCount: 0,
-  },
-
-  // Kids' Subcategories
-  {
-    id: 'sub-kids-vests',
-    categoryId: 'cat-kids',
-    name: "Kids' Vests",
-    slug: 'kids-vests',
-    description: 'Hypoallergenic pure cotton vests for kids.',
-    isActive: true,
-    displayOrder: 1,
-    productCount: 0,
-  },
-  {
-    id: 'sub-kids-underwear',
-    categoryId: 'cat-kids',
-    name: "Kids' Underwear",
-    slug: 'kids-underwear',
-    description: 'Gentle cotton briefs and trunks for boys and girls.',
-    isActive: true,
-    displayOrder: 2,
-    productCount: 0,
-  },
-];
-
-export const INITIAL_CATEGORIES: Category[] = [
-  {
-    id: 'cat-men',
-    name: 'Men',
-    slug: 'men',
-    description: 'Everyday premium cotton innerwear, vests, and essentials engineered for maximum comfort and durability.',
-    isActive: true,
-    displayOrder: 1,
-    productCount: 2,
-  },
-  {
-    id: 'cat-women',
-    name: 'Women',
-    slug: 'women',
-    description: 'Upcoming collection of comfortable, breathable women hosiery essentials.',
-    isActive: true,
-    displayOrder: 2,
-    productCount: 0,
-  },
-  {
-    id: 'cat-kids',
-    name: 'Kids',
-    slug: 'kids',
-    description: 'Soft and gentle cotton hosiery for children of all ages.',
-    isActive: true,
-    displayOrder: 3,
-    productCount: 0,
-  },
-];
-
-export const INITIAL_PRODUCTS: Product[] = [
-  // Product 1: High Quality Vest (Taped Seams)
+const PRODUCTS = [
   {
     id: 'f0000000-0000-0000-0000-000000000001',
     categoryId: 'cat-men',
@@ -302,8 +24,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: "Men's Pure Cotton Vest — High Quality (Taped Seams)",
     slug: 'mens-vest-high-quality',
     subtitle: '100% Combed Cotton Breathable Innerwear with Anti-Sag Neck & Shoulder Seam Tape',
-    description:
-      'Engineered for long-lasting durability in Pakistani climate, the Amin Raisat Hosiery High-Quality Men’s Vest is crafted from 100% fine combed cotton. Features protective reinforcement tape along the neck and shoulder seams to maintain its shape wash after wash without collar sagging. Available in Sleeveless (Sando) and Full Sleeve options.',
+    description: "Engineered for long-lasting durability in Pakistani climate, the Amin Raisat Hosiery High-Quality Men's Vest is crafted from 100% fine combed cotton. Features protective reinforcement tape along the neck and shoulder seams to maintain its shape wash after wash without collar sagging. Available in Sleeveless (Sando) and Full Sleeve options.",
     features: [
       '100% Premium Combed Cotton for skin-friendly softness and breathability',
       'Reinforced Neck & Shoulder Tape for anti-sag shape retention',
@@ -326,18 +47,16 @@ export const INITIAL_PRODUCTS: Product[] = [
       'Medium heat iron if required',
       'Line dry in shade for longest fabric life',
     ],
-    shippingInfo:
-      'Fast delivery across all cities of Pakistan. Minimum order 3 pieces. Orders of 3 or more pieces qualify for 100% Free Delivery. Cash on Delivery (COD) & Bank Transfer available.',
+    shippingInfo: 'Fast delivery across all cities of Pakistan. Minimum order 3 pieces. Orders of 3 or more pieces qualify for 100% Free Delivery. Cash on Delivery (COD) & Bank Transfer available.',
     isPublished: true,
     isWholesaleEnabled: true,
     wholesaleMinQty: 12,
-    createdAt: new Date().toISOString(),
     media: [
       {
         id: 'med-hq-sl',
         productId: 'f0000000-0000-0000-0000-000000000001',
         type: 'photo',
-        url: '/images/products/sleevless high.jpeg',
+        url: mapMediaUrl('/images/products/sleevless high.jpeg'),
         alt: "Men's Vest - High Quality Sleeveless / Sando",
         title: 'High Quality Sleeveless Front',
         displayOrder: 1,
@@ -348,7 +67,7 @@ export const INITIAL_PRODUCTS: Product[] = [
         id: 'med-hq-fs',
         productId: 'f0000000-0000-0000-0000-000000000001',
         type: 'photo',
-        url: '/images/products/full sleeve high.jpeg',
+        url: mapMediaUrl('/images/products/full sleeve high.jpeg'),
         alt: "Men's Vest - High Quality Full Sleeve",
         title: 'High Quality Full Sleeve',
         displayOrder: 2,
@@ -357,14 +76,11 @@ export const INITIAL_PRODUCTS: Product[] = [
       },
     ],
     variants: [
-      // High Quality - Sleeveless / Sando (S, M, L, XL, XXL)
       { id: 'var-hq-sl-s', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'S', price: 480, wholesalePrice: 390, stock: 45, sku: 'ARH-HQ-SL-S', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 390, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 370, label: '2–4 Dozen' }, { minQty: 48, price: 350, label: 'Bulk 4+ Dozen' }] },
       { id: 'var-hq-sl-m', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'M', price: 480, wholesalePrice: 390, stock: 60, sku: 'ARH-HQ-SL-M', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 390, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 370, label: '2–4 Dozen' }, { minQty: 48, price: 350, label: 'Bulk 4+ Dozen' }] },
       { id: 'var-hq-sl-l', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'L', price: 480, wholesalePrice: 390, stock: 55, sku: 'ARH-HQ-SL-L', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 390, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 370, label: '2–4 Dozen' }, { minQty: 48, price: 350, label: 'Bulk 4+ Dozen' }] },
       { id: 'var-hq-sl-xl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'XL', price: 500, wholesalePrice: 410, stock: 40, sku: 'ARH-HQ-SL-XL', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 410, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 390, label: '2–4 Dozen' }, { minQty: 48, price: 370, label: 'Bulk 4+ Dozen' }] },
       { id: 'var-hq-sl-xxl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Sleeveless', size: 'XXL', price: 520, wholesalePrice: 430, stock: 30, sku: 'ARH-HQ-SL-XXL', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 430, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 410, label: '2–4 Dozen' }, { minQty: 48, price: 390, label: 'Bulk 4+ Dozen' }] },
-
-      // High Quality - Full Sleeve (S, M, L, XL, XXL)
       { id: 'var-hq-fs-s', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'S', price: 540, wholesalePrice: 440, stock: 35, sku: 'ARH-HQ-FS-S', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 440, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 420, label: '2–4 Dozen' }, { minQty: 48, price: 395, label: 'Bulk 4+ Dozen' }] },
       { id: 'var-hq-fs-m', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'M', price: 540, wholesalePrice: 440, stock: 50, sku: 'ARH-HQ-FS-M', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 440, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 420, label: '2–4 Dozen' }, { minQty: 48, price: 395, label: 'Bulk 4+ Dozen' }] },
       { id: 'var-hq-fs-l', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'L', price: 540, wholesalePrice: 440, stock: 50, sku: 'ARH-HQ-FS-L', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 440, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 420, label: '2–4 Dozen' }, { minQty: 48, price: 395, label: 'Bulk 4+ Dozen' }] },
@@ -372,8 +88,6 @@ export const INITIAL_PRODUCTS: Product[] = [
       { id: 'var-hq-fs-xxl', productId: 'f0000000-0000-0000-0000-000000000001', quality: 'High Quality', sleeve: 'Full Sleeve', size: 'XXL', price: 580, wholesalePrice: 480, stock: 25, sku: 'ARH-HQ-FS-XXL', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 480, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 460, label: '2–4 Dozen' }, { minQty: 48, price: 435, label: 'Bulk 4+ Dozen' }] },
     ],
   },
-
-  // Product 2: Standard Quality Vest (Folded Seams)
   {
     id: 'f0000000-0000-0000-0000-000000000002',
     categoryId: 'cat-men',
@@ -381,8 +95,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: "Men's Pure Cotton Vest — Standard Quality (Folded Seams)",
     slug: 'mens-vest-standard-quality',
     subtitle: '100% Pure Combed Cotton Daily Wear Innerwear with Clean Folded Stitched Finish',
-    description:
-      'Dependable everyday pure cotton inner vest crafted for breathability and comfort. Built with clean double-needle machine-stitched folded seams for dependable daily wear at an affordable price.',
+    description: 'Dependable everyday pure cotton inner vest crafted for breathability and comfort. Built with clean double-needle machine-stitched folded seams for dependable daily wear at an affordable price.',
     features: [
       '100% Pure Combed Cotton for gentle breathability and skin comfort',
       'Clean folded neckline machine-stitched seam',
@@ -405,18 +118,16 @@ export const INITIAL_PRODUCTS: Product[] = [
       'Medium heat iron if required',
       'Line dry in shade for longest fabric life',
     ],
-    shippingInfo:
-      'Fast delivery across all cities of Pakistan. Minimum order 3 pieces. Orders of 3 or more pieces qualify for 100% Free Delivery. Cash on Delivery (COD) & Bank Transfer available.',
+    shippingInfo: 'Fast delivery across all cities of Pakistan. Minimum order 3 pieces. Orders of 3 or more pieces qualify for 100% Free Delivery. Cash on Delivery (COD) & Bank Transfer available.',
     isPublished: true,
     isWholesaleEnabled: true,
     wholesaleMinQty: 12,
-    createdAt: new Date().toISOString(),
     media: [
       {
         id: 'med-sq-sl',
         productId: 'f0000000-0000-0000-0000-000000000002',
         type: 'photo',
-        url: '/images/products/sleevless low.jpeg',
+        url: mapMediaUrl('/images/products/sleevless low.jpeg'),
         alt: "Men's Vest - Standard Quality Sleeveless / Sando",
         title: 'Standard Quality Sleeveless',
         displayOrder: 1,
@@ -425,7 +136,6 @@ export const INITIAL_PRODUCTS: Product[] = [
       },
     ],
     variants: [
-      // Standard Quality - Sleeveless / Sando Only (S, M, L, XL, XXL)
       { id: 'var-sq-sl-s', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'S', price: 380, wholesalePrice: 310, stock: 50, sku: 'ARH-SQ-SL-S', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 310, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 295, label: '2–4 Dozen' }, { minQty: 48, price: 280, label: 'Bulk 4+ Dozen' }] },
       { id: 'var-sq-sl-m', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'M', price: 380, wholesalePrice: 310, stock: 65, sku: 'ARH-SQ-SL-M', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 310, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 295, label: '2–4 Dozen' }, { minQty: 48, price: 280, label: 'Bulk 4+ Dozen' }] },
       { id: 'var-sq-sl-l', productId: 'f0000000-0000-0000-0000-000000000002', quality: 'Standard Quality', sleeve: 'Sleeveless', size: 'L', price: 380, wholesalePrice: 310, stock: 60, sku: 'ARH-SQ-SL-L', isAvailable: true, wholesaleTiers: [{ minQty: 12, maxQty: 23, price: 310, label: '1–2 Dozen' }, { minQty: 24, maxQty: 47, price: 295, label: '2–4 Dozen' }, { minQty: 48, price: 280, label: 'Bulk 4+ Dozen' }] },
@@ -434,3 +144,51 @@ export const INITIAL_PRODUCTS: Product[] = [
     ],
   },
 ];
+
+async function seedProduct(product) {
+  console.log(`\nSeeding: ${product.name}...`);
+  const res = await fetch(`${API_BASE}/api/admin/products`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(product),
+  });
+  const data = await res.json();
+  if (res.ok && data.success) {
+    console.log(`  ✓ Saved: ${data.product.id} | ${data.product.name}`);
+    console.log(`  ✓ Variants: ${data.product.variants?.length ?? 0} | Media: ${data.product.media?.length ?? 0}`);
+  } else {
+    console.error(`  ✗ FAILED: ${JSON.stringify(data)}`);
+    throw new Error(`Failed to seed ${product.name}: ${data.error || 'Unknown error'}`);
+  }
+}
+
+async function verifyDB() {
+  console.log('\n--- Verifying database via API ---');
+  const res = await fetch(`${API_BASE}/api/admin/products`);
+  const data = await res.json();
+  console.log(`Products in DB (via API): ${data.products?.length ?? 'ERROR'}`);
+  for (const p of (data.products || [])) {
+    console.log(`  [${p.id}] ${p.name} | variants: ${p.variants?.length} | media: ${p.media?.length}`);
+  }
+}
+
+async function main() {
+  console.log('=== ONE-TIME BASELINE PRODUCT SEED ===');
+  console.log('Target:', API_BASE);
+
+  // Verify current state
+  await verifyDB();
+
+  for (const product of PRODUCTS) {
+    await seedProduct(product);
+  }
+
+  console.log('\n=== FINAL VERIFICATION ===');
+  await verifyDB();
+  console.log('\n=== SEED COMPLETE ===');
+}
+
+main().catch((err) => {
+  console.error('Fatal seed error:', err);
+  process.exit(1);
+});

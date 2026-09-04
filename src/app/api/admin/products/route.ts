@@ -20,18 +20,30 @@ const MEDIA_STORAGE_MAP: Record<string, string> = {
 
 
 
+function getDbClient() {
+  try {
+    return createAdminClient();
+  } catch {
+    return supabaseServer;
+  }
+}
+
+function generateSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[\s-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export async function GET() {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ products: INITIAL_PRODUCTS });
   }
 
   try {
-    let dbClient = supabaseServer;
-    try {
-      dbClient = createAdminClient();
-    } catch {
-      // No service role key — use server client (publishable key)
-    }
+    const dbClient = getDbClient();
 
     const { data: prods, error } = await dbClient
       .from('products')
@@ -43,55 +55,63 @@ export async function GET() {
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 
-    const formattedProducts: Product[] = (prods || []).map((p: any) => ({
-      id: p.id,
-      categoryId: p.category_id,
-      subcategoryId: p.subcategory_id,
-      name: p.name,
-      slug: p.slug,
-      subtitle: p.subtitle || '',
-      description: p.description || '',
-      features: Array.isArray(p.features) ? p.features : [],
-      qualityComparison: p.quality_comparison || {},
-      careInstructions: Array.isArray(p.care_instructions) ? p.care_instructions : [],
-      shippingInfo: p.shipping_info || '',
-      returnPolicy: 'Hassle-free exchange within 7 days of delivery for sizing or manufacturing defect.',
-      isPublished: p.is_published ?? true,
-      isWholesaleEnabled: p.is_wholesale_enabled ?? true,
-      wholesaleMinQty: p.wholesale_min_qty ? Number(p.wholesale_min_qty) : 12,
-      createdAt: p.created_at,
-      variants: Array.isArray(p.product_variants)
-        ? p.product_variants.map((v: any) => ({
-            id: v.id,
-            productId: v.product_id,
-            quality: v.quality,
-            sleeve: v.sleeve,
-            size: v.size,
-            price: Number(v.price) || 0,
-            salePrice: v.sale_price ? Number(v.sale_price) : undefined,
-            wholesalePrice: v.wholesale_price ? Number(v.wholesale_price) : Math.round((Number(v.price) || 480) * 0.82),
-            wholesaleTiers: Array.isArray(v.wholesale_tiers) ? v.wholesale_tiers : undefined,
-            stock: Number(v.stock) || 0,
-            sku: v.sku || '',
-            isAvailable: v.is_available ?? true,
-          }))
-        : [],
-      media: Array.isArray(p.product_media)
-        ? p.product_media
-            .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
-            .map((m: any) => ({
-              id: m.id,
-              productId: m.product_id,
-              type: m.media_type || 'photo',
-              url: m.url,
-              alt: m.alt_text || '',
-              title: m.title || '',
-              displayOrder: m.display_order || 0,
-              variantQuality: m.variant_quality || undefined,
-              variantSleeve: m.variant_sleeve || undefined,
+    const formattedProducts: Product[] = (prods || []).map((p: any) => {
+      const mediaList = Array.isArray(p.product_media) ? p.product_media : [];
+      const videoMedia = mediaList.find((m: any) => m.media_type === 'video');
+      const sizeGuideMedia = mediaList.find((m: any) => m.media_type === 'size_guide');
+
+      return {
+        id: p.id,
+        categoryId: p.category_id,
+        subcategoryId: p.subcategory_id,
+        name: p.name,
+        slug: p.slug,
+        subtitle: p.subtitle || '',
+        shortDescription: p.short_description || p.subtitle || '',
+        description: p.description || '',
+        features: Array.isArray(p.features) ? p.features : [],
+        qualityComparison: p.quality_comparison || {},
+        careInstructions: Array.isArray(p.care_instructions) ? p.care_instructions : [],
+        shippingInfo: p.shipping_info || '',
+        returnPolicy: 'Hassle-free exchange within 7 days of delivery for sizing or manufacturing defect.',
+        videoUrl: p.video_url || videoMedia?.url || undefined,
+        sizeGuideUrl: p.size_guide_url || sizeGuideMedia?.url || undefined,
+        isPublished: p.is_published ?? true,
+        isWholesaleEnabled: p.is_wholesale_enabled ?? true,
+        wholesaleMinQty: p.wholesale_min_qty ? Number(p.wholesale_min_qty) : 12,
+        createdAt: p.created_at,
+        variants: Array.isArray(p.product_variants)
+          ? p.product_variants.map((v: any) => ({
+              id: v.id,
+              productId: v.product_id,
+              quality: v.quality,
+              sleeve: v.sleeve,
+              size: v.size,
+              price: Number(v.price) || 0,
+              salePrice: v.sale_price ? Number(v.sale_price) : undefined,
+              wholesalePrice: v.wholesale_price ? Number(v.wholesale_price) : Math.round((Number(v.price) || 480) * 0.82),
+              wholesaleTiers: Array.isArray(v.wholesale_tiers) ? v.wholesale_tiers : undefined,
+              stock: Number(v.stock) || 0,
+              sku: v.sku || '',
+              isAvailable: v.is_available ?? true,
             }))
-        : [],
-    }));
+          : [],
+        media: mediaList
+          .filter((m: any) => m.media_type !== 'size_guide')
+          .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
+          .map((m: any) => ({
+            id: m.id,
+            productId: m.product_id,
+            type: m.media_type || 'photo',
+            url: m.url,
+            alt: m.alt_text || '',
+            title: m.title || '',
+            displayOrder: m.display_order || 0,
+            variantQuality: m.variant_quality || undefined,
+            variantSleeve: m.variant_sleeve || undefined,
+          })),
+      };
+    });
 
     return NextResponse.json({ products: formattedProducts });
   } catch (err: any) {
@@ -106,31 +126,41 @@ export async function POST(req: Request) {
   }
 
   try {
-    const adminDb = createAdminClient();
+    const adminDb = getDbClient();
     const body: Product = await req.json();
 
     if (!body.name || !body.name.trim()) {
       return NextResponse.json({ error: 'Product name is required.' }, { status: 400 });
     }
 
-    // 1. Resolve authoritative Product ID (ensure existing products by slug/ID retain their UUID)
-    const autoSlug = body.slug
-      ? body.slug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')
-      : body.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const isExisting = isUuid(body.id);
+    // Mandatory Size Guide validation: must have sizeGuideUrl on creation
+    if (!isExisting && (!body.sizeGuideUrl || !body.sizeGuideUrl.trim())) {
+      return NextResponse.json({ error: 'Size Guide image is required.' }, { status: 400 });
+    }
 
-    let productId: string;
-    if (isUuid(body.id)) {
-      productId = body.id;
-    } else {
-      // Check if product exists in database by slug
-      const { data: existingBySlug } = await adminDb
+    // 1. Resolve authoritative Product ID
+    let productId = isExisting ? body.id : crypto.randomUUID();
+
+    // 2. Slug Auto-Generation & Validation with Uniqueness Check
+    const baseSlugText = body.slug?.trim() ? body.slug.trim() : body.name.trim();
+    const baseSlug = generateSlug(baseSlugText);
+    let autoSlug = baseSlug;
+
+    let slugCounter = 1;
+    while (true) {
+      const { data: existingProductBySlug } = await adminDb
         .from('products')
         .select('id')
         .eq('slug', autoSlug)
-        .limit(1)
+        .neq('id', productId)
         .maybeSingle();
 
-      productId = existingBySlug?.id || crypto.randomUUID();
+      if (!existingProductBySlug) {
+        break; // Unique slug found
+      }
+      slugCounter++;
+      autoSlug = `${baseSlug}-${slugCounter}`;
     }
 
     // 2. Normalize Category ID: Ensure valid UUID or find by slug
@@ -183,6 +213,15 @@ export async function POST(req: Request) {
       updated_at: new Date().toISOString(),
     };
 
+    if (body.shortDescription !== undefined) {
+      productPayload.short_description = body.shortDescription.trim();
+    }
+    if (body.videoUrl !== undefined) {
+      productPayload.video_url = body.videoUrl.trim();
+    }
+    if (body.sizeGuideUrl !== undefined) {
+      productPayload.size_guide_url = body.sizeGuideUrl.trim();
+    }
     if (body.isWholesaleEnabled !== undefined) {
       productPayload.is_wholesale_enabled = body.isWholesaleEnabled;
     }
@@ -203,9 +242,12 @@ export async function POST(req: Request) {
     prodErr = res1.error;
 
     if (prodErr && prodErr.code === 'PGRST204') {
-      // Omit optional wholesale columns and retry
+      // Omit optional wholesale & new columns if schema migration hasn't added them yet
       delete productPayload.is_wholesale_enabled;
       delete productPayload.wholesale_min_qty;
+      delete productPayload.short_description;
+      delete productPayload.video_url;
+      delete productPayload.size_guide_url;
 
       const res2 = await adminDb
         .from('products')
@@ -268,7 +310,6 @@ export async function POST(req: Request) {
         .select();
 
       if (varErr && varErr.code === 'PGRST204') {
-        // Retry without optional wholesale columns
         const retryRes = await adminDb
           .from('product_variants')
           .insert(buildVariantsPayload(false))
@@ -295,9 +336,9 @@ export async function POST(req: Request) {
     // 2. Manage Media atomically
     await adminDb.from('product_media').delete().eq('product_id', confirmedProdId);
 
-    let savedMedia: any[] = [];
-    if (body.media && body.media.length > 0) {
-      const mediaPayload = body.media.map((m, idx) => ({
+    let mediaPayload = (body.media || [])
+      .filter((m) => m.type !== 'video' && m.type !== 'size_guide')
+      .map((m, idx) => ({
         id: isUuid(m.id) ? m.id : crypto.randomUUID(),
         product_id: confirmedProdId,
         media_type: m.type || 'photo',
@@ -309,6 +350,38 @@ export async function POST(req: Request) {
         variant_sleeve: m.variantSleeve || null,
       }));
 
+    // Attach Video URL into media
+    if (body.videoUrl && body.videoUrl.trim()) {
+      mediaPayload.push({
+        id: crypto.randomUUID(),
+        product_id: confirmedProdId,
+        media_type: 'video',
+        url: body.videoUrl.trim(),
+        alt_text: `${body.name} Video Demo`,
+        title: 'Video Demo',
+        display_order: 98,
+        variant_quality: null,
+        variant_sleeve: null,
+      });
+    }
+
+    // Attach Size Guide image into media
+    if (body.sizeGuideUrl && body.sizeGuideUrl.trim()) {
+      mediaPayload.push({
+        id: crypto.randomUUID(),
+        product_id: confirmedProdId,
+        media_type: 'size_guide',
+        url: body.sizeGuideUrl.trim(),
+        alt_text: `${body.name} Size Guide`,
+        title: 'Size Guide',
+        display_order: 99,
+        variant_quality: null,
+        variant_sleeve: null,
+      });
+    }
+
+    let savedMedia: any[] = [];
+    if (mediaPayload.length > 0) {
       const { data: insertedMedia, error: mediaErr } = await adminDb
         .from('product_media')
         .insert(mediaPayload)
@@ -336,12 +409,15 @@ export async function POST(req: Request) {
       name: savedProd.name,
       slug: savedProd.slug,
       subtitle: savedProd.subtitle || '',
+      shortDescription: savedProd.short_description || body.shortDescription || savedProd.subtitle || '',
       description: savedProd.description || '',
       features: savedProd.features || [],
       qualityComparison: savedProd.quality_comparison || {},
       careInstructions: savedProd.care_instructions || [],
       shippingInfo: savedProd.shipping_info || '',
       returnPolicy: 'Hassle-free exchange within 7 days of delivery for sizing or manufacturing defect.',
+      videoUrl: savedProd.video_url || body.videoUrl || undefined,
+      sizeGuideUrl: savedProd.size_guide_url || body.sizeGuideUrl || undefined,
       isPublished: savedProd.is_published,
       isWholesaleEnabled: savedProd.is_wholesale_enabled,
       wholesaleMinQty: savedProd.wholesale_min_qty,
@@ -360,17 +436,19 @@ export async function POST(req: Request) {
         sku: v.sku || '',
         isAvailable: v.is_available,
       })),
-      media: savedMedia.map((m: any) => ({
-        id: m.id,
-        productId: m.product_id,
-        type: m.media_type || 'photo',
-        url: m.url,
-        alt: m.alt_text || '',
-        title: m.title || '',
-        displayOrder: m.display_order || 0,
-        variantQuality: m.variant_quality || undefined,
-        variantSleeve: m.variant_sleeve || undefined,
-      })),
+      media: savedMedia
+        .filter((m: any) => m.media_type !== 'size_guide')
+        .map((m: any) => ({
+          id: m.id,
+          productId: m.product_id,
+          type: m.media_type || 'photo',
+          url: m.url,
+          alt: m.alt_text || '',
+          title: m.title || '',
+          displayOrder: m.display_order || 0,
+          variantQuality: m.variant_quality || undefined,
+          variantSleeve: m.variant_sleeve || undefined,
+        })),
     };
 
     return NextResponse.json({ success: true, product: finalProduct }, { status: 200 });
@@ -386,7 +464,7 @@ export async function DELETE(req: Request) {
   }
 
   try {
-    const adminDb = createAdminClient();
+    const adminDb = getDbClient();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 

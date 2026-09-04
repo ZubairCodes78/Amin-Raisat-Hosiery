@@ -1,9 +1,16 @@
 'use client';
 
 import React from 'react';
-import { Truck, ShieldCheck, PhoneCall, CheckCircle } from 'lucide-react';
+import { Truck, ShieldCheck, PhoneCall, CheckCircle, Sparkles } from 'lucide-react';
 import { useStore } from '@/context/StoreContext';
-import { DISPLAY_WHATSAPP_NUMBER } from '@/lib/whatsapp';
+
+const ICON_MAP: Record<string, any> = {
+  truck: Truck,
+  shield: ShieldCheck,
+  phone: PhoneCall,
+  check: CheckCircle,
+  sparkles: Sparkles,
+};
 
 export const AnnouncementMarquee: React.FC = () => {
   const { settings } = useStore();
@@ -14,29 +21,45 @@ export const AnnouncementMarquee: React.FC = () => {
 
   const freeThreshold = settings.shipping?.freeDeliveryThreshold ?? 3;
 
-  const messages = [
-    {
-      icon: Truck,
-      text: `FREE DELIVERY ON ${freeThreshold}+ PIECES ACROSS PAKISTAN`,
-    },
-    {
-      icon: ShieldCheck,
-      text: '100% Pure Combed Cotton — Breathable Rib Weave & Anti-Sag Seams',
-    },
-    {
-      icon: CheckCircle,
-      text: 'Cash on Delivery (COD) & Direct Bank Transfer Available Across Pakistan',
-    },
-    {
-      icon: PhoneCall,
-      text: 'Official WhatsApp Ordering & 24/7 Customer Support Across Pakistan',
-    },
-  ];
+  // Use configured announcement strips if present and active
+  let stripsToDisplay: { icon: any; text: string }[] = [];
+
+  if (settings.announcementStrips && Array.isArray(settings.announcementStrips)) {
+    const activeCustom = settings.announcementStrips.filter((s) => s.isActive);
+    if (activeCustom.length > 0) {
+      stripsToDisplay = activeCustom.map((s) => ({
+        icon: (s.icon && ICON_MAP[s.icon.toLowerCase()]) || CheckCircle,
+        text: s.text,
+      }));
+    }
+  }
+
+  // Fallback if no custom strips are defined or active
+  if (stripsToDisplay.length === 0) {
+    stripsToDisplay = [
+      {
+        icon: Truck,
+        text: `FREE DELIVERY ON ${freeThreshold}+ PIECES ACROSS PAKISTAN`,
+      },
+      {
+        icon: ShieldCheck,
+        text: '100% Pure Combed Cotton — Breathable Rib Weave & Anti-Sag Seams',
+      },
+      {
+        icon: CheckCircle,
+        text: 'Cash on Delivery (COD) & Direct Bank Transfer Available Across Pakistan',
+      },
+      {
+        icon: PhoneCall,
+        text: 'Official WhatsApp Ordering & 24/7 Customer Support Across Pakistan',
+      },
+    ];
+  }
 
   return (
     <div className="bg-[#0b0b10] text-gray-200 text-[11px] font-medium py-2.5 overflow-hidden border-b border-dark-border relative z-30 select-none">
       <div className="flex w-max animate-marquee hover:[animation-play-state:paused] gap-12 items-center cursor-default">
-        {[...messages, ...messages, ...messages].map((item, idx) => {
+        {[...stripsToDisplay, ...stripsToDisplay, ...stripsToDisplay].map((item, idx) => {
           const Icon = item.icon;
           return (
             <div key={idx} className="flex items-center gap-2.5 flex-shrink-0 text-gray-300">

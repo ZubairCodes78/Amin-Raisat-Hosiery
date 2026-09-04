@@ -28,6 +28,7 @@ import {
   Percent,
   DollarSign,
   TrendingDown,
+  Copy,
 } from 'lucide-react';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { optimizeImageForUpload } from '@/lib/imageOptimizer';
@@ -41,6 +42,7 @@ function AdminProductsContent() {
     categories,
     subcategories,
     saveProduct,
+    duplicateProduct,
     deleteProduct,
     uploadMediaFile,
     isLoading,
@@ -49,6 +51,7 @@ function AdminProductsContent() {
   // Mode: 'list' | 'editor'
   const [viewMode, setViewMode] = useState<'list' | 'editor'>('list');
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [isDuplicatingId, setIsDuplicatingId] = useState<string | null>(null);
 
   // Notification Toast
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -72,7 +75,11 @@ function AdminProductsContent() {
   const [prodQualityGrade, setProdQualityGrade] = useState('High Quality');
   const [prodSlug, setProdSlug] = useState('');
   const [prodSubtitle, setProdSubtitle] = useState('');
+  const [prodShortDesc, setProdShortDesc] = useState('');
   const [prodDesc, setProdDesc] = useState('');
+  const [prodVideoUrl, setProdVideoUrl] = useState('');
+  const [prodSizeGuideUrl, setProdSizeGuideUrl] = useState('');
+  const [isUploadingSizeGuide, setIsUploadingSizeGuide] = useState(false);
   const [prodCategoryId, setProdCategoryId] = useState('');
   const [prodSubcategoryId, setProdSubcategoryId] = useState('');
   const [prodIsPublished, setProdIsPublished] = useState(true);
@@ -181,7 +188,10 @@ function AdminProductsContent() {
     setProdQualityGrade('High Quality');
     setProdSlug('');
     setProdSubtitle('');
+    setProdShortDesc('');
     setProdDesc('');
+    setProdVideoUrl('');
+    setProdSizeGuideUrl('');
     const defaultCat = categories[0]?.id || '';
     setProdCategoryId(defaultCat);
     const defaultSub = subcategories.find((s) => s.categoryId === defaultCat)?.id || '';
@@ -227,7 +237,10 @@ function AdminProductsContent() {
     setProdQualityGrade(prod.variants?.[0]?.quality || 'High Quality');
     setProdSlug(prod.slug);
     setProdSubtitle(prod.subtitle || '');
+    setProdShortDesc(prod.shortDescription || '');
     setProdDesc(prod.description || '');
+    setProdVideoUrl(prod.videoUrl || prod.media?.find((m) => m.type === 'video')?.url || '');
+    setProdSizeGuideUrl(prod.sizeGuideUrl || prod.media?.find((m) => m.type === 'size_guide' || m.variantSleeve === 'size_guide')?.url || '');
     setProdCategoryId(prod.categoryId);
     setProdSubcategoryId(prod.subcategoryId || '');
     setProdIsPublished(prod.isPublished);
@@ -263,11 +276,32 @@ function AdminProductsContent() {
     setViewMode('editor');
   };
 
+  // ------------------ DUPLICATE PRODUCT ------------------
+  const handleDuplicateProduct = async (prod: Product) => {
+    try {
+      setIsDuplicatingId(prod.id);
+      const duplicated = await duplicateProduct(prod.id);
+      showNotice(`Successfully duplicated "${prod.name}" as "${duplicated.name}"!`);
+    } catch (err: any) {
+      console.error('Duplication failed:', err);
+      showNotice(err?.message || 'Failed to duplicate product.', 'error');
+    } finally {
+      setIsDuplicatingId(null);
+    }
+  };
+
   // ------------------ SAVE PRODUCT ------------------
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prodName.trim()) {
       showNotice('Please enter a Product Name.', 'error');
+      setEditorTab('basic');
+      return;
+    }
+
+    // MANDATORY Size Guide validation
+    if (!prodSizeGuideUrl.trim()) {
+      showNotice('Size Guide image is required. Please upload a Size Guide image before saving the product.', 'error');
       setEditorTab('basic');
       return;
     }
@@ -279,9 +313,22 @@ function AdminProductsContent() {
     }
 
     const currentId = editingProductId || `prod-${Date.now()}`;
-    const autoSlug = prodSlug.trim()
-      ? prodSlug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')
-      : prodName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    let baseSlug = prodSlug.trim()
+      ? prodSlug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      : prodName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+    if (!baseSlug) {
+      baseSlug = 'arh-product';
+    }
+
+    // Ensure slug uniqueness
+    let uniqueSlug = baseSlug;
+    let counter = 2;
+    while (products.some((p) => p.slug === uniqueSlug && p.id !== currentId)) {
+      uniqueSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    const autoSlug = uniqueSlug;
 
     const featuresArray = prodFeaturesText
       .split('\n')
@@ -314,6 +361,32 @@ function AdminProductsContent() {
       productId: currentId,
     }));
 
+    // Maintain media redundancy for video and size guide
+    if (prodVideoUrl.trim() && !cleanMedia.some((m) => m.type === 'video' || m.url === prodVideoUrl.trim())) {
+      cleanMedia.push({
+        id: `med-${currentId}-vid`,
+        productId: currentId,
+        type: 'video',
+        url: prodVideoUrl.trim(),
+        alt: `${prodName.trim()} video demo`,
+        title: 'Product Video Showcase',
+        displayOrder: cleanMedia.length + 1,
+      });
+    }
+
+    if (prodSizeGuideUrl.trim() && !cleanMedia.some((m) => m.type === 'size_guide' || m.variantSleeve === 'size_guide')) {
+      cleanMedia.push({
+        id: `med-${currentId}-sg`,
+        productId: currentId,
+        type: 'size_guide',
+        url: prodSizeGuideUrl.trim(),
+        alt: `${prodName.trim()} Size Guide Chart`,
+        title: 'Size Guide',
+        variantSleeve: 'size_guide',
+        displayOrder: 99,
+      });
+    }
+
     const productToSave: Product = {
       id: currentId,
       categoryId: prodCategoryId || categories[0]?.id || '',
@@ -321,7 +394,10 @@ function AdminProductsContent() {
       name: prodName.trim(),
       slug: autoSlug,
       subtitle: prodSubtitle.trim(),
+      shortDescription: prodShortDesc.trim() || undefined,
       description: prodDesc.trim(),
+      videoUrl: prodVideoUrl.trim() || undefined,
+      sizeGuideUrl: prodSizeGuideUrl.trim(),
       features: featuresArray,
       qualityComparison: {
         highQuality: {
@@ -872,7 +948,18 @@ function AdminProductsContent() {
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] text-charcoal-900 dark:text-[#F4F1E9] border border-light-border dark:border-[#34322D] hover:border-[#B89555] dark:hover:border-[#C9A96A] text-xs font-semibold rounded-xl shadow-xs transition-colors"
                       >
                         <Edit2 className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A]" />
-                        <span>Edit Product &amp; Pricing</span>
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isDuplicatingId === prod.id}
+                        onClick={() => handleDuplicateProduct(prod)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] text-charcoal-700 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] border border-light-border dark:border-[#34322D] hover:border-[#B89555] dark:hover:border-[#C9A96A] text-xs font-semibold rounded-xl shadow-xs transition-colors disabled:opacity-50"
+                        title="Duplicate this product and all its variants & media"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-[#B89555] dark:text-[#C9A96A]" />
+                        <span>{isDuplicatingId === prod.id ? 'Duplicating...' : 'Duplicate'}</span>
                       </button>
 
                       <button
@@ -1026,16 +1113,31 @@ function AdminProductsContent() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
-                    URL Slug
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4]">
+                      URL Slug
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const s = prodName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                        setProdSlug(s);
+                      }}
+                      className="text-[10px] text-[#B89555] dark:text-[#C9A96A] hover:underline font-semibold"
+                    >
+                      Generate from Name
+                    </button>
+                  </div>
                   <input
                     type="text"
                     placeholder="e.g. mens-cotton-vest-high-quality"
                     value={prodSlug}
-                    onChange={(e) => setProdSlug(e.target.value)}
+                    onChange={(e) => setProdSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
                     className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs font-mono text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                   />
+                  <span className="text-[10px] text-charcoal-500 dark:text-[#8E8A80] mt-0.5 block truncate">
+                    Preview: /product/{prodSlug || 'product-slug'}
+                  </span>
                 </div>
 
                 <div>
@@ -1132,7 +1234,20 @@ function AdminProductsContent() {
 
               <div>
                 <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
-                  Craftsmanship Description
+                  Short Description (Highlights displayed beneath price in storefront)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Premium 100% combed cotton vest with ultra-soft ribbed weave. Engineered for maximum airflow and daily comfort."
+                  value={prodShortDesc}
+                  onChange={(e) => setProdShortDesc(e.target.value)}
+                  className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs leading-relaxed text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                  Full Craftsmanship Description
                 </label>
                 <textarea
                   rows={3}
@@ -1141,6 +1256,109 @@ function AdminProductsContent() {
                   onChange={(e) => setProdDesc(e.target.value)}
                   className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs leading-relaxed text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
                 />
+              </div>
+
+              {/* Video URL Input */}
+              <div>
+                <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#D8D8D4] mb-1">
+                  Product Video URL (YouTube, Vimeo, or MP4)
+                </label>
+                <input
+                  type="url"
+                  placeholder="e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                  value={prodVideoUrl}
+                  onChange={(e) => setProdVideoUrl(e.target.value)}
+                  className="w-full p-2.5 bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-xs text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:border-[#B89555] dark:focus:border-[#C9A96A] focus:outline-none"
+                />
+                <span className="text-[10px] text-charcoal-500 dark:text-[#8E8A80] mt-0.5 block">
+                  When provided, product cards display a &apos;Watch Video&apos; button that plays inline in the product media section without leaving the page.
+                </span>
+              </div>
+
+              {/* MANDATORY SIZE GUIDE IMAGE UPLOAD */}
+              <div className="p-4 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+                      Official Size Guide Image <span className="text-rose-600">* (Mandatory)</span>
+                    </label>
+                    <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80]">
+                      Displayed inside the customer-facing Size Guide modal above &apos;Select Size&apos;. Product cannot be saved without a Size Guide image.
+                    </p>
+                  </div>
+                  {prodSizeGuideUrl && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                      ✓ Size Guide Attached
+                    </span>
+                  )}
+                </div>
+
+                {prodSizeGuideUrl ? (
+                  <div className="p-3 bg-white dark:bg-[#191917] rounded-xl border border-light-border dark:border-[#34322D] flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] flex-shrink-0">
+                        <img
+                          src={prodSizeGuideUrl}
+                          alt="Size Guide Chart Preview"
+                          className="w-full h-full object-contain p-1"
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+                          Size Guide Chart
+                        </p>
+                        <a
+                          href={prodSizeGuideUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-[#B89555] dark:text-[#C9A96A] hover:underline block"
+                        >
+                          View full image
+                        </a>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProdSizeGuideUrl('')}
+                      className="text-xs text-rose-600 hover:underline font-semibold"
+                    >
+                      Remove / Replace
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative border-2 border-dashed border-rose-300 dark:border-rose-900/60 hover:border-[#B89555] rounded-xl p-4 text-center transition-colors bg-rose-50/40 dark:bg-rose-950/20">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploadingSizeGuide}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          setIsUploadingSizeGuide(true);
+                          const url = await uploadMediaFile(file, 'size-guides');
+                          setProdSizeGuideUrl(url);
+                          showNotice('Size Guide image uploaded successfully.');
+                        } catch (err: any) {
+                          console.error('Size guide upload failed:', err);
+                          showNotice(err?.message || 'Failed to upload Size Guide image.', 'error');
+                        } finally {
+                          setIsUploadingSizeGuide(false);
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
+                      <Upload className={`w-5 h-5 text-rose-600 dark:text-rose-400 ${isUploadingSizeGuide ? 'animate-bounce' : ''}`} />
+                      <span className="text-xs font-bold text-charcoal-900 dark:text-[#F4F1E9]">
+                        {isUploadingSizeGuide ? 'Uploading Size Guide...' : 'Upload Size Guide Chart (Required)'}
+                      </span>
+                      <span className="text-[10px] text-charcoal-500 dark:text-[#8E8A80]">
+                        PNG, JPG, or WebP chart
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

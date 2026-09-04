@@ -13,9 +13,21 @@ export async function GET() {
         supabaseServer.from('categories').select('*, subcategories(*)').eq('is_active', true),
       ]);
 
-      if (products && products.length > 0) {
+      if (Array.isArray(products)) {
+        const formatted = products.map((p: any) => {
+          const mediaList = Array.isArray(p.product_media) ? p.product_media : [];
+          const videoMedia = mediaList.find((m: any) => m.media_type === 'video');
+          const sizeGuideMedia = mediaList.find((m: any) => m.media_type === 'size_guide');
+          return {
+            ...p,
+            shortDescription: p.short_description || p.subtitle || '',
+            videoUrl: p.video_url || videoMedia?.url || undefined,
+            sizeGuideUrl: p.size_guide_url || sizeGuideMedia?.url || undefined,
+          };
+        });
+
         return NextResponse.json({
-          products,
+          products: formatted,
           categories: categories || INITIAL_CATEGORIES,
           settings: INITIAL_SITE_SETTINGS,
         });
@@ -26,7 +38,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    products: INITIAL_PRODUCTS,
+    products: [],
     categories: INITIAL_CATEGORIES,
     settings: INITIAL_SITE_SETTINGS,
   });

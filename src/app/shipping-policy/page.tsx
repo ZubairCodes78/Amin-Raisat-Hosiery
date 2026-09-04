@@ -50,13 +50,25 @@ export default function ShippingPolicyPage() {
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
                 <span>
+                  <strong>Retail Maximum Order Quantity:</strong> Up to {settings.shipping.maxOrderQty || 100} pieces per order online (for larger consignments, choose Wholesale).
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong>Standard Delivery Fee:</strong> Flat Rs. {settings.shipping.baseDeliveryCharge || 200} across Pakistan for orders under {settings.shipping.freeDeliveryThreshold} pieces.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                <span>
                   <strong>Free Delivery on {settings.shipping.freeDeliveryThreshold}+ Pieces:</strong> Orders containing {settings.shipping.freeDeliveryThreshold} or more pieces automatically qualify for <strong className="text-emerald-700 dark:text-emerald-400">100% Free Delivery</strong>.
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong>Wholesale Orders:</strong> Minimum 12 pieces (1 dozen) with special commercial wholesale rates and free nationwide courier or cargo dispatch.
+                  <strong>Wholesale Bulk Logistics:</strong> Minimum 12 pieces (1 dozen) with factory wholesale rates and nationwide cargo/courier dispatch.
                 </span>
               </li>
             </ul>
@@ -70,14 +82,21 @@ export default function ShippingPolicyPage() {
           </section>
 
           <section className="space-y-2">
-            <h3 className="font-bold text-charcoal-900 dark:text-[#F4F1E9] text-sm">Payment Methods</h3>
+            <h3 className="font-bold text-charcoal-900 dark:text-[#F4F1E9] text-sm">Accepted Payment Methods</h3>
             <p>
-              We offer two secure payment options:
+              We accept multiple secure payment methods across Pakistan:
             </p>
             <ul className="pl-4 list-disc space-y-1">
-              <li><strong>Cash on Delivery (COD):</strong> Pay the courier rider in cash upon receiving your parcel.</li>
-              <li><strong>Direct Bank Transfer:</strong> Transfer the exact total amount to our bank account and share a screenshot of the receipt on WhatsApp with your Order Number.</li>
+              <li><strong>Cash on Delivery (COD):</strong> Pay the courier rider in cash upon receiving your parcel at your doorstep.</li>
+              <li><strong>Direct Bank Transfer:</strong> Transfer to our official Bank Al Habib business account.</li>
+              <li><strong>Mobile Wallets:</strong> Instant transfers via JazzCash, EasyPaisa, and SadaPay.</li>
             </ul>
+            <p className="pt-1">
+              For complete account numbers and transfer details, visit our{' '}
+              <Link href="/payment-info" className="text-[#B89555] dark:text-[#C9A96A] font-bold hover:underline">
+                Payment Information Page &rarr;
+              </Link>
+            </p>
           </section>
 
           <section className="space-y-2">
