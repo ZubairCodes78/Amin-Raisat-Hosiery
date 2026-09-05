@@ -345,7 +345,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
             ) : (
               <div className="space-y-0.5">
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-                  <Check className="w-3.5 h-3.5" /> In Stock ({stock} pcs)
+                  <Check className="w-3.5 h-3.5" /> In Stock
                 </span>
                 <p className="text-[10px] font-mono text-charcoal-400 dark:text-[#8E8A80]">
                   SKU: {currentVariant?.sku || 'ARH-SKU'}

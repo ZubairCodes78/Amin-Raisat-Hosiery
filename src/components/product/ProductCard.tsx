@@ -144,11 +144,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, isWholesaleVi
                 100% Combed Cotton
               </span>
             )}
-            {stock <= 10 && stock > 0 && (
-              <span className="bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-[10px] font-semibold px-2.5 py-0.5 rounded-md whitespace-nowrap">
-                Only {stock} left
-              </span>
-            )}
           </div>
 
           <Link

@@ -4,12 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingBag, Menu, X, Search, ChevronDown, User, Layers, Sun, Moon, Mail } from 'lucide-react';
+import { ShoppingBag, Menu, X, Search, ChevronDown, Layers, Sun, Moon, Mail } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/common/WhatsAppIcon';
 import { WHATSAPP_URL, DISPLAY_WHATSAPP_NUMBER, BUSINESS_EMAIL, EMAIL_URL } from '@/lib/whatsapp';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
-import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { AnnouncementMarquee } from '@/components/home/AnnouncementMarquee';
 
@@ -18,7 +17,6 @@ export const Navbar: React.FC = () => {
   const router = useRouter();
   const { totalQuantity, openDrawer } = useCart();
   const { categories, subcategories } = useStore();
-  const { user, profile } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
 
   const [isScrolled, setIsScrolled] = useState(false);
@@ -611,19 +609,6 @@ export const Navbar: React.FC = () => {
                   <Search className="w-4 h-4" />
                 </button>
 
-                {/* Customer Account Button */}
-                <Link
-                  href={user ? '/account' : '/login'}
-                  className="h-9 lg:h-10 px-3 text-charcoal-700 dark:text-[#B8B3A8] hover:text-[#B89555] dark:hover:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl transition-colors flex items-center gap-1.5 border border-transparent hover:border-light-border dark:hover:border-[#34322D]"
-                  aria-label="Customer Account"
-                  title={user ? 'My Account' : 'Sign In'}
-                >
-                  <User className="w-4 h-4" />
-                  <span className="text-[11px] font-semibold text-charcoal-900 dark:text-[#F4F1E9] max-w-[90px] truncate">
-                    {user ? (profile?.fullName ? profile.fullName.split(' ')[0] : 'Account') : 'Sign In'}
-                  </span>
-                </Link>
-
                 {/* Shopping Cart Drawer Trigger */}
                 <button
                   type="button"
@@ -906,15 +891,8 @@ export const Navbar: React.FC = () => {
               </>
             )}
 
-            {/* 5. Customer Account / About / Contact */}
+            {/* 5. About / Contact */}
             <div className="pt-2 border-t border-light-border dark:border-[#34322D] space-y-1">
-              <Link
-                href={user ? '/account' : '/login'}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-semibold text-[#B89555] dark:text-[#C9A96A] hover:bg-light-hover dark:hover:bg-[#22211E] rounded-xl"
-              >
-                {user ? `My Account (${profile?.fullName ? profile.fullName.split(' ')[0] : 'Customer'})` : 'Sign In / Register'}
-              </Link>
               <Link
                 href="/about"
                 onClick={() => setMobileMenuOpen(false)}

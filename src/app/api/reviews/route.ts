@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, createAdminClient, createServerClient, isSupabaseConfigured } from '@/lib/supabase';
+import { supabaseServer, createAdminClient, isSupabaseConfigured } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,38 +14,20 @@ function getDbClient() {
   return supabaseServer;
 }
 
-/**
- * Extracts and verifies the authenticated user from the Request headers or cookies.
- */
-async function getAuthenticatedUser(req: Request) {
-  let token = '';
-  const authHeader = req.headers.get('authorization') || '';
-  if (authHeader.startsWith('Bearer ')) {
-    token = authHeader.slice(7).trim();
-  }
-
-  if (!token) {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const match = cookieHeader.match(/sb-[a-z0-9]+-auth-token=([^;]+)/i);
-    if (match) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(match[1]));
-        token = Array.isArray(parsed) ? parsed[0] : parsed?.access_token;
-      } catch {}
+// Basic anti-spam: very simple in-memory rate limit (resets on server restart)
+const recentSubmissions = new Map<string, number>();
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const last = recentSubmissions.get(ip);
+  if (last && now - last < 30_000) return true; // 30 seconds cooldown per IP
+  recentSubmissions.set(ip, now);
+  // Clean up old entries periodically
+  if (recentSubmissions.size > 5000) {
+    for (const [k, v] of recentSubmissions.entries()) {
+      if (now - v > 120_000) recentSubmissions.delete(k);
     }
   }
-
-  if (!token) return null;
-
-  try {
-    const client = createServerClient();
-    const { data: { user }, error } = await client.auth.getUser(token);
-    if (error || !user) return null;
-    return user;
-  } catch (err) {
-    console.warn('Error verifying auth token:', err);
-    return null;
-  }
+  return false;
 }
 
 export async function GET(req: Request) {
@@ -121,30 +103,44 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const {
-      productId,
-      customerName,
-      customerCity,
-      rating,
-      comment,
-      orderId,
-    } = body;
+    // Rate limiting by IP
+    const ip =
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      'unknown';
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: 'Too many submissions. Please wait a moment before submitting another review.' },
+        { status: 429 }
+      );
+    }
 
-    const cleanName = customerName?.trim();
-    const cleanComment = comment?.trim();
-    const cleanCity = customerCity?.trim();
+    const body = await req.json();
+    const { productId, customerName, customerCity, rating, comment } = body;
+
+    // Server-side validation
+    const cleanName = customerName?.toString().trim();
+    const cleanComment = comment?.toString().trim();
+    const cleanCity = customerCity?.toString().trim();
     const parsedRating = Number(rating);
 
-    if (
-      !cleanComment ||
-      cleanComment.length < 2 ||
-      !parsedRating ||
-      parsedRating < 1 ||
-      parsedRating > 5
-    ) {
+    if (!cleanName || cleanName.length < 2 || cleanName.length > 100) {
       return NextResponse.json(
-        { error: 'Please provide a valid rating between 1 and 5 and a review comment.' },
+        { error: 'Please provide your name (2–100 characters).' },
+        { status: 400 }
+      );
+    }
+
+    if (!cleanComment || cleanComment.length < 2 || cleanComment.length > 1000) {
+      return NextResponse.json(
+        { error: 'Review comment must be between 2 and 1000 characters.' },
+        { status: 400 }
+      );
+    }
+
+    if (!parsedRating || parsedRating < 1 || parsedRating > 5 || !Number.isInteger(parsedRating)) {
+      return NextResponse.json(
+        { error: 'Rating must be a whole number between 1 and 5.' },
         { status: 400 }
       );
     }
@@ -153,116 +149,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Product ID is required.' }, { status: 400 });
     }
 
-    // 1. Authenticate Customer Server-Side (CASE 6: Unauthenticated customer rejected)
-    const user = await getAuthenticatedUser(req);
-    if (!user) {
-      return NextResponse.json(
-        { error: "Please sign in to review a product you've purchased." },
-        { status: 401 }
-      );
+    // Spam check: reject suspiciously long identical content or HTML
+    if (/<[^>]+>/.test(cleanComment) || /<[^>]+>/.test(cleanName)) {
+      return NextResponse.json({ error: 'Invalid input detected.' }, { status: 400 });
     }
 
-    const authUserId = user.id;
-    const authUserEmail = user.email?.toLowerCase();
     const dbClient = getDbClient();
 
     if (isSupabaseConfigured()) {
-      // 2. Query Orders belonging to this Authenticated Customer
-      let orderQuery = dbClient
-        .from('orders')
-        .select('*, order_items(product_id, product_name)');
+      // Verify the product exists in the database
+      const { data: productRow } = await dbClient
+        .from('products')
+        .select('id')
+        .eq('id', productId)
+        .maybeSingle();
 
-      if (authUserEmail) {
-        orderQuery = orderQuery.ilike('customer_email', authUserEmail);
-      } else {
-        return NextResponse.json(
-          { error: 'Customer account must have a verified email to review products.' },
-          { status: 403 }
-        );
+      if (!productRow) {
+        return NextResponse.json({ error: 'Product not found.' }, { status: 404 });
       }
 
-      const { data: customerOrders, error: ordErr } = await orderQuery;
-
-      if (ordErr) {
-        console.error('Customer orders lookup error:', ordErr);
-        return NextResponse.json({ error: 'Failed to verify order history.' }, { status: 500 });
-      }
-
-      // Check if customer has any order containing this product
-      const ordersWithProduct = (customerOrders || []).filter((ord: any) => {
-        const items = ord.order_items || [];
-        return items.some((it: any) => it.product_id === productId);
-      });
-
-      // CASE 5: Customer has never purchased this product
-      if (ordersWithProduct.length === 0) {
-        return NextResponse.json(
-          { error: 'Only customers who have received this product can leave a review.' },
-          { status: 403 }
-        );
-      }
-
-      // Check if any of those orders have been DELIVERED
-      const deliveredOrdersWithProduct = ordersWithProduct.filter(
-        (ord: any) => ord.status?.toLowerCase() === 'delivered'
-      );
-
-      // CASE 2 & 3: Customer ordered product but order is NOT Delivered (Pending, Confirmed, Shipped, etc.)
-      if (deliveredOrdersWithProduct.length === 0) {
-        return NextResponse.json(
-          { error: 'Reviews are available after your order has been delivered.' },
-          { status: 403 }
-        );
-      }
-
-      // CASE 7 & 8: If client provided an orderId, verify it matches an authenticated delivered order containing this product
-      let matchingDeliveredOrder = deliveredOrdersWithProduct[0];
-      if (orderId) {
-        const found = deliveredOrdersWithProduct.find((ord: any) => ord.id === orderId);
-        if (!found) {
-          return NextResponse.json(
-            { error: 'Invalid order: The specified order does not belong to you or has not been delivered with this product.' },
-            { status: 403 }
-          );
-        }
-        matchingDeliveredOrder = found;
-      }
-
-      // CASE 9: Customer already reviewed the same product -> Prevent duplicate review
-      const { data: existingReviews, error: revErr } = await dbClient
-        .from('reviews')
-        .select('*')
-        .eq('product_id', productId);
-
-      if (!revErr && existingReviews && existingReviews.length > 0) {
-        const alreadyReviewed = existingReviews.some((r: any) => {
-          if (r.user_id && r.user_id === authUserId) return true;
-          if (r.customer_name && cleanName && r.customer_name.toLowerCase() === cleanName.toLowerCase()) return true;
-          return false;
-        });
-
-        if (alreadyReviewed) {
-          return NextResponse.json(
-            { error: 'You have already submitted a review for this product.' },
-            { status: 409 }
-          );
-        }
-      }
-
-      // CASE 1: All checks passed! Insert review into Supabase
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId);
-      const effectiveName =
-        cleanName ||
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
-        user.email?.split('@')[0] ||
-        'Verified Buyer';
 
       const reviewPayload: any = {
         product_id: isUuid ? productId : null,
-        user_id: authUserId,
-        order_id: matchingDeliveredOrder?.id || null,
-        customer_name: effectiveName,
+        user_id: null,
+        order_id: null,
+        customer_name: cleanName,
         customer_city: cleanCity || null,
         rating: parsedRating,
         comment: cleanComment,
@@ -303,9 +215,9 @@ export async function POST(req: Request) {
       const review = {
         id: insertedId,
         productId,
-        userId: authUserId,
-        orderId: matchingDeliveredOrder?.id,
-        customerName: effectiveName,
+        userId: undefined,
+        orderId: undefined,
+        customerName: cleanName,
         customerCity: cleanCity || undefined,
         rating: parsedRating,
         comment: cleanComment,
@@ -320,8 +232,8 @@ export async function POST(req: Request) {
     const demoReview = {
       id: `rev-${Date.now()}`,
       productId,
-      userId: authUserId,
-      customerName: cleanName || 'Verified Buyer',
+      userId: undefined,
+      customerName: cleanName,
       customerCity: cleanCity || undefined,
       rating: parsedRating,
       comment: cleanComment,

@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useStore } from '@/context/StoreContext';
-import { useAuth } from '@/context/AuthContext';
 import { PaymentMethodType } from '@/types';
 import {
   ArrowLeft,
@@ -13,17 +13,10 @@ import {
   Building2,
   Banknote,
   AlertCircle,
-  Mail,
-  User as UserIcon,
-  Phone,
-  ArrowRight,
   CheckCircle2,
-  Eye,
-  EyeOff,
   Upload,
   Smartphone,
   Copy,
-  Check,
 } from 'lucide-react';
 
 const PAKISTAN_PROVINCES = [
@@ -75,10 +68,7 @@ export default function CheckoutPage() {
     totalSavings,
   } = useCart();
   const { settings, createOrder, uploadMediaFile } = useStore();
-  const { user, profile, addresses, isLoading: authLoading, signIn, signUp } = useAuth();
 
-  // Guest checkout state
-  const [isGuestCheckout, setIsGuestCheckout] = useState(false);
   const [paymentScreenshotUrl, setPaymentScreenshotUrl] = useState('');
   const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -88,17 +78,6 @@ export default function CheckoutPage() {
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
   };
-
-  // Auth gate state (for unauthenticated customers)
-  const [authTab, setAuthTab] = useState<'signup' | 'signin'>('signup');
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
-  const [authFullName, setAuthFullName] = useState('');
-  const [authPhone, setAuthPhone] = useState('');
-  const [authShowPassword, setAuthShowPassword] = useState(false);
-  const [authSubmitting, setAuthSubmitting] = useState(false);
-  const [authError, setAuthError] = useState('');
 
   // Checkout Form State
   const [formData, setFormData] = useState({
@@ -117,23 +96,6 @@ export default function CheckoutPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-
-  // Autofill user profile and default saved address if logged in
-  useEffect(() => {
-    if (user || profile) {
-      const defaultAddr = addresses.find((a) => a.isDefault) || addresses[0];
-      setFormData((prev) => ({
-        ...prev,
-        fullName: profile?.fullName || defaultAddr?.fullName || prev.fullName,
-        phone: profile?.phone || profile?.whatsappNumber || defaultAddr?.phone || prev.phone,
-        whatsappNumber: profile?.whatsappNumber || profile?.phone || prev.whatsappNumber,
-        email: user?.email || profile?.email || prev.email,
-        address: defaultAddr?.address || defaultAddr?.streetAddress || prev.address,
-        city: defaultAddr?.city || prev.city,
-        province: defaultAddr?.province || prev.province,
-      }));
-    }
-  }, [user, profile, addresses]);
 
   // Cart Empty State
   if (items.length === 0) {
@@ -191,335 +153,7 @@ export default function CheckoutPage() {
     );
   }
 
-  // Handle Authentication for Unregistered Guests
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthSubmitting(true);
-
-    try {
-      if (authTab === 'signup') {
-        if (!authFullName.trim()) {
-          setAuthError('Please enter your full name.');
-          setAuthSubmitting(false);
-          return;
-        }
-        if (!authPhone.trim() || authPhone.length < 10) {
-          setAuthError('Please enter a valid Pakistani mobile number (e.g. 03001234567).');
-          setAuthSubmitting(false);
-          return;
-        }
-        if (authPassword.length < 6) {
-          setAuthError('Password must be at least 6 characters.');
-          setAuthSubmitting(false);
-          return;
-        }
-        if (authPassword !== authConfirmPassword) {
-          setAuthError('Passwords do not match.');
-          setAuthSubmitting(false);
-          return;
-        }
-
-        const res = await signUp(authEmail.trim(), authPassword, authFullName.trim(), authPhone.trim());
-
-        if (res?.error) {
-          setAuthError(res.error || 'Failed to create account. Please check details.');
-          setAuthSubmitting(false);
-          return;
-        }
-
-        setFormData((prev) => ({
-          ...prev,
-          fullName: authFullName.trim(),
-          phone: authPhone.trim(),
-          email: authEmail.trim(),
-        }));
-      } else {
-        const res = await signIn(authEmail.trim(), authPassword);
-        if (res?.error) {
-          setAuthError(res.error || 'Invalid email or password.');
-          setAuthSubmitting(false);
-          return;
-        }
-        setFormData((prev) => ({
-          ...prev,
-          email: authEmail.trim(),
-        }));
-      }
-    } catch (err: any) {
-      setAuthError('Authentication failed. Please try again.');
-    } finally {
-      setAuthSubmitting(false);
-    }
-  };
-
-  // STEP 1: AUTH GATE (If not signed in and not guest, prompt clean Sign In / Register / Guest)
-  if (!user && !authLoading && !isGuestCheckout) {
-    return (
-      <div className="py-12 bg-light-bg dark:bg-[#11110F] min-h-[85vh] text-charcoal-900 dark:text-[#F4F1E9] transition-colors duration-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-xs text-charcoal-500 dark:text-[#8E8A80] mb-6">
-            <Link href="/cart" className="hover:text-[#B89555] dark:hover:text-[#C9A96A] flex items-center gap-1">
-              <ArrowLeft className="w-3.5 h-3.5" /> Back to Cart
-            </Link>
-            <span>/</span>
-            <span className="font-bold text-charcoal-900 dark:text-[#F4F1E9]">Account Verification</span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left: Auth Form Card */}
-            <div className="lg:col-span-7 bg-white dark:bg-[#191917] p-6 sm:p-8 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm space-y-6">
-              <div>
-                <span className="text-[10px] font-bold text-[#B89555] dark:text-[#C9A96A] uppercase tracking-widest block">
-                  Step 1 of 2
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-charcoal-900 dark:text-[#F4F1E9] mt-1 tracking-tight">
-                  Sign in or register to checkout
-                </h1>
-                <p className="text-xs text-charcoal-600 dark:text-[#8E8A80] mt-1.5 leading-relaxed">
-                  Your cart items and selected sizes are securely saved. Complete this quick step to proceed with delivery.
-                </p>
-              </div>
-
-              {/* Two Clear Options */}
-              <div className="grid grid-cols-2 gap-2 p-1 bg-light-elevated dark:bg-[#22211E] rounded-xl border border-light-border dark:border-[#34322D]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthTab('signup');
-                    setAuthError('');
-                  }}
-                  className={`py-2.5 text-xs font-bold rounded-lg transition-all ${
-                    authTab === 'signup'
-                      ? 'bg-champagne-500 text-charcoal-950 shadow-xs'
-                      : 'text-charcoal-600 dark:text-[#8E8A80] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
-                  }`}
-                >
-                  Create Account
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthTab('signin');
-                    setAuthError('');
-                  }}
-                  className={`py-2.5 text-xs font-bold rounded-lg transition-all ${
-                    authTab === 'signin'
-                      ? 'bg-champagne-500 text-charcoal-950 shadow-xs'
-                      : 'text-charcoal-600 dark:text-[#8E8A80] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]'
-                  }`}
-                >
-                  Sign In
-                </button>
-              </div>
-
-              {authError && (
-                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs flex items-center gap-2.5 animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{authError}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleAuthSubmit} className="space-y-3.5">
-                {authTab === 'signup' && (
-                  <div>
-                    <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
-                      Full Name <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        value={authFullName}
-                        onChange={(e) => setAuthFullName(e.target.value)}
-                        placeholder="e.g. Muhammad Usman"
-                        className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
-                      />
-                      <UserIcon className="w-4 h-4 text-charcoal-400 dark:text-[#8E8A80] absolute left-3.5 top-3" />
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
-                    Email Address <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      required
-                      value={authEmail}
-                      onChange={(e) => setAuthEmail(e.target.value)}
-                      placeholder="your.email@example.com"
-                      className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
-                    />
-                    <Mail className="w-4 h-4 text-charcoal-400 dark:text-[#8E8A80] absolute left-3.5 top-3" />
-                  </div>
-                </div>
-
-                {authTab === 'signup' && (
-                  <div>
-                    <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
-                      Mobile Number <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="tel"
-                        required
-                        value={authPhone}
-                        onChange={(e) => setAuthPhone(e.target.value)}
-                        placeholder="03001234567"
-                        className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
-                      />
-                      <Phone className="w-4 h-4 text-charcoal-400 dark:text-[#8E8A80] absolute left-3.5 top-3" />
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
-                    Password <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={authShowPassword ? 'text' : 'password'}
-                      required
-                      value={authPassword}
-                      onChange={(e) => setAuthPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-2.5 text-xs bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
-                    />
-                    <Lock className="w-4 h-4 text-charcoal-400 dark:text-[#8E8A80] absolute left-3.5 top-3" />
-                    <button
-                      type="button"
-                      onClick={() => setAuthShowPassword(!authShowPassword)}
-                      className="absolute right-3.5 top-3 text-charcoal-400 dark:text-[#8E8A80] hover:text-charcoal-900 dark:hover:text-[#F4F1E9]"
-                    >
-                      {authShowPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {authTab === 'signup' && (
-                  <div>
-                    <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
-                      Confirm Password <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={authShowPassword ? 'text' : 'password'}
-                        required
-                        value={authConfirmPassword}
-                        onChange={(e) => setAuthConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
-                      />
-                      <Lock className="w-4 h-4 text-charcoal-400 dark:text-[#8E8A80] absolute left-3.5 top-3" />
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={authSubmitting}
-                  className="w-full mt-2 py-3 px-4 bg-champagne-500 hover:bg-champagne-400 disabled:opacity-50 text-charcoal-950 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
-                >
-                  <span>
-                    {authSubmitting
-                      ? 'Please wait...'
-                      : authTab === 'signup'
-                      ? 'Register & Continue to Delivery'
-                      : 'Sign In & Continue to Delivery'}
-                  </span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </form>
-
-              {/* Continue as Guest option */}
-              <div className="space-y-3 pt-2">
-                <div className="relative flex items-center justify-center">
-                  <div className="border-t border-light-border dark:border-[#34322D] w-full" />
-                  <span className="bg-white dark:bg-[#191917] px-3 text-[10px] font-bold text-charcoal-400 dark:text-[#8E8A80] uppercase tracking-wider absolute">
-                    Or
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsGuestCheckout(true);
-                    setFormData((prev) => ({
-                      ...prev,
-                      fullName: authFullName.trim() || prev.fullName,
-                      email: authEmail.trim() || prev.email,
-                      phone: authPhone.trim() || prev.phone,
-                    }));
-                  }}
-                  className="w-full py-3 px-4 bg-light-elevated dark:bg-[#22211E] hover:bg-light-hover dark:hover:bg-[#2A2925] text-charcoal-900 dark:text-[#F4F1E9] font-bold text-xs rounded-xl border border-light-border dark:border-[#34322D] transition-all flex items-center justify-center gap-2 shadow-xs hover:border-[#B89555]/50 active:scale-[0.99]"
-                >
-                  <UserIcon className="w-4 h-4 text-[#B89555] dark:text-[#C9A96A]" />
-                  <span>Continue as Guest (No Password Required)</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Right: Cart Summary Sidebar */}
-            <div className="lg:col-span-5 bg-white dark:bg-[#191917] p-6 rounded-2xl border border-light-border dark:border-[#34322D] shadow-sm space-y-4">
-              <h3 className="font-bold text-sm text-charcoal-900 dark:text-[#F4F1E9] border-b border-light-border dark:border-[#34322D] pb-3">
-                Order Summary ({totalQuantity} pieces)
-              </h3>
-
-              <div className="space-y-3 divide-y divide-light-border dark:divide-[#34322D] max-h-60 overflow-y-auto">
-                {items.map((item) => (
-                  <div key={item.id} className="pt-3 first:pt-0 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-charcoal-900 dark:text-[#F4F1E9]">{item.productName}</p>
-                      <p className="text-[11px] text-charcoal-500 dark:text-[#8E8A80]">
-                        {item.isWholesale && (
-                          <span className="font-bold text-[#B89555] dark:text-[#C9A96A] mr-1">[Wholesale]</span>
-                        )}
-                        {item.quality} • {item.sleeve} • Size: {item.size}
-                      </p>
-                      <p className="text-[11px] text-charcoal-600 dark:text-[#B8B3A8] font-medium">
-                        Qty: {item.quantity} x Rs. {item.unitPrice}
-                      </p>
-                    </div>
-                    <div className="font-bold text-[#B89555] dark:text-[#C9A96A]">
-                      Rs. {item.unitPrice * item.quantity}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-light-border dark:border-[#34322D] pt-3 space-y-2 text-xs text-charcoal-600 dark:text-[#B8B3A8]">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span className="font-semibold text-charcoal-900 dark:text-[#F4F1E9]">Rs. {subtotal}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Delivery</span>
-                  <span>
-                    {deliveryFee === 0 ? (
-                      <span className="text-emerald-700 dark:text-emerald-400 font-bold">FREE Delivery</span>
-                    ) : (
-                      `Rs. ${deliveryFee}`
-                    )}
-                  </span>
-                </div>
-                <div className="border-t border-light-border dark:border-[#34322D] pt-2 flex justify-between text-base font-bold text-[#B89555] dark:text-[#C9A96A]">
-                  <span>Total Payable</span>
-                  <span>Rs. {totalAmount}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // STEP 2: AUTHENTICATED CHECKOUT & DELIVERY FORM
+  // CHECKOUT & DELIVERY FORM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -556,11 +190,11 @@ export default function CheckoutPage() {
       setIsSubmitting(true);
 
       const orderPayload = {
-        userId: user?.id || undefined,
-        customerType: (user ? 'REGISTERED' : 'GUEST') as 'REGISTERED' | 'GUEST',
+        userId: undefined,
+        customerType: 'GUEST' as const,
         customerName: formData.fullName.trim(),
         customerPhone: formData.phone.trim(),
-        customerEmail: user?.email || formData.email.trim() || undefined,
+        customerEmail: formData.email.trim() || undefined,
         address: formData.address.trim(),
         city: finalCity,
         province: formData.province,
@@ -626,26 +260,10 @@ export default function CheckoutPage() {
                   </span>
                 )}
               </div>
-              {user ? (
-                <p className="text-xs text-charcoal-600 dark:text-[#8E8A80] mt-1 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>Logged in as <strong className="text-[#B89555] dark:text-[#C9A96A]">{user?.email || profile?.email}</strong>. Saved address details auto-applied.</span>
-                </p>
-              ) : (
-                <p className="text-xs text-charcoal-600 dark:text-[#8E8A80] mt-1 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                  <span>Checking out as <strong>Guest</strong>. Complete delivery details below.</span>
-                </p>
-              )}
+              <p className="text-xs text-charcoal-600 dark:text-[#8E8A80] mt-1">
+                Fast and secure delivery across Pakistan. Enter your recipient and delivery details below.
+              </p>
             </div>
-            {user && (
-              <Link
-                href="/account"
-                className="text-xs text-[#B89555] dark:text-[#C9A96A] hover:underline font-semibold"
-              >
-                Manage Saved Addresses →
-              </Link>
-            )}
           </div>
         </div>
 
@@ -715,17 +333,14 @@ export default function CheckoutPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-charcoal-700 dark:text-[#B8B3A8] mb-1">
-                      Email Address {!user && <span className="text-charcoal-400 font-normal">(Optional for tracking)</span>}
+                      Email Address <span className="text-charcoal-400 font-normal">(Optional for tracking)</span>
                     </label>
                     <input
                       type="email"
-                      readOnly={!!user}
                       value={formData.email}
                       placeholder="your.email@example.com"
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className={`w-full px-3.5 py-2.5 text-xs bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A] ${
-                        user ? 'cursor-not-allowed opacity-75' : ''
-                      }`}
+                      className="w-full px-3.5 py-2.5 text-xs bg-light-elevated dark:bg-[#22211E] border border-light-border dark:border-[#34322D] rounded-xl text-charcoal-900 dark:text-[#F4F1E9] placeholder-charcoal-400 dark:placeholder-[#8E8A80] focus:outline-none focus:border-[#B89555] dark:focus:border-[#C9A96A]"
                     />
                   </div>
                 </div>

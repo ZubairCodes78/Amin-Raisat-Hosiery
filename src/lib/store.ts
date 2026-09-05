@@ -1416,7 +1416,7 @@ export class DataStore {
 
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(json.error || 'Failed to submit review. Only verified delivered purchases can be reviewed.');
+        throw new Error(json.error || 'Failed to submit review. Please try again.');
       }
 
       if (json.success && json.review) {
